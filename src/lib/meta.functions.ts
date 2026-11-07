@@ -4,11 +4,11 @@ import { z } from "zod";
 const GRAPH = "https://graph.facebook.com/v21.0";
 
 async function graph(path: string, init?: { method?: string; params?: Record<string, unknown> }) {
-  const token = process.env.META_ACCESS_TOKEN;
+  const token = process.env['META_ACCESS_TOKEN'];
   if (!token) throw new Error("META_TOKEN_MISSING");
   const method = init?.method ?? "GET";
   const url = new URL(`${GRAPH}/${path}`);
-  let body: URLSearchParams | undefined;
+  let body: URLSearchParams | null = null;
   if (method === "GET") {
     url.searchParams.set("access_token", token);
     for (const [k, v] of Object.entries(init?.params ?? {})) {
@@ -33,7 +33,7 @@ async function graph(path: string, init?: { method?: string; params?: Record<str
 const INSIGHT_FIELDS = "spend,impressions,reach,clicks,ctr,cpc,cpm,frequency,actions,cost_per_action_type,purchase_roas";
 
 export const getStatus = createServerFn({ method: "GET" }).handler(async () => {
-  if (!process.env.META_ACCESS_TOKEN) return { connected: false as const, name: null };
+  if (!process.env['META_ACCESS_TOKEN']) return { connected: false as const, name: null };
   try {
     const me = await graph("me", { params: { fields: "id,name" } });
     return { connected: true as const, name: me.name as string };
@@ -88,7 +88,7 @@ export const getObjects = createServerFn({ method: "GET" })
       limit: "200",
     };
     if (data.parentIds?.length) {
-      params.filtering = [
+      params['filtering'] = [
         { field: data.level === "adsets" ? "campaign.id" : "adset.id", operator: "IN", value: data.parentIds },
       ];
     }
