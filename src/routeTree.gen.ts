@@ -10,11 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MetRouteImport } from './routes/met'
 import { Route as UtmRouteImport } from './routes/utm'
+import { Route as MetIndexRouteImport } from './routes/met.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MetRoute = MetRouteImport.update({
+  id: '/met',
+  path: '/met',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UtmRoute = UtmRouteImport.update({
@@ -22,30 +29,41 @@ const UtmRoute = UtmRouteImport.update({
   path: '/utm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MetIndexRoute = MetIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MetRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/met': typeof MetRouteWithChildren
   '/utm': typeof UtmRoute
+  '/met/': typeof MetIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/utm': typeof UtmRoute
+  '/met': typeof MetIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/met': typeof MetRouteWithChildren
   '/utm': typeof UtmRoute
+  '/met/': typeof MetIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/utm'
+  fullPaths: '/' | '/met' | '/utm' | '/met/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/utm'
-  id: '__root__' | '/' | '/utm'
+  to: '/' | '/utm' | '/met'
+  id: '__root__' | '/' | '/met' | '/utm' | '/met/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MetRoute: typeof MetRouteWithChildren
   UtmRoute: typeof UtmRoute
 }
 
@@ -58,6 +76,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/met': {
+      id: '/met'
+      path: '/met'
+      fullPath: '/met'
+      preLoaderRoute: typeof MetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/utm': {
       id: '/utm'
       path: '/utm'
@@ -65,11 +90,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/met/': {
+      id: '/met/'
+      path: '/'
+      fullPath: '/met/'
+      preLoaderRoute: typeof MetIndexRouteImport
+      parentRoute: typeof MetRoute
+    }
   }
 }
 
+interface MetRouteChildren {
+  MetIndexRoute: typeof MetIndexRoute
+}
+
+const MetRouteChildren: MetRouteChildren = {
+  MetIndexRoute: MetIndexRoute,
+}
+
+const MetRouteWithChildren = MetRoute._addFileChildren(MetRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MetRoute: MetRouteWithChildren,
   UtmRoute: UtmRoute,
 }
 export const routeTree = rootRouteImport
