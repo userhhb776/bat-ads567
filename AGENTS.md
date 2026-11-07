@@ -28,3 +28,5 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Meta Marketing API calls live only in `src/lib/meta.functions.ts` server functions using the `META_ACCESS_TOKEN` secret — keeps the token server-side.
