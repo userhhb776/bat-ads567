@@ -156,7 +156,7 @@ function Create() {
         <Section n={1} title="Campanha">
           <Field label="Nome da campanha"><Input value={c.name} onChange={(e) => setC({ ...c, name: e.target.value })} placeholder="CP01 - CBO - 1-5-1 - AD1" /></Field>
           <Field label="Objetivo">
-            <Pick value={c.objective} onChange={(v) => { setC({ ...c, objective: v }); setS({ ...s, optimization_goal: optGoals[v][0][0] }); }} options={objectives} />
+            <Pick value={c.objective} onChange={(v) => { setC({ ...c, objective: v }); setS({ ...s, optimization_goal: optGoals[v]?.[0]?.[0] ?? "LINK_CLICKS" }); }} options={objectives} />
           </Field>
           <Field label="Estratégia de lance"><Pick value={c.bid_strategy} onChange={(v) => setC({ ...c, bid_strategy: v })} options={bids} /></Field>
           <div className="flex items-center gap-6 pt-5">
@@ -169,7 +169,7 @@ function Create() {
         <Section n={2} title="Conjunto de anúncios">
           <Field label="Nome do conjunto"><Input value={s.name} onChange={(e) => setS({ ...s, name: e.target.value })} placeholder="Aberto - BR - 18+" /></Field>
           {!c.cbo && <Field label="Orçamento diário (R$)"><Input type="number" value={s.budget} onChange={(e) => setS({ ...s, budget: e.target.value })} /></Field>}
-          <Field label="Meta de desempenho"><Pick value={s.optimization_goal} onChange={(v) => setS({ ...s, optimization_goal: v })} options={optGoals[c.objective]} /></Field>
+          <Field label="Meta de desempenho"><Pick value={s.optimization_goal} onChange={(v) => setS({ ...s, optimization_goal: v })} options={optGoals[c.objective] ?? []} /></Field>
           {(s.optimization_goal === "OFFSITE_CONVERSIONS" || s.optimization_goal === "VALUE") && (
             <>
               <Field label="Pixel / conjunto de dados">

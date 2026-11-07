@@ -29,7 +29,7 @@ export const Route = createFileRoute("/met/")({
 type Level = "campaigns" | "adsets" | "ads";
 const PURCHASE = ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"];
 const IC = ["initiate_checkout", "offsite_conversion.fb_pixel_initiate_checkout", "omni_initiated_checkout"];
-const presets = [
+const presets: [string, string][] = [
   ["today", "Hoje"],
   ["yesterday", "Ontem"],
   ["last_7d", "Últimos 7 dias"],
