@@ -140,7 +140,7 @@ function Create() {
     const r = new FileReader();
     r.onload = () => {
       const url = String(r.result);
-      setA((x) => ({ ...x, image: url.split(",")[1], preview: url }));
+      setA((x) => ({ ...x, image: url.split(",")[1] ?? "", preview: url }));
     };
     r.readAsDataURL(f);
   };
