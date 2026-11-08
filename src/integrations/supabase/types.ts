@@ -113,28 +113,37 @@ export type Database = {
       watch_log: {
         Row: {
           action: string
+          campaign_name: string | null
           created_at: string
           detail: string | null
           id: string
+          new_budget: number | null
           rule_id: string | null
+          state: string
           target_id: string | null
           user_id: string
         }
         Insert: {
           action: string
+          campaign_name?: string | null
           created_at?: string
           detail?: string | null
           id?: string
+          new_budget?: number | null
           rule_id?: string | null
+          state?: string
           target_id?: string | null
           user_id: string
         }
         Update: {
           action?: string
+          campaign_name?: string | null
           created_at?: string
           detail?: string | null
           id?: string
+          new_budget?: number | null
           rule_id?: string | null
+          state?: string
           target_id?: string | null
           user_id?: string
         }
