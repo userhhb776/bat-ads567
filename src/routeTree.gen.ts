@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AutomacoesRouteImport } from './routes/automacoes'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as CrowleyRouteImport } from './routes/crowley'
+import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as FunisRouteImport } from './routes/funis'
 import { Route as InteligenciaRouteImport } from './routes/inteligencia'
 import { Route as MaisRouteImport } from './routes/mais'
@@ -45,6 +46,11 @@ const CrmRoute = CrmRouteImport.update({
 const CrowleyRoute = CrowleyRouteImport.update({
   id: '/crowley',
   path: '/crowley',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FunisRoute = FunisRouteImport.update({
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/automacoes': typeof AutomacoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
+  '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
@@ -137,6 +144,7 @@ export interface FileRoutesByTo {
   '/automacoes': typeof AutomacoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
+  '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/automacoes': typeof AutomacoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
+  '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/automacoes'
     | '/crm'
     | '/crowley'
+    | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/automacoes'
     | '/crm'
     | '/crowley'
+    | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/automacoes'
     | '/crm'
     | '/crowley'
+    | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   AutomacoesRoute: typeof AutomacoesRoute
   CrmRoute: typeof CrmRoute
   CrowleyRoute: typeof CrowleyRoute
+  EntrarRoute: typeof EntrarRoute
   FunisRoute: typeof FunisRoute
   InteligenciaRoute: typeof InteligenciaRoute
   MaisRoute: typeof MaisRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/crowley'
       fullPath: '/crowley'
       preLoaderRoute: typeof CrowleyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/funis': {
@@ -397,6 +417,7 @@ const rootRouteChildren: RootRouteChildren = {
   AutomacoesRoute: AutomacoesRoute,
   CrmRoute: CrmRoute,
   CrowleyRoute: CrowleyRoute,
+  EntrarRoute: EntrarRoute,
   FunisRoute: FunisRoute,
   InteligenciaRoute: InteligenciaRoute,
   MaisRoute: MaisRoute,
