@@ -1,3 +1,4 @@
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -15,7 +16,7 @@ Nunca invente IDs; use somente os do resumo. Para criar páginas, funis, produto
 
 const msgSchema = z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(8000) });
 
-export const crowleyChat = createServerFn({ method: "POST" })
+export const crowleyChat = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({

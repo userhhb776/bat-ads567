@@ -1,3 +1,4 @@
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -5,7 +6,7 @@ const SYSTEM = `Você é um criador de páginas de vendas de alta conversão. Re
 Regras: HTML + CSS embutido (pode usar Tailwind via CDN), 100% responsivo para celular, português do Brasil, textos persuasivos reais (sem lorem ipsum), seções: topo com promessa, benefícios, prova social, oferta, garantia, FAQ e chamada final.
 Todos os botões de compra devem ter a classe "bg-cta" e href="{{CHECKOUT_URL}}". Não inclua scripts de rastreamento: eles são adicionados automaticamente.`;
 
-export const generatePage = createServerFn({ method: "POST" })
+export const generatePage = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ prompt: z.string().min(3).max(6000), current: z.string().max(300000).optional() }).parse(d),
   )
@@ -41,7 +42,7 @@ export const generatePage = createServerFn({ method: "POST" })
     return { html, error: "" };
   });
 
-export const publishPage = createServerFn({ method: "POST" })
+export const publishPage = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ name: z.string().min(1).max(60), html: z.string().min(1).max(500000) }).parse(d))
   .handler(async ({ data }) => {
     const token = process.env["VERCEL_TOKEN"];

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AutomacoesRouteImport } from './routes/automacoes'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as CrowleyRouteImport } from './routes/crowley'
+import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as FunisRouteImport } from './routes/funis'
 import { Route as InteligenciaRouteImport } from './routes/inteligencia'
 import { Route as MaisRouteImport } from './routes/mais'
@@ -26,6 +27,7 @@ import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
 import { Route as UtmLinksRouteImport } from './routes/utm.links'
+import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/public/webhooks.$platform'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +47,11 @@ const CrmRoute = CrmRouteImport.update({
 const CrowleyRoute = CrowleyRouteImport.update({
   id: '/crowley',
   path: '/crowley',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FunisRoute = FunisRouteImport.update({
@@ -112,12 +119,19 @@ const UtmLinksRoute = UtmLinksRouteImport.update({
   path: '/links',
   getParentRoute: () => UtmRoute,
 } as any)
+const ApiPublicWebhooksPlatformRoute =
+  ApiPublicWebhooksPlatformRouteImport.update({
+    id: '/api/public/webhooks/$platform',
+    path: '/api/public/webhooks/$platform',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/automacoes': typeof AutomacoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
+  '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
@@ -131,12 +145,14 @@ export interface FileRoutesByFullPath {
   '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/automacoes': typeof AutomacoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
+  '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
@@ -148,6 +164,7 @@ export interface FileRoutesByTo {
   '/utm/links': typeof UtmLinksRoute
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
+  '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -155,6 +172,7 @@ export interface FileRoutesById {
   '/automacoes': typeof AutomacoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
+  '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
@@ -168,6 +186,7 @@ export interface FileRoutesById {
   '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -176,6 +195,7 @@ export interface FileRouteTypes {
     | '/automacoes'
     | '/crm'
     | '/crowley'
+    | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
@@ -189,12 +209,14 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met/'
     | '/utm/'
+    | '/api/public/webhooks/$platform'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/automacoes'
     | '/crm'
     | '/crowley'
+    | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
@@ -206,12 +228,14 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met'
     | '/utm'
+    | '/api/public/webhooks/$platform'
   id:
     | '__root__'
     | '/'
     | '/automacoes'
     | '/crm'
     | '/crowley'
+    | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
@@ -225,6 +249,7 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met/'
     | '/utm/'
+    | '/api/public/webhooks/$platform'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -232,6 +257,7 @@ export interface RootRouteChildren {
   AutomacoesRoute: typeof AutomacoesRoute
   CrmRoute: typeof CrmRoute
   CrowleyRoute: typeof CrowleyRoute
+  EntrarRoute: typeof EntrarRoute
   FunisRoute: typeof FunisRoute
   InteligenciaRoute: typeof InteligenciaRoute
   MaisRoute: typeof MaisRoute
@@ -240,6 +266,7 @@ export interface RootRouteChildren {
   ProdutosRoute: typeof ProdutosRoute
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
+  ApiPublicWebhooksPlatformRoute: typeof ApiPublicWebhooksPlatformRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -270,6 +297,13 @@ declare module '@tanstack/react-router' {
       path: '/crowley'
       fullPath: '/crowley'
       preLoaderRoute: typeof CrowleyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/funis': {
@@ -363,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmLinksRouteImport
       parentRoute: typeof UtmRoute
     }
+    '/api/public/webhooks/$platform': {
+      id: '/api/public/webhooks/$platform'
+      path: '/api/public/webhooks/$platform'
+      fullPath: '/api/public/webhooks/$platform'
+      preLoaderRoute: typeof ApiPublicWebhooksPlatformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -397,6 +438,7 @@ const rootRouteChildren: RootRouteChildren = {
   AutomacoesRoute: AutomacoesRoute,
   CrmRoute: CrmRoute,
   CrowleyRoute: CrowleyRoute,
+  EntrarRoute: EntrarRoute,
   FunisRoute: FunisRoute,
   InteligenciaRoute: InteligenciaRoute,
   MaisRoute: MaisRoute,
@@ -405,6 +447,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutosRoute: ProdutosRoute,
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
+  ApiPublicWebhooksPlatformRoute: ApiPublicWebhooksPlatformRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

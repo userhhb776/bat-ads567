@@ -14,7 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      app_state: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          user_id: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          user_id: string
+          value?: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          user_id?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      gateway_events: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          customer_email: string | null
+          customer_phone: string | null
+          external_id: string
+          id: string
+          occurred_at: string
+          payload: Json
+          platform: string
+          product_name: string | null
+          status: string
+          user_id: string
+          utm: Json
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_phone?: string | null
+          external_id: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          platform: string
+          product_name?: string | null
+          status: string
+          user_id: string
+          utm?: Json
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          customer_phone?: string | null
+          external_id?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          platform?: string
+          product_name?: string | null
+          status?: string
+          user_id?: string
+          utm?: Json
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          updated_at: string
+          user_id: string
+          webhook_token: string
+        }
+        Insert: {
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          webhook_token?: string
+        }
+        Update: {
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          webhook_token?: string
+        }
+        Relationships: []
+      }
+      watch_log: {
+        Row: {
+          action: string
+          created_at: string
+          detail: string | null
+          id: string
+          rule_id: string | null
+          target_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          rule_id?: string | null
+          target_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          rule_id?: string | null
+          target_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

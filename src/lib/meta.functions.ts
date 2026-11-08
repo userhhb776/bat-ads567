@@ -1,3 +1,4 @@
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
@@ -49,7 +50,7 @@ async function graph(path: string, init?: { method?: string; params?: Record<str
 const INSIGHT_FIELDS =
   "spend,impressions,reach,clicks,inline_link_clicks,ctr,cpc,cpm,frequency,actions,action_values,cost_per_action_type,purchase_roas";
 
-export const getStatus = createServerFn({ method: "GET" }).handler(async () => {
+export const getStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   try {
     const me = await graph("me", { params: { fields: "id,name" } });
     return { connected: true as const, name: me.name as string, error: null };
@@ -58,7 +59,7 @@ export const getStatus = createServerFn({ method: "GET" }).handler(async () => {
   }
 });
 
-export const getAdAccounts = createServerFn({ method: "GET" }).handler(async () => {
+export const getAdAccounts = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const r = await graph("me/adaccounts", {
     params: { fields: "id,name,account_status,currency,timezone_name,business{id,name}", limit: "200" },
   });
@@ -71,7 +72,7 @@ export const getAdAccounts = createServerFn({ method: "GET" }).handler(async () 
   }));
 });
 
-export const getAssets = createServerFn({ method: "GET" })
+export const getAssets = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ accountId: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const empty = { data: [] };
@@ -89,7 +90,7 @@ export const getAssets = createServerFn({ method: "GET" })
     };
   });
 
-export const searchTargeting = createServerFn({ method: "GET" })
+export const searchTargeting = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ kind: z.enum(["interest", "geo", "locale"]), q: z.string().min(1) }).parse(d),
   )
@@ -115,7 +116,7 @@ export const searchTargeting = createServerFn({ method: "GET" })
 
 const levelSchema = z.enum(["campaigns", "adsets", "ads"]);
 
-export const getObjects = createServerFn({ method: "GET" })
+export const getObjects = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -147,7 +148,7 @@ export const getObjects = createServerFn({ method: "GET" })
     return (r.data as any[]).map((o) => ({ ...o, insights: o.insights?.data?.[0] ?? null }));
   });
 
-export const getInsights = createServerFn({ method: "GET" })
+export const getInsights = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ accountIds: z.array(z.string()).min(1), datePreset: z.string() }).parse(d),
   )
@@ -171,7 +172,7 @@ export const getInsights = createServerFn({ method: "GET" })
     };
   });
 
-export const updateObject = createServerFn({ method: "POST" })
+export const updateObject = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -187,7 +188,7 @@ export const updateObject = createServerFn({ method: "POST" })
     return graph(id, { method: "POST", params: rest });
   });
 
-export const duplicateObject = createServerFn({ method: "POST" })
+export const duplicateObject = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ id: z.string(), deep: z.boolean() }).parse(d))
   .handler(async ({ data }) =>
     graph(`${data.id}/copies`, {
@@ -196,7 +197,7 @@ export const duplicateObject = createServerFn({ method: "POST" })
     }),
   );
 
-export const uploadMedia = createServerFn({ method: "POST" })
+export const uploadMedia = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ accountId: z.string(), kind: z.enum(["image", "video"]), base64: z.string().min(1), name: z.string() }).parse(d),
   )
@@ -274,7 +275,7 @@ const createSchema = z.object({
 
 export type PublishInput = z.infer<typeof createSchema>;
 
-export const publishCampaign = createServerFn({ method: "POST" })
+export const publishCampaign = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => createSchema.parse(d))
   .handler(async ({ data }) => {
     const { accountId, campaign: c, adset: s, ad: a } = data;
