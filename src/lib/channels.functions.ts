@@ -1,8 +1,9 @@
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 /** Sends a message through WhatsApp (user's Render server), Telegram bot or webhook. Keys stay server-side. */
-export const sendMessage = createServerFn({ method: "POST" })
+export const sendMessage = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({
       channel: z.enum(["whatsapp", "telegram", "email", "webhook"]),
@@ -52,7 +53,7 @@ export const sendMessage = createServerFn({ method: "POST" })
     }
   });
 
-export const channelStatus = createServerFn({ method: "GET" }).handler(async () => ({
+export const channelStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => ({
   whatsapp: !!process.env["RENDER_WHATSAPP_URL"],
   telegram: !!process.env["TELEGRAM_BOT_TOKEN"],
   email: !!process.env["RESEND_API_KEY"] && !!process.env["EMAIL_FROM"],
@@ -62,7 +63,7 @@ export const channelStatus = createServerFn({ method: "GET" }).handler(async () 
 }));
 
 /** Support agent reply grounded on the product knowledge base (Ollama Cloud, fast). */
-export const supportReply = createServerFn({ method: "POST" })
+export const supportReply = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({
       product: z.string().max(200), knowledge: z.string().max(20000),
