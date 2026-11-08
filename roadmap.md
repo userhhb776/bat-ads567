@@ -22,6 +22,8 @@
 
 ## External inputs
 - [x] Reconnect Meta ads in the new workspace.
-- [ ] Render WhatsApp URL and service contract, then secure credentials.
+- [x] Render WhatsApp URL/key and Vercel token saved; live send untested.
 - [ ] Verify provider credentials securely, callback URLs and production permissions.
-- [ ] Database tables in user's Supabase for cloud save, gateway webhooks and 24h watch (needs user to allow schema changes).
+- [x] Database tables, login, cloud sync, gateway webhooks, 24h watch endpoint.
+- [ ] User: create account in app, set cron-job.org job, paste gateway links.
+- [ ] Installed-app push notifications (watch logs only for now).

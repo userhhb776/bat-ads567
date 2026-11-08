@@ -11,6 +11,8 @@ import { useStore, uid } from "@/lib/store";
 import { useAccount, actionValue } from "@/lib/use-account";
 import { evaluate, type CampaignStats, type Decision, type IntelRule } from "@/lib/intel";
 import { getObjects, updateObject } from "@/lib/meta.functions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/inteligencia")({
   head: () => head("Inteligência de campanhas", "Agentes que vigiam gasto, vendas, CPA, ROAS e frequência e agem sozinhos ou pedem aprovação."),
@@ -21,6 +23,46 @@ type Entry = { id: string; at: number; ruleId: string; campaignId: string; campa
 const PURCHASE = ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"];
 
 const blank = (): IntelRule => ({ id: uid(), name: "Teste de criativo", profile: "teste", campaignId: "*", maxSpendNoSale: 30, maxCpa: 0, minRoasToScale: 0, scalePercent: 20, maxDailyBudget: 0, maxFrequency: 0, hours: [0, 24], autonomy: "auto", active: true });
+
+type LogRow = { id: string; created_at: string; target_id: string | null; campaign_name: string | null; action: string; detail: string | null; state: string; new_budget: number | null };
+
+function CloudWatch() {
+  const update = useServerFn(updateObject);
+  const log = useQuery({
+    queryKey: ["watch-log"], refetchInterval: 60_000,
+    queryFn: async () => ((await supabase.from("watch_log").select("*").order("created_at", { ascending: false }).limit(50)).data ?? []) as unknown as LogRow[],
+  });
+  const setState = async (id: string, state: string) => { await supabase.from("watch_log").update({ state }).eq("id", id); log.refetch(); };
+  async function approve(r: LogRow) {
+    try {
+      if (!r.target_id) return;
+      if (r.action === "pausar") await update({ data: { id: r.target_id, status: "PAUSED" } });
+      if (r.action === "escalar" && r.new_budget) await update({ data: { id: r.target_id, daily_budget: Number(r.new_budget) } });
+      await setState(r.id, "executado"); toast.success("Feito, patrão.");
+    } catch (e) { toast.error(String(e)); await setState(r.id, "erro"); }
+  }
+  const pend = log.data?.filter((r) => r.state === "pendente").length ?? 0;
+  return (
+    <Card className="space-y-2">
+      <div className="flex items-center justify-between"><div className="font-semibold">Vigia 24h na nuvem</div><span className="text-xs text-muted-foreground">{pend} aguardando aprovação</span></div>
+      {!log.data?.length ? <p className="text-xs text-muted-foreground">Nenhuma decisão da nuvem ainda. Ela começa assim que o agendador externo estiver chamando a vigia.</p> : (
+        <div className="divide-y divide-border">
+          {log.data.map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center gap-2 py-2 text-sm">
+              <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("pt-BR")}</span>
+              <span className="font-medium">{r.campaign_name}</span><span className="text-primary">{r.action}</span>
+              <span className="text-muted-foreground">{r.detail}</span><span className="ml-auto text-xs uppercase">{r.state}</span>
+              {r.state === "pendente" && <>
+                <Button size="icon" variant="ghost" onClick={() => approve(r)}><Check className="h-4 w-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => setState(r.id, "recusado")}><X className="h-4 w-4" /></Button>
+              </>}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
 
 function IntelRoute() {
   const [account, setAccount] = useAccount();
@@ -95,8 +137,10 @@ function IntelRoute() {
       <Card className="flex flex-wrap items-center gap-2 text-sm">
         Checar a cada <Input type="number" className="w-20" value={interval} onChange={(e) => setIntervalMin(Number(e.target.value))} /> minutos.
         <Button size="sm" variant="outline" onClick={check}>Checar agora</Button>
-        <span className="text-xs text-muted-foreground">O vigia roda enquanto o app está aberto. O vigia 24h com o app fechado precisa do banco de dados conectado (veja o pedido abaixo).</span>
+        <span className="text-xs text-muted-foreground">Com o app aberto, checa no intervalo acima. Com o app fechado, a vigia 24h na nuvem usa as mesmas regras e a conta selecionada.</span>
       </Card>
+      <CloudWatch />
+
       <div className="flex items-center justify-between"><h2 className="font-display text-2xl">Regras</h2><Button size="sm" onClick={() => setRules([blank(), ...rules])}><Plus className="h-4 w-4" /> Regra</Button></div>
       {rules.length === 0 && <Empty>Ex.: “Se a campanha X gastar R$ 30 e não vender, pausar.” Toque em “Regra”.</Empty>}
       {rules.map((r) => (
