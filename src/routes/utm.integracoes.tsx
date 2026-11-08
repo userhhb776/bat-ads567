@@ -25,7 +25,7 @@ function GatewayLinks() {
   const token = useWebhookToken(!!session.data);
   const events = useGatewayEvents(!!session.data, 7);
   if (!session.data) return <p className="text-xs text-muted-foreground">Entre na sua conta (<Link to="/entrar" className="text-primary underline">entrar</Link>) para gerar seus links secretos de webhook.</p>;
-  const base = typeof window !== "undefined" ? window.location.origin.replace("id-preview--", "project--").replace(/\.lovable\.app$/, ".lovable.app") : "";
+  const base = "https://bat-ads567.lovable.app";
   const link = (g: string) => `${base}/api/public/webhooks/${g.toLowerCase().replace(/[^a-z0-9]/g, "")}?token=${token.data ?? "..."}`;
   const count = (g: string) => events.data?.filter((e) => e.platform === g.toLowerCase().replace(/[^a-z0-9]/g, "")).length ?? 0;
   return (
