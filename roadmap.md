@@ -12,14 +12,15 @@
 - [ ] Audit ads API: accounts/BMs, permissions, pixels/datasets, pages/Instagram, catalogs, restrictions, complete campaign options and reports.
 - [ ] Analytics: UTM links, visitors/sessions/events, deduplication, first/last attribution, payment webhooks and real order reports.
 - [~] Pages (AI generate/edit, versions, duplicate, pixel+UTM, download, Vercel publish done; visual block editor, domains, cloud save pending): visual editor, templates, DeepSeek generation, versions, duplication, publication/domains, forms, pixels and tracking.
-- [ ] Product/offer/order base integrated with pages, funnels and campaigns; never store card credentials.
-- [ ] Automations: conditions, branches, delays, schedules, commercial triggers, retries, logs and channel delivery.
-- [ ] CRM: contacts, tags, custom fields, purchases/conversations, pipeline, import/export and behavioral segmentation.
-- [ ] Support: unified inbox, product knowledge, AI/human handoff and reports.
-- [ ] Crowley: controlled tools across modules, operational memory and approvals.
-- [ ] Intelligence: persistent monitoring, test/scale/maintenance profiles, financial limits, schedules, decision history.
+- [x] (device storage; DB pending) Product/offer/order base integrated with pages, funnels and campaigns; never store card credentials.
+- [x] (runs while app open; 24h needs DB) Automations: conditions, branches, delays, schedules, commercial triggers, retries, logs and channel delivery.
+- [x] (device storage) CRM: contacts, tags, custom fields, purchases/conversations, pipeline, import/export and behavioral segmentation.
+- [x] (inbound messages need Render/Telegram webhooks) Support: unified inbox, product knowledge, AI/human handoff and reports.
+- [x] (status, budget, rules, automations) Crowley: controlled tools across modules, operational memory and approvals.
+- [x] (runs while app open) Intelligence: persistent monitoring, test/scale/maintenance profiles, financial limits, schedules, decision history.
 - [ ] Real installed-app push notifications and 24h checks. Current browser checks are not background monitoring.
 
 ## External inputs
 - [ ] Render WhatsApp URL and service contract, then secure credentials.
 - [ ] Verify provider credentials securely, callback URLs and production permissions.
+- [ ] Database tables in user's Supabase for cloud save, gateway webhooks and 24h watch (needs user to allow schema changes).
