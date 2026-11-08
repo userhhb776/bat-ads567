@@ -27,6 +27,7 @@ import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
 import { Route as UtmLinksRouteImport } from './routes/utm.links'
+import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/public/webhooks.$platform'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -118,6 +119,12 @@ const UtmLinksRoute = UtmLinksRouteImport.update({
   path: '/links',
   getParentRoute: () => UtmRoute,
 } as any)
+const ApiPublicWebhooksPlatformRoute =
+  ApiPublicWebhooksPlatformRouteImport.update({
+    id: '/api/public/webhooks/$platform',
+    path: '/api/public/webhooks/$platform',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/utm/links': typeof UtmLinksRoute
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
+  '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met/'
     | '/utm/'
+    | '/api/public/webhooks/$platform'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met'
     | '/utm'
+    | '/api/public/webhooks/$platform'
   id:
     | '__root__'
     | '/'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met/'
     | '/utm/'
+    | '/api/public/webhooks/$platform'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -253,6 +266,7 @@ export interface RootRouteChildren {
   ProdutosRoute: typeof ProdutosRoute
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
+  ApiPublicWebhooksPlatformRoute: typeof ApiPublicWebhooksPlatformRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -383,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmLinksRouteImport
       parentRoute: typeof UtmRoute
     }
+    '/api/public/webhooks/$platform': {
+      id: '/api/public/webhooks/$platform'
+      path: '/api/public/webhooks/$platform'
+      fullPath: '/api/public/webhooks/$platform'
+      preLoaderRoute: typeof ApiPublicWebhooksPlatformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -426,6 +447,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutosRoute: ProdutosRoute,
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
+  ApiPublicWebhooksPlatformRoute: ApiPublicWebhooksPlatformRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
