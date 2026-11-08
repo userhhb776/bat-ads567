@@ -128,17 +128,28 @@ function Logo({ size = "text-3xl" }: { size?: string }) {
   );
 }
 
+function EntrarGate() {
+  return (
+    <div className="mx-auto max-w-sm p-8 text-center">
+      <h1 className="font-display text-3xl">Área protegida</h1>
+      <p className="mt-2 text-sm text-muted-foreground">Entre para acessar suas contas, campanhas e dados. Assim ninguém mais mexe nos seus anúncios.</p>
+      <Link to="/entrar" className="mt-5 inline-flex rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground">Entrar</Link>
+    </div>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const path = useRouterState({ select: (s) => s.location.pathname }).replace(/\/$/, "") || "/";
   useEffect(() => { loadRate(); }, []);
   const [email, setEmail] = useState<string | null>(null);
+  const [checked, setChecked] = useState(false);
   useEffect(() => {
     const begin = async (uid: string) => {
       const changed = await startCloudSync(uid);
       if (changed && !sessionStorage.getItem("bg-synced")) { sessionStorage.setItem("bg-synced", "1"); location.reload(); }
     };
-    supabase.auth.getSession().then(({ data }) => { if (data.session) { setEmail(data.session.user.email ?? ""); void begin(data.session.user.id); } });
+    supabase.auth.getSession().then(({ data }) => { setChecked(true); if (data.session) { setEmail(data.session.user.email ?? ""); void begin(data.session.user.id); } });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) { setEmail(session.user.email ?? ""); void begin(session.user.id); }
       if (event === "SIGNED_OUT") { setEmail(null); stopCloudSync(); sessionStorage.removeItem("bg-synced"); }
@@ -188,7 +199,7 @@ function RootComponent() {
           </div>
         </aside>
         <main className="min-w-0 flex-1">
-          <Outlet />
+          {checked && email === null && path !== "/entrar" ? <EntrarGate /> : <Outlet />}
         </main>
       </div>
       <Toaster />
