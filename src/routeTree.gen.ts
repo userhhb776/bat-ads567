@@ -27,6 +27,7 @@ import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
 import { Route as UtmLinksRouteImport } from './routes/utm.links'
+import { Route as ApiPublicCronWatchRouteImport } from './routes/api/public/cron/watch'
 import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/public/webhooks.$platform'
 
 const IndexRoute = IndexRouteImport.update({
@@ -119,6 +120,11 @@ const UtmLinksRoute = UtmLinksRouteImport.update({
   path: '/links',
   getParentRoute: () => UtmRoute,
 } as any)
+const ApiPublicCronWatchRoute = ApiPublicCronWatchRouteImport.update({
+  id: '/api/public/cron/watch',
+  path: '/api/public/cron/watch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksPlatformRoute =
   ApiPublicWebhooksPlatformRouteImport.update({
     id: '/api/public/webhooks/$platform',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesByTo {
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/utm/links': typeof UtmLinksRoute
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
+  '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesById {
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRouteTypes {
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met/'
     | '/utm/'
+    | '/api/public/cron/watch'
     | '/api/public/webhooks/$platform'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met'
     | '/utm'
+    | '/api/public/cron/watch'
     | '/api/public/webhooks/$platform'
   id:
     | '__root__'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/utm/links'
     | '/met/'
     | '/utm/'
+    | '/api/public/cron/watch'
     | '/api/public/webhooks/$platform'
   fileRoutesById: FileRoutesById
 }
@@ -266,6 +278,7 @@ export interface RootRouteChildren {
   ProdutosRoute: typeof ProdutosRoute
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
+  ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
   ApiPublicWebhooksPlatformRoute: typeof ApiPublicWebhooksPlatformRoute
 }
 
@@ -397,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmLinksRouteImport
       parentRoute: typeof UtmRoute
     }
+    '/api/public/cron/watch': {
+      id: '/api/public/cron/watch'
+      path: '/api/public/cron/watch'
+      fullPath: '/api/public/cron/watch'
+      preLoaderRoute: typeof ApiPublicCronWatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/$platform': {
       id: '/api/public/webhooks/$platform'
       path: '/api/public/webhooks/$platform'
@@ -447,6 +467,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProdutosRoute: ProdutosRoute,
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
+  ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
   ApiPublicWebhooksPlatformRoute: ApiPublicWebhooksPlatformRoute,
 }
 export const routeTree = rootRouteImport
