@@ -26,4 +26,4 @@
 - [ ] Verify provider credentials securely, callback URLs and production permissions.
 - [x] Database tables, login, cloud sync, gateway webhooks, 24h watch endpoint.
 - [ ] User: create account in app, set cron-job.org job, paste gateway links.
-- [ ] Installed-app push notifications (watch logs only for now).
+- [x] Installed-app push notifications: device subscribes in Inteligência; 24h watch pushes each decision. Live phone delivery untested.
