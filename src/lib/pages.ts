@@ -6,7 +6,7 @@ export type SalesPage = {
   checkoutUrl: string;
   pixelId: string;
   versions: PageVersion[];
-  publishedUrl?: string;
+  publishedUrl?: string | undefined;
 };
 
 /** Injects checkout link, Meta pixel and UTM forwarding so every published page tracks the same way. */
