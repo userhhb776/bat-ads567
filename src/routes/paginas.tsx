@@ -50,7 +50,7 @@ function PagesRoute() {
     const ctx = page.product ? `Produto: ${page.product}. ` : "";
     const r = await gen({ data: { prompt: ctx + prompt, current: html || undefined } }).catch(() => ({ html: "", error: "Falha ao gerar." }));
     setBusy(false);
-    if (r.error) return toast.error(r.error);
+    if (r.error) { toast.error(r.error); return; }
     addVersion(r.html, prompt.slice(0, 80)); setPrompt(""); toast.success("Página atualizada");
   };
   const publish = async () => {
@@ -58,7 +58,7 @@ function PagesRoute() {
     setBusy(true);
     const r = await pub({ data: { name: page.name, html: final } }).catch(() => ({ url: "", error: "Falha ao publicar." }));
     setBusy(false);
-    if (r.error) return toast.error(r.error);
+    if (r.error) { toast.error(r.error); return; }
     patch({ publishedUrl: r.url }); toast.success("Publicada: " + r.url);
   };
   const download = () => {
