@@ -11,7 +11,7 @@
 ## Requested full scope
 - [ ] Audit ads API: accounts/BMs, permissions, pixels/datasets, pages/Instagram, catalogs, restrictions, complete campaign options and reports.
 - [ ] Analytics: UTM links, visitors/sessions/events, deduplication, first/last attribution, payment webhooks and real order reports.
-- [ ] Pages: visual editor, templates, DeepSeek generation, versions, duplication, publication/domains, forms, pixels and tracking.
+- [~] Pages (AI generate/edit, versions, duplicate, pixel+UTM, download, Vercel publish done; visual block editor, domains, cloud save pending): visual editor, templates, DeepSeek generation, versions, duplication, publication/domains, forms, pixels and tracking.
 - [ ] Product/offer/order base integrated with pages, funnels and campaigns; never store card credentials.
 - [ ] Automations: conditions, branches, delays, schedules, commercial triggers, retries, logs and channel delivery.
 - [ ] CRM: contacts, tags, custom fields, purchases/conversations, pipeline, import/export and behavioral segmentation.

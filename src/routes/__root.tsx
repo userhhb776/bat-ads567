@@ -10,7 +10,7 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronRight } from "lucide-react";
+import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencyToggle } from "@/components/currency-toggle";
 import { loadRate } from "@/lib/currency";
@@ -105,6 +105,7 @@ const nav = [
   { to: "/met", label: "Campanhas", icon: LayoutGrid },
   { to: "/met/criar", label: "Criar", icon: PlusSquare },
   { to: "/utm", label: "Métricas", icon: BarChart3 },
+  { to: "/paginas", label: "Páginas", icon: FileText },
   { to: "/funis", label: "Funis", icon: Workflow },
   { to: "/crowley", label: "Crowley", icon: Bot },
 ] as const;
