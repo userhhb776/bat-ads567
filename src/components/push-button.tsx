@@ -15,9 +15,13 @@ export function PushButton() {
       if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
         toast.error("Este navegador não aceita notificações. No iPhone, instale o app na tela inicial primeiro."); return;
       }
+      if (window.top !== window.self) {
+        toast.error("Abra o app publicado (bat-ads567.lovable.app) instalado na tela inicial — a prévia não pode pedir permissão."); return;
+      }
       if ((await Notification.requestPermission()) !== "granted") { toast.error("Notificações bloqueadas nas configurações do celular."); return; }
-      const reg = await navigator.serviceWorker.register("/sw.js");
-      await navigator.serviceWorker.ready;
+      await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.ready;
+      await reg.update().catch(() => {});
       const key = await getKey();
       const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: toBytes(key) }));
       const json = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
