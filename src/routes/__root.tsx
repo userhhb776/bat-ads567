@@ -199,7 +199,7 @@ function RootComponent() {
           </div>
         </aside>
         <main className="min-w-0 flex-1">
-          {checked && email === null && path !== "/entrar" ? <EntrarGate /> : <Outlet />}
+          {!checked && path !== "/entrar" ? null : email === null && path !== "/entrar" ? <EntrarGate /> : <Outlet />}
         </main>
       </div>
       <Toaster />
