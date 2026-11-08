@@ -9,7 +9,10 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { startCloudSync, stopCloudSync } from "@/lib/cloud-sync";
+import { Cloud, CloudOff } from "lucide-react";
 import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronRight, FileText, Package, Zap, Users, MessagesSquare, Radar, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencyToggle } from "@/components/currency-toggle";
@@ -129,6 +132,22 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const path = useRouterState({ select: (s) => s.location.pathname }).replace(/\/$/, "") || "/";
   useEffect(() => { loadRate(); }, []);
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => {
+    const begin = async (uid: string) => {
+      const changed = await startCloudSync(uid);
+      if (changed && !sessionStorage.getItem("bg-synced")) { sessionStorage.setItem("bg-synced", "1"); location.reload(); }
+    };
+    supabase.auth.getSession().then(({ data }) => { if (data.session) { setEmail(data.session.user.email ?? ""); void begin(data.session.user.id); } });
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) { setEmail(session.user.email ?? ""); void begin(session.user.id); }
+      if (event === "SIGNED_OUT") { setEmail(null); stopCloudSync(); sessionStorage.removeItem("bg-synced"); }
+    });
+    return () => data.subscription.unsubscribe();
+  }, []);
+  const cloud = email !== null
+    ? <button onClick={() => supabase.auth.signOut()} title={`Nuvem ativa (${email}) — toque para sair`} className="text-primary"><Cloud className="h-5 w-5" /></button>
+    : <Link to="/entrar" title="Entrar para salvar na nuvem" className="text-destructive"><CloudOff className="h-5 w-5" /></Link>;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -136,6 +155,7 @@ function RootComponent() {
         <Logo size="text-2xl" />
         <div className="flex items-center gap-2">
           <CurrencyToggle />
+          {cloud}
           <Link to="/utm/integracoes" className="text-muted-foreground" aria-label="Integrações"><Plug className="h-5 w-5" /></Link>
         </div>
       </header>
@@ -162,6 +182,7 @@ function RootComponent() {
             ))}
           </nav>
           <div className="mt-auto space-y-2 border-t border-sidebar-border p-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">{cloud}<span className="truncate">{email !== null ? email : "Entrar p/ salvar na nuvem"}</span></div>
             <div className="text-xs text-muted-foreground">Moeda</div>
             <CurrencyToggle />
           </div>
