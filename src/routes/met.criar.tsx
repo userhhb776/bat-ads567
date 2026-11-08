@@ -118,7 +118,7 @@ function Field({ label, hint, children, wide }: { label: string; hint?: string; 
 }
 function Pick({ value, onChange, options, placeholder }: { value: string; onChange: (v: string) => void; options: Opt[]; placeholder?: string }) {
   return (
-    <Select value={value || undefined} onValueChange={onChange}>
+    <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full"><SelectValue placeholder={placeholder ?? "Escolha"} /></SelectTrigger>
       <SelectContent>{options.filter(([v]) => v !== "").map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
     </Select>
@@ -143,7 +143,7 @@ function Checks({ options, value, onChange }: { options: Opt[]; value: string[];
     </div>
   );
 }
-function Section({ n, title, children, sub }: { n: number; title: string; sub?: string; children: ReactNode }) {
+function Section({ n, title, children, sub }: { n: number; title: string; sub?: string | undefined; children: ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
     <section className="rounded-lg border border-border bg-card">

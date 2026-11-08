@@ -35,7 +35,7 @@ export function AccountBar({ account, setAccount, children }: { account: string;
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3 sm:flex sm:flex-wrap sm:gap-4">
       <div className="min-w-0">
         <div className="mb-1 text-xs text-muted-foreground">Conta de anúncio · {accounts.data?.length ?? 0} disponíveis</div>
-        <Select value={account || undefined} onValueChange={setAccount}>
+        <Select value={account} onValueChange={setAccount}>
           <SelectTrigger className="w-full sm:w-80"><SelectValue placeholder="Escolha a conta" /></SelectTrigger>
           <SelectContent>
             {[...groups.entries()].map(([biz, list]) => (
