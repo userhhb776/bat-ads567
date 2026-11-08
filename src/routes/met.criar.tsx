@@ -6,7 +6,7 @@ import { ChevronDown, Eye, ImagePlus, Trash2 } from "lucide-react";
 import { AccountBar } from "@/components/account-bar";
 import { TargetSearch, type TargetItem } from "@/components/target-search";
 import { useAccount } from "@/lib/use-account";
-import { getAssets, publishCampaign, uploadMedia } from "@/lib/meta.functions";
+import { createPixel, getAssets, publishCampaign, uploadMedia } from "@/lib/meta.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -187,10 +187,11 @@ function Create() {
     locales: [] as TargetItem[], interests: [] as TargetItem[], audIn: [] as string[], audOut: [] as string[],
     advantage: true, autoPlacements: true, platforms: ["facebook", "instagram"] as string[], fb: ["feed", "story", "facebook_reels"] as string[],
     ig: ["stream", "story", "reels"] as string[], an: [] as string[], msg: [] as string[], devices: "all",
+    daypart: false, days: ["1", "2", "3", "4", "5"] as string[], hFrom: "8", hTo: "22", fcap: "", fdays: "7",
   });
   const [a, setA] = useState({
     name: "", page_id: "", ig_id: "", format: "single" as "single" | "carousel", message: "", headline: "", description: "",
-    link: "", display_link: "", cta: "SHOP_NOW", url_tags: DEFAULT_UTM, tracking: true,
+    link: "", display_link: "", cta: "SHOP_NOW", url_tags: DEFAULT_UTM, tracking: true, enhancements: false,
   });
   const [media, setMedia] = useState<Media[]>([]);
   const [publishActive, setPublishActive] = useState(false);
@@ -274,12 +275,15 @@ function Create() {
             start_time: s.start ? new Date(s.start).toISOString() : undefined,
             end_time: s.end ? new Date(s.end).toISOString() : undefined,
             targeting: buildTargeting(),
+            schedule: c.budget_type === "lifetime" && s.daypart && s.days.length ? [{ days: s.days.map(Number), start_minute: Number(s.hFrom) * 60, end_minute: Math.min(24, Number(s.hTo)) * 60 }] : undefined,
+            frequency_cap: s.optimization_goal === "REACH" && Number(s.fcap) > 0 ? { events: Number(s.fcap), days: Number(s.fdays) || 7 } : undefined,
           },
           ad: {
             name: a.name || `${c.name} - Anúncio`, page_id: a.page_id, instagram_user_id: a.ig_id || undefined, format: a.format,
             media: uploaded, message: a.message, headline: a.headline, description: a.description, link: a.link,
             display_link: a.display_link || undefined, cta: a.cta, url_tags: a.url_tags || undefined,
             pixel_tracking: a.tracking && s.pixel_id ? s.pixel_id : undefined,
+            enhancements: a.enhancements,
           },
         },
       });
@@ -383,6 +387,12 @@ function Create() {
               <>
                 <Field label="Conjunto de dados (pixel)">
                   <Pick value={s.pixel_id} onChange={(v) => setS({ ...s, pixel_id: v })} options={(assets.data?.pixels ?? []).map((p) => [p.id, p.name])} placeholder={assets.data?.pixels.length === 0 ? "Nenhum pixel nesta conta" : "Escolha o pixel"} />
+                  <button type="button" className="text-[11px] text-primary underline" onClick={async () => {
+                    const name = window.prompt("Nome do novo pixel", c.name || "Pixel Bat Gotham");
+                    if (!name) return;
+                    try { const r = await createPixel({ data: { accountId: account, name } }); await assets.refetch(); setS((x) => ({ ...x, pixel_id: r.id })); toast.success(`Pixel criado: ${r.id}`); }
+                    catch (e) { toast.error((e as Error).message); }
+                  }}>+ Criar novo pixel nesta conta</button>
                 </Field>
                 <Field label="Evento de conversão"><Pick value={s.event} onChange={(v) => setS({ ...s, event: v })} options={events} /></Field>
                 <Field label="Configuração de atribuição"><Pick value={s.attribution} onChange={(v) => setS({ ...s, attribution: v })} options={attributions} /></Field>
@@ -396,6 +406,24 @@ function Create() {
             {!c.cbo && <Field label="Tipo de orçamento"><Pick value={c.budget_type} onChange={(v) => setC({ ...c, budget_type: v as "daily" | "lifetime" })} options={[["daily", "Orçamento diário"], ["lifetime", "Orçamento total"]]} /></Field>}
             <Field label="Data de início"><Input type="datetime-local" value={s.start} onChange={(e) => setS({ ...s, start: e.target.value })} /></Field>
             <Field label={`Data de término${c.budget_type === "lifetime" ? " (obrigatória)" : " (opcional)"}`}><Input type="datetime-local" value={s.end} onChange={(e) => setS({ ...s, end: e.target.value })} /></Field>
+            {c.budget_type === "lifetime" && (
+              <div className="md:col-span-2 space-y-2 rounded-md border border-border p-3">
+                <Toggle checked={s.daypart} onChange={(v) => setS({ ...s, daypart: v })} label="Programação de anúncios (só em horários escolhidos)" />
+                {s.daypart && <div className="grid grid-cols-2 gap-3">
+                  <Field label="Dias"><Checks options={[["0", "Dom"], ["1", "Seg"], ["2", "Ter"], ["3", "Qua"], ["4", "Qui"], ["5", "Sex"], ["6", "Sáb"]]} value={s.days} onChange={(v) => setS({ ...s, days: v })} /></Field>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field label="Das (hora)"><Input inputMode="numeric" value={s.hFrom} onChange={(e) => setS({ ...s, hFrom: e.target.value })} /></Field>
+                    <Field label="Até (hora)"><Input inputMode="numeric" value={s.hTo} onChange={(e) => setS({ ...s, hTo: e.target.value })} /></Field>
+                  </div>
+                </div>}
+              </div>
+            )}
+            {s.optimization_goal === "REACH" && (
+              <div className="grid grid-cols-2 gap-3 md:col-span-2">
+                <Field label="Limite de frequência (impressões)"><Input inputMode="numeric" value={s.fcap} onChange={(e) => setS({ ...s, fcap: e.target.value })} placeholder="ex.: 2" /></Field>
+                <Field label="A cada (dias)"><Input inputMode="numeric" value={s.fdays} onChange={(e) => setS({ ...s, fdays: e.target.value })} /></Field>
+              </div>
+            )}
           </Group>
           <Group title="Público">
             <div className="md:col-span-2 rounded-md border border-border p-3">
@@ -489,6 +517,7 @@ function Create() {
           </Group>
           <Group title="Rastreamento">
             <div className="md:col-span-2"><Toggle checked={a.tracking} onChange={(v) => setA({ ...a, tracking: v })} label="Rastrear eventos do site com o pixel do conjunto" /></div>
+            <div className="md:col-span-2"><Toggle checked={a.enhancements} onChange={(v) => setA({ ...a, enhancements: v })} label="Melhorias de criativo Advantage+ (a Meta ajusta brilho, texto e formato)" /></div>
           </Group>
         </Section>
 
