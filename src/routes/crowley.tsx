@@ -63,7 +63,7 @@ function CrowleyPage() {
     if (p === "ollama" || p === "deepseek") setProvider(p);
   }, []);
   const saveRules = (r: Rule[]) => { setRules(r); localStorage.setItem("batgotham.rules", JSON.stringify(r)); };
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [msgs]);
+  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs]);
 
   // Vigia: confere as regras sempre que os números chegam (a cada 5 min com o app aberto)
   useEffect(() => {
