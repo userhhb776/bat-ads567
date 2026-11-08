@@ -255,6 +255,8 @@ const createSchema = z.object({
     start_time: z.string().optional(),
     end_time: z.string().optional(),
     targeting: z.record(z.string(), z.any()),
+    schedule: z.array(z.object({ days: z.array(z.number().int().min(0).max(6)), start_minute: z.number().int(), end_minute: z.number().int() })).optional(),
+    frequency_cap: z.object({ events: z.number().int().positive(), days: z.number().int().min(1).max(90) }).optional(),
   }),
   ad: z.object({
     name: z.string().min(1),
@@ -270,8 +272,17 @@ const createSchema = z.object({
     cta: z.string(),
     url_tags: z.string().optional(),
     pixel_tracking: z.string().optional(),
+    enhancements: z.boolean().optional(),
   }),
 });
+
+/** Creates a new Pixel/dataset in the chosen ad account. */
+export const createPixel = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ accountId: z.string().startsWith("act_"), name: z.string().min(1).max(100) }).parse(d))
+  .handler(async ({ data }) => {
+    const r = await graph(`${data.accountId}/adspixels`, { method: "POST", params: { name: data.name } });
+    return { id: String(r.id) };
+  });
 
 export type PublishInput = z.infer<typeof createSchema>;
 
@@ -320,6 +331,8 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
         targeting: s.targeting,
         start_time: s.start_time,
         end_time: s.end_time,
+        ...(s.schedule?.length ? { adset_schedule: s.schedule, pacing_type: ["day_parting"] } : {}),
+        frequency_control_specs: s.frequency_cap && s.optimization_goal === "REACH" ? [{ event: "IMPRESSIONS", interval_days: s.frequency_cap.days, max_frequency: s.frequency_cap.events }] : undefined,
       },
     });
 
@@ -378,6 +391,7 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
         object_story_spec: story,
         instagram_user_id: a.instagram_user_id,
         url_tags: a.url_tags,
+        degrees_of_freedom_spec: a.enhancements === undefined ? undefined : { creative_features_spec: { standard_enhancements: { enroll_status: a.enhancements ? "OPT_IN" : "OPT_OUT" } } },
       },
     });
     const ad = await graph(`${accountId}/ads`, {
