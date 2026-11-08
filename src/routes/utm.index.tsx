@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { useAdAccounts } from "@/components/account-bar";
 import { getInsights } from "@/lib/meta.functions";
 import { actionValue, brl } from "@/lib/use-account";
+import { currencyStore } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
