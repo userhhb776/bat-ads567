@@ -99,7 +99,7 @@ const metNav = [
 ] as const;
 const utmNav = [
   { to: "/utm", label: "Resumo", icon: BarChart3 },
-  { to: "/utm", label: "Integrações", icon: Plug },
+  { to: "/utm/integracoes", label: "Integrações", icon: Plug },
 ] as const;
 
 function RootComponent() {
@@ -110,8 +110,26 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen w-full">
-        <aside className="flex w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
+      <header className="sticky top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-sidebar-border bg-sidebar px-4 py-2 md:hidden">
+        <div className="truncate font-display text-2xl tracking-wide text-primary">BAT ADS</div>
+        <div className="grid grid-cols-2 rounded-md bg-sidebar-accent p-1 text-xs font-semibold">
+          <Link to="/met" className={`rounded px-3 py-1 ${mode === "met" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>MET</Link>
+          <Link to="/utm" className={`rounded px-3 py-1 ${mode === "utm" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>UTM</Link>
+        </div>
+      </header>
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-2 border-t border-sidebar-border bg-sidebar md:hidden">
+        {nav.map((n) => {
+          const active = path.replace(/\/$/, "") === n.to;
+          return (
+            <Link key={n.label} to={n.to} className={`flex flex-col items-center justify-center gap-1 text-xs ${active ? "text-primary" : "text-muted-foreground"}`}>
+              <n.icon className="h-5 w-5" />
+              {n.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="flex min-h-screen w-full pb-16 md:pb-0">
+        <aside className="hidden w-56 shrink-0 md:flex flex-col border-r border-sidebar-border bg-sidebar">
           <div className="px-5 py-5">
             <div className="font-display text-3xl tracking-wide text-primary">BAT ADS</div>
           </div>
@@ -125,7 +143,7 @@ function RootComponent() {
           </div>
           <nav className="flex flex-col gap-1 px-3">
             {nav.map((n) => {
-              const active = path === n.to;
+              const active = path.replace(/\/$/, "") === n.to;
               return (
                 <Link
                   key={n.label}
