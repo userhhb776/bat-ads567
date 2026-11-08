@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { getObjects } from '@/lib/meta.functions';
 import { actionValue, useAccount } from '@/lib/use-account';
 import { money, useCurrency } from '@/lib/currency';
+import { summarizeSales, useGatewayEvents, useSession } from '@/lib/sales';
 
 export function OperationsDashboard() {
   useCurrency();
@@ -41,10 +42,19 @@ export function OperationsDashboard() {
     <AccountBar account={account} setAccount={setAccount} />
     {campaigns.error && <p className="mt-4 text-sm text-destructive">Não foi possível consultar as campanhas.</p>}
     <div className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">{stats.map(({label,value,icon: Icon}) => <div key={label} className="metric-card min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5"><div className="flex items-start justify-between gap-2"><span className="text-xs text-muted-foreground">{label}</span><span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span></div><div className="mt-5 break-words text-xl font-semibold tabular-nums sm:text-3xl">{ready ? value : '—'}</div></div>)}</div>
-    <p className="mt-3 text-xs text-muted-foreground">Compras e receita atribuídas pelos anúncios. Vendas aprovadas dos gateways ainda não conectadas.</p>
+    <p className="mt-3 text-xs text-muted-foreground">Acima: compras e receita atribuídas pelos anúncios. Abaixo: pagamentos reais recebidos dos gateways (30 dias).</p>
+    <RealSales />
     <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
       <section><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-2xl">Campanhas em operação</h2><Button asChild variant="ghost" size="sm"><Link to="/met">Ver todas <ArrowUpRight /></Link></Button></div><div className="flex gap-6 border-y border-border py-4"><span className="text-sm"><b className="text-success">{ready ? rows.filter((c) => c.status === 'ACTIVE').length : '—'}</b> ativas</span><span className="text-sm text-muted-foreground"><b className="text-foreground">{ready ? rows.filter((c) => c.status === 'PAUSED').length : '—'}</b> pausadas</span></div>{rows.slice(0,6).map((c) => <div key={c.id} className="flex items-center justify-between gap-3 border-b border-border py-4"><div className="min-w-0"><div className="truncate text-sm font-medium">{c.name}</div><div className="mt-1 text-xs text-muted-foreground">{c.status === 'ACTIVE' ? 'Ativa' : c.status === 'PAUSED' ? 'Pausada' : c.status}</div></div><div className="shrink-0 text-sm tabular-nums">{money(c.insights?.spend ?? 0)}</div></div>)}{!rows.length && <p className="py-8 text-sm text-muted-foreground">{campaigns.isFetching ? 'Consultando campanhas…' : 'Nenhuma campanha carregada.'}</p>}</section>
-      <section className="space-y-5"><h2 className="font-display text-2xl">Sua central</h2><Link to="/funis" className="flex items-center gap-3 border-b border-border pb-5"><Workflow className="h-5 w-5 text-primary" /><div className="flex-1"><div className="text-sm font-semibold">Funis</div><div className="text-xs text-muted-foreground">{funnelCount} rascunho neste aparelho</div></div><ArrowUpRight className="h-4 w-4" /></Link><Link to="/crowley" className="flex items-center gap-3 border-b border-border pb-5"><Bot className="h-5 w-5 text-primary" /><div className="flex-1"><div className="text-sm font-semibold">Crowley</div><div className="text-xs text-muted-foreground">Análise e comandos</div></div><ArrowUpRight className="h-4 w-4" /></Link><div className="border-l-2 border-primary pl-4"><div className="text-sm font-semibold">Vigia em segundo plano</div><p className="mt-1 text-xs text-muted-foreground">Ainda não ativado. As regras atuais verificam campanhas somente com o app aberto.</p></div></section>
+      <section className="space-y-5"><h2 className="font-display text-2xl">Sua central</h2><Link to="/funis" className="flex items-center gap-3 border-b border-border pb-5"><Workflow className="h-5 w-5 text-primary" /><div className="flex-1"><div className="text-sm font-semibold">Funis</div><div className="text-xs text-muted-foreground">{funnelCount} rascunho neste aparelho</div></div><ArrowUpRight className="h-4 w-4" /></Link><Link to="/crowley" className="flex items-center gap-3 border-b border-border pb-5"><Bot className="h-5 w-5 text-primary" /><div className="flex-1"><div className="text-sm font-semibold">Crowley</div><div className="text-xs text-muted-foreground">Análise e comandos</div></div><ArrowUpRight className="h-4 w-4" /></Link><div className="border-l-2 border-primary pl-4"><div className="text-sm font-semibold">Vigia em segundo plano</div><p className="mt-1 text-xs text-muted-foreground">Na nuvem a cada poucos minutos, mesmo com o app fechado. Veja em Inteligência.</p></div></section>
     </div>
   </div>;
+}
+function RealSales() {
+  const session = useSession();
+  const ev = useGatewayEvents(!!session.data, 30);
+  const s = summarizeSales(ev.data ?? []);
+  const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const cards = [['Vendas aprovadas', String(s.approvedCount)], ['Faturamento real', brl(s.revenue)], ['Pix/boleto pendentes', `${s.pendingCount} · ${brl(s.pendingValue)}`], ['Reembolsos', String(s.refundedCount)]];
+  return <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">{cards.map(([l, v]) => <div key={l} className="rounded-lg border border-border bg-card p-4"><div className="text-xs text-muted-foreground">{l}</div><div className="mt-2 text-lg font-semibold tabular-nums">{ev.data ? v : '—'}</div></div>)}{ev.data && !ev.data.length && <p className="col-span-full text-xs text-muted-foreground">Nenhum pagamento ainda. <Link to="/utm/integracoes" className="text-primary underline">Copie o link do seu gateway</Link>.</p>}</div>;
 }
