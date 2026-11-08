@@ -103,6 +103,11 @@ function Utm() {
         .sort((a, b) => b.spend - a.spend),
     [q.data],
   );
+  useEffect(() => {
+    const list = accounts.data ?? [];
+    const cur = scope === "all" ? list[0]?.currency : list.find((a) => a.id === scope)?.currency;
+    if (cur) currencyStore.setSource(cur);
+  }, [scope, accounts.data]);
 
   if (status.data && !status.data.connected) return <div className="p-6 text-sm text-destructive">Conta da Meta não conectada.</div>;
 
