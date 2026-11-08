@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 export const Route = createFileRoute("/entrar")({
   head: () => ({ meta: [
     { title: "Entrar — Bat Gotham" },
-    { name: "description", content: "Acesse o Bat Gotham para salvar tudo na nuvem." },
+    { name: "description", content: "Acesso exclusivo ao Bat Gotham." },
     { property: "og:title", content: "Entrar — Bat Gotham" },
     { property: "og:description", content: "Acesse sua central de operações." },
     { property: "og:type", content: "website" },
@@ -21,17 +21,13 @@ function Entrar() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mode, setMode] = useState<"in" | "up">("in");
   const [busy, setBusy] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setBusy(true);
-    const res = mode === "in"
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
+    const res = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (res.error) { toast.error(res.error.message); return; }
-    if (mode === "up" && !res.data.session) { toast.success("Conta criada. Confirme pelo e-mail e depois entre."); return; }
+    if (res.error) { toast.error("E-mail ou senha incorretos."); return; }
     toast.success("Bem-vindo de volta, patrão."); nav({ to: "/" });
   }
 
@@ -40,15 +36,12 @@ function Entrar() {
       <div className="text-center">
         <img src="/favicon.svg" alt="" className="mx-auto h-16 w-16" />
         <h1 className="mt-3 font-display text-4xl">BAT <span className="text-primary">GOTHAM</span></h1>
-        <p className="mt-1 text-sm text-muted-foreground">Entre para salvar tudo na nuvem e ligar a vigia 24h.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Acesso exclusivo.</p>
       </div>
       <form onSubmit={submit} className="space-y-3 rounded-xl border border-border bg-card p-5">
-        <Input type="email" required placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Input type="password" required minLength={6} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} />
-        <Button className="w-full" disabled={busy}>{mode === "in" ? "Entrar" : "Criar conta"}</Button>
-        <button type="button" className="w-full text-xs text-muted-foreground" onClick={() => setMode(mode === "in" ? "up" : "in")}>
-          {mode === "in" ? "Primeira vez? Criar conta" : "Já tenho conta"}
-        </button>
+        <Input type="email" required autoComplete="username" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Input type="password" required autoComplete="current-password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Button className="w-full" disabled={busy}>Entrar</Button>
       </form>
     </div>
   );
