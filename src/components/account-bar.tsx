@@ -5,6 +5,7 @@ import { getAdAccounts, getStatus } from "@/lib/meta.functions";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { currencyStore } from "@/lib/currency";
 
 export function useAdAccounts() {
   const status = useQuery({ queryKey: ["meta-status"], queryFn: () => getStatus(), staleTime: 5 * 60_000 });
@@ -18,6 +19,10 @@ export function AccountBar({ account, setAccount, children }: { account: string;
   useEffect(() => {
     if (accounts.data?.length && !accounts.data.some((a) => a.id === account)) setAccount(accounts.data[0]!.id);
   }, [account, accounts.data, setAccount]);
+  useEffect(() => {
+    const cur = accounts.data?.find((a) => a.id === account)?.currency;
+    if (cur) currencyStore.setSource(cur);
+  }, [account, accounts.data]);
 
   if (status.isLoading) return <div className="text-sm text-muted-foreground">Conectando…</div>;
   if (!status.data?.connected)
