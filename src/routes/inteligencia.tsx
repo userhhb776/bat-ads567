@@ -23,7 +23,7 @@ const PURCHASE = ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purc
 const blank = (): IntelRule => ({ id: uid(), name: "Teste de criativo", profile: "teste", campaignId: "*", maxSpendNoSale: 30, maxCpa: 0, minRoasToScale: 0, scalePercent: 20, maxDailyBudget: 0, maxFrequency: 0, hours: [0, 24], autonomy: "auto", active: true });
 
 function IntelRoute() {
-  const [account] = useAccount();
+  const [account, setAccount] = useAccount();
   const [rules, setRules] = useStore<IntelRule[]>("intel-rules", []);
   const [history, setHistory] = useStore<Entry[]>("intel-history", []);
   const [interval, setIntervalMin] = useStore<number>("intel-interval", 15);
@@ -85,7 +85,7 @@ function IntelRoute() {
         <Button variant="outline" onClick={() => Notification.requestPermission().then((p) => toast(p === "granted" ? "Notificações ativadas" : "Notificações bloqueadas"))}><Bell className="h-4 w-4" /> Notificações</Button>
         <Button onClick={() => setWatching(!watching)} variant={watching ? "outline" : "default"}><Play className="h-4 w-4" /> {watching ? "Parar vigia" : "Iniciar vigia"}</Button>
       </PageHead>
-      <AccountBar />
+      <AccountBar account={account} setAccount={setAccount} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Regras ativas" value={rules.filter((r) => r.active).length} />
         <Stat label="Campanhas vigiadas" value={campaigns.filter((c) => c.status === "ACTIVE").length} />
