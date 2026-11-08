@@ -43,7 +43,9 @@ const ID_RE = /^\d{6,}$/
 /** "Campanha Frio 01|120210987654320123" -> { name, id } */
 export function splitNameId(value?: string | null): { name: string | null; id: string | null } {
   if (!value) return { name: null, id: null }
-  const raw = decodeURIComponent(String(value).replace(/\+/g, ' ')).trim()
+  const encoded = String(value).replace(/\+/g, ' ')
+  let raw: string
+  try { raw = decodeURIComponent(encoded).trim() } catch { raw = encoded.trim() }
   if (!raw) return { name: null, id: null }
 
   const cut = raw.lastIndexOf('|')
@@ -101,7 +103,7 @@ export function utmsFromUrl(url: string): Utms & { fbclid?: string; gclid?: stri
     qs = new URLSearchParams(url.startsWith('?') ? url.slice(1) : url)
   }
   const get = (k: string) => qs.get(k) || undefined
-  return {
+  const values = {
     src: get('src'),
     sck: get('sck'),
     utm_source: get('utm_source'),
@@ -113,6 +115,7 @@ export function utmsFromUrl(url: string): Utms & { fbclid?: string; gclid?: stri
     gclid: get('gclid'),
     ttclid: get('ttclid'),
   }
+  return Object.fromEntries(Object.entries(values).filter(([, value]) => value !== undefined))
 }
 
 /** Modelo de URL pra colar no anuncio. E o que a tela de integracao mostra. */
