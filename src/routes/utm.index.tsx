@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 import { useAdAccounts } from "@/components/account-bar";
 import { getInsights } from "@/lib/meta.functions";
 import { actionValue, brl } from "@/lib/use-account";
+import { currencyStore, useCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,9 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export const Route = createFileRoute("/utm/")({
   head: () => ({
     meta: [
-      { title: "Resumo UTM — Bat Ads" },
+      { title: "Resumo UTM — Bat Gotham" },
       { name: "description", content: "Faturamento, lucro, ROAS e CPA de todas as contas." },
-      { property: "og:title", content: "Resumo UTM — Bat Ads" },
+      { property: "og:title", content: "Resumo UTM — Bat Gotham" },
       { property: "og:description", content: "Faturamento, lucro, ROAS e CPA de todas as contas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -55,6 +56,7 @@ function Card({ label, value, tone }: { label: string; value: string; tone?: "go
 }
 
 function Utm() {
+  useCurrency();
   const { status, accounts } = useAdAccounts();
   const [preset, setPreset] = useState("today");
   const [scope, setScope] = useState("all");
@@ -103,6 +105,11 @@ function Utm() {
         .sort((a, b) => b.spend - a.spend),
     [q.data],
   );
+  useEffect(() => {
+    const list = accounts.data ?? [];
+    const cur = scope === "all" ? list[0]?.currency : list.find((a) => a.id === scope)?.currency;
+    if (cur) currencyStore.setSource(cur);
+  }, [scope, accounts.data]);
 
   if (status.data && !status.data.connected) return <div className="p-6 text-sm text-destructive">Conta da Meta não conectada.</div>;
 

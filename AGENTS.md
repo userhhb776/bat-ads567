@@ -31,3 +31,5 @@ use the editor.
 
 - Meta Marketing API calls live only in `src/lib/meta.functions.ts` server functions, routed through the Lovable connector gateway (`LOVABLE_API_KEY` + `META_ADS_API_KEY`) — keeps credentials server-side.
 - Mobile layout: below `md` the sidebar becomes a top bar + fixed bottom nav (h-16); pages add bottom padding so content clears it.
+- AI assistant (Crowley) calls DeepSeek/Ollama only from `src/lib/crowley.functions.ts` server functions using `DEEPSEEK_API_KEY` / `OLLAMA_API_KEY` — keeps AI keys server-side.
+- Money display goes through `money()` in `src/lib/currency.ts` (account currency → chosen view with live USD/BRL rate); pages call `useCurrency()` to re-render on toggle.

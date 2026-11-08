@@ -5,9 +5,9 @@ import { useAdAccounts } from "@/components/account-bar";
 export const Route = createFileRoute("/utm/integracoes")({
   head: () => ({
     meta: [
-      { title: "Integrações — Bat Ads" },
+      { title: "Integrações — Bat Gotham" },
       { name: "description", content: "Conecte contas de anúncio e gateways de vendas." },
-      { property: "og:title", content: "Integrações — Bat Ads" },
+      { property: "og:title", content: "Integrações — Bat Gotham" },
       { property: "og:description", content: "Conecte contas de anúncio e gateways de vendas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

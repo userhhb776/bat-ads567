@@ -17,9 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export const Route = createFileRoute("/met/criar")({
   head: () => ({
     meta: [
-      { title: "Criar anúncio — Bat Ads" },
+      { title: "Criar anúncio — Bat Gotham" },
       { name: "description", content: "Crie campanha, conjunto e anúncio e publique de verdade." },
-      { property: "og:title", content: "Criar anúncio — Bat Ads" },
+      { property: "og:title", content: "Criar anúncio — Bat Gotham" },
       { property: "og:description", content: "Crie campanha, conjunto e anúncio e publique de verdade." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

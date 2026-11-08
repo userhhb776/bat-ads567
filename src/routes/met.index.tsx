@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Copy, FolderOpen, LayoutGrid, Pencil, RefreshCw, Smartphone } from "lucide-react";
 import { AccountBar } from "@/components/account-bar";
 import { useAccount, brl, actionValue } from "@/lib/use-account";
+import { useCurrency } from "@/lib/currency";
 import { duplicateObject, getObjects, updateObject } from "@/lib/meta.functions";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -15,9 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export const Route = createFileRoute("/met/")({
   head: () => ({
     meta: [
-      { title: "Campanhas — Bat Ads" },
+      { title: "Campanhas — Bat Gotham" },
       { name: "description", content: "Gerencie campanhas, conjuntos e anúncios." },
-      { property: "og:title", content: "Campanhas — Bat Ads" },
+      { property: "og:title", content: "Campanhas — Bat Gotham" },
       { property: "og:description", content: "Gerencie campanhas, conjuntos e anúncios." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -40,6 +41,7 @@ const presets: [string, string][] = [
 ];
 
 function Manager() {
+  useCurrency();
   const [account, setAccount] = useAccount();
   const [level, setLevel] = useState<Level>("campaigns");
   const [preset, setPreset] = useState("today");
