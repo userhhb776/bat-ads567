@@ -111,9 +111,9 @@ function Manager() {
   ];
 
   return (
-    <div className="space-y-5 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-4xl tracking-wide">Gerenciador de Campanhas</h1>
+    <div className="space-y-4 p-3 pb-24 sm:space-y-5 sm:p-6">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <h1 className="truncate font-display text-3xl tracking-wide sm:text-4xl">Gerenciador de Campanhas</h1>
         <Button asChild>
           <Link to="/met/criar">+ Criar</Link>
         </Button>
@@ -121,12 +121,12 @@ function Manager() {
       <AccountBar account={account} setAccount={setAccount} />
 
       <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="flex border-b border-border">
+        <div className="flex overflow-x-auto border-b border-border">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setLevel(t.key)}
-              className={`flex flex-1 items-center gap-2 px-5 py-3 text-sm font-semibold ${level === t.key ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
+              className={`flex shrink-0 flex-1 items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-semibold ${level === t.key ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`}
             >
               <t.icon className="h-4 w-4" />
               {t.label}
@@ -145,15 +145,15 @@ function Manager() {
           ))}
         </div>
 
-        <div className="flex flex-wrap items-end gap-3 border-b border-border p-4">
+        <div className="grid grid-cols-2 items-end gap-3 border-b border-border p-3 sm:flex sm:flex-wrap sm:p-4">
           <div>
             <div className="mb-1 text-xs text-muted-foreground">Nome</div>
-            <Input placeholder="Filtrar por nome" value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} className="w-52" />
+            <Input placeholder="Filtrar por nome" value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} className="w-full sm:w-52" />
           </div>
           <div>
             <div className="mb-1 text-xs text-muted-foreground">Status</div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Qualquer</SelectItem>
                 <SelectItem value="ACTIVE">Ativo</SelectItem>
@@ -167,7 +167,7 @@ function Manager() {
           <div>
             <div className="mb-1 text-xs text-muted-foreground">Período</div>
             <Select value={preset} onValueChange={setPreset}>
-              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {presets.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
               </SelectContent>
@@ -176,7 +176,7 @@ function Manager() {
           <Button variant="secondary" disabled={!sel.length || dup.isPending} onClick={() => dup.mutate(sel)}>
             <Copy className="mr-2 h-4 w-4" /> Duplicar
           </Button>
-          <Button className="ml-auto" onClick={() => q.refetch()} disabled={q.isFetching}>
+          <Button className="sm:ml-auto" onClick={() => q.refetch()} disabled={q.isFetching}>
             <RefreshCw className={`mr-2 h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`} /> Atualizar
           </Button>
         </div>

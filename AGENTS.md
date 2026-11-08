@@ -29,4 +29,5 @@ use the editor.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
 
-- Meta Marketing API calls live only in `src/lib/meta.functions.ts` server functions using the `META_ACCESS_TOKEN` secret — keeps the token server-side.
+- Meta Marketing API calls live only in `src/lib/meta.functions.ts` server functions, routed through the Lovable connector gateway (`LOVABLE_API_KEY` + `META_ADS_API_KEY`) — keeps credentials server-side.
+- Mobile layout: below `md` the sidebar becomes a top bar + fixed bottom nav (h-16); pages add bottom padding so content clears it.
