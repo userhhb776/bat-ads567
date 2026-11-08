@@ -1,14 +1,68 @@
 {
   "source": "User-provided reusable modules, not a database or authentication migration",
   "capabilities": [
-    {"capability":"Funnel editor", "source":"flowcast-funnel-builder.zip", "outcome":"reuse", "status":"implementing", "next_action":"Integrate and verify full editor"},
-    {"capability":"Database and auth", "source":"Bat Gotham external Supabase", "outcome":"preserve", "status":"pending", "next_action":"Inspect existing schema and owner access before adding persistent operations"},
-    {"capability":"Existing records and auth identities", "source":"Reusable repositories", "outcome":"not requested for import", "status":"not applicable", "next_action":"No source records supplied"},
-    {"capability":"Meta Ads", "source":"Existing gateway integration", "outcome":"preserve and audit", "status":"pending", "next_action":"Audit API capabilities and permissions; verify publishing without inventing support"},
-    {"capability":"Pages, analytics, automations, CRM, support, products", "source":"User repositories", "outcome":"reuse selectively", "status":"pending", "next_action":"Inspect modules and integrate requested capabilities"},
-    {"capability":"Crowley providers", "source":"DeepSeek and Ollama Cloud", "outcome":"preserve", "status":"pending", "next_action":"Verify secrets and authenticated calls"},
-    {"capability":"WhatsApp", "source":"User Render service", "outcome":"preserve", "status":"blocked", "next_action":"Need service URL and API contract, then secure key setup"},
-    {"capability":"24h monitoring and push", "source":"Requested capability", "outcome":"implement", "status":"pending", "next_action":"Authenticated persistent rules and supported scheduler, then web push"},
-    {"capability":"Cutover, public endpoints and storage", "source":"Reusable module repositories", "outcome":"audit", "status":"pending", "next_action":"Identify provider callbacks and file bytes from source inspection"}
+    {
+      "capability": "Funnel editor",
+      "source": "flowcast-funnel-builder.zip",
+      "outcome": "reuse",
+      "status": "verified",
+      "next_action": "Editor interactions and local persistence verified; real module resource connections pending"
+    },
+    {
+      "capability": "Database and auth",
+      "source": "Bat Gotham external Supabase",
+      "outcome": "preserve",
+      "status": "pending",
+      "next_action": "Inspect existing schema and owner access before adding persistent operations"
+    },
+    {
+      "capability": "Existing records and auth identities",
+      "source": "Reusable repositories",
+      "outcome": "not requested for import",
+      "status": "not applicable",
+      "next_action": "No source records supplied"
+    },
+    {
+      "capability": "Meta Ads",
+      "source": "Existing gateway integration",
+      "outcome": "preserve and audit",
+      "status": "pending",
+      "next_action": "Audit API capabilities and permissions; verify publishing without inventing support"
+    },
+    {
+      "capability": "Pages, analytics, automations, CRM, support, products",
+      "source": "User repositories",
+      "outcome": "reuse selectively",
+      "status": "pending",
+      "next_action": "Inspect modules and integrate requested capabilities"
+    },
+    {
+      "capability": "Crowley providers",
+      "source": "DeepSeek and Ollama Cloud",
+      "outcome": "preserve",
+      "status": "pending",
+      "next_action": "Verify secrets and authenticated calls"
+    },
+    {
+      "capability": "WhatsApp",
+      "source": "User Render service",
+      "outcome": "preserve",
+      "status": "blocked",
+      "next_action": "Need service URL and API contract, then secure key setup"
+    },
+    {
+      "capability": "24h monitoring and push",
+      "source": "Requested capability",
+      "outcome": "implement",
+      "status": "pending",
+      "next_action": "Authenticated persistent rules and supported scheduler, then web push"
+    },
+    {
+      "capability": "Cutover, public endpoints and storage",
+      "source": "Reusable module repositories",
+      "outcome": "audit",
+      "status": "pending",
+      "next_action": "Identify provider callbacks and file bytes from source inspection"
+    }
   ]
 }

@@ -18,6 +18,7 @@ import { Route as MetIndexRouteImport } from './routes/met.index'
 import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
+import { Route as UtmLinksRouteImport } from './routes/utm.links'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +65,11 @@ const UtmIntegracoesRoute = UtmIntegracoesRouteImport.update({
   path: '/integracoes',
   getParentRoute: () => UtmRoute,
 } as any)
+const UtmLinksRoute = UtmLinksRouteImport.update({
+  id: '/links',
+  path: '/links',
+  getParentRoute: () => UtmRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/utm': typeof UtmRouteWithChildren
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
+  '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
 }
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/funis': typeof FunisRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
+  '/utm/links': typeof UtmLinksRoute
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
 }
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/utm': typeof UtmRouteWithChildren
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
+  '/utm/links': typeof UtmLinksRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
 }
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/utm'
     | '/met/criar'
     | '/utm/integracoes'
+    | '/utm/links'
     | '/met/'
     | '/utm/'
   fileRoutesByTo: FileRoutesByTo
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/funis'
     | '/met/criar'
     | '/utm/integracoes'
+    | '/utm/links'
     | '/met'
     | '/utm'
   id:
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/utm'
     | '/met/criar'
     | '/utm/integracoes'
+    | '/utm/links'
     | '/met/'
     | '/utm/'
   fileRoutesById: FileRoutesById
@@ -204,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmIntegracoesRouteImport
       parentRoute: typeof UtmRoute
     }
+    '/utm/links': {
+      id: '/utm/links'
+      path: '/links'
+      fullPath: '/utm/links'
+      preLoaderRoute: typeof UtmLinksRouteImport
+      parentRoute: typeof UtmRoute
+    }
   }
 }
 
@@ -221,11 +240,13 @@ const MetRouteWithChildren = MetRoute._addFileChildren(MetRouteChildren)
 
 interface UtmRouteChildren {
   UtmIntegracoesRoute: typeof UtmIntegracoesRoute
+  UtmLinksRoute: typeof UtmLinksRoute
   UtmIndexRoute: typeof UtmIndexRoute
 }
 
 const UtmRouteChildren: UtmRouteChildren = {
   UtmIntegracoesRoute: UtmIntegracoesRoute,
+  UtmLinksRoute: UtmLinksRoute,
   UtmIndexRoute: UtmIndexRoute,
 }
 
