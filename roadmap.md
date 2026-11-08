@@ -1,11 +1,12 @@
 # Bat Gotham
 
 ## Current delivery
-- [ ] Apply BatRadar-inspired visual design without changing its structure.
+- [x] Apply BatRadar-inspired visual design without importing its structure.
 - [ ] Create a distinctive logo and matching install icons. Image generation blocked; awaiting alternative direction.
-- [ ] Reuse the complete supplied funnel editor and verify save, edit, templates and simulation.
-- [ ] Inspect all four repositories for requested reusable capabilities.
-- [ ] Create the central dashboard with truthful source-specific metrics.
+- [x] Reuse supplied funnel editor: 297 elements, custom properties, appearance, templates, editing, simulation and local save. Real cross-module resource connections remain below.
+- [x] Inspect all four repositories for requested reusable capabilities.
+- [x] Create central dashboard with selected-account ad-attributed metrics; gateway figures and global product/origin filters remain pending.
+- [x] Reuse tracking UTM parser and add campaign link generator.
 
 ## Requested full scope
 - [ ] Audit ads API: accounts/BMs, permissions, pixels/datasets, pages/Instagram, catalogs, restrictions, complete campaign options and reports.

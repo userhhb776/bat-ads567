@@ -49,7 +49,7 @@ function Integrations() {
 
       <section className="rounded-lg border border-border bg-card p-4">
         <div className="mb-1 text-sm font-semibold">Gateways de vendas</div>
-        <p className="mb-4 text-xs text-muted-foreground">Para receber as vendas dos gateways, o app precisa do seu banco de dados próprio conectado. Fica para a próxima etapa.</p>
+        <p className="mb-4 text-xs text-muted-foreground">Seu Supabase está conectado. O recebimento e a validação dos pagamentos ainda não foram implementados.</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {gateways.map((g) => (
             <div key={g} className="flex items-center justify-between gap-2 rounded-md border border-border p-3 text-sm">

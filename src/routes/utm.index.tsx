@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -121,6 +121,7 @@ function Utm() {
       </div>
 
       <div className="grid gap-3 sm:flex sm:flex-wrap">
+        <Button asChild variant="secondary"><Link to="/utm/links">Links de campanha</Link></Button>
         <Select value={preset} onValueChange={setPreset}>
           <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
           <SelectContent>{presets.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
