@@ -35,6 +35,7 @@ export const Route = createFileRoute("/api/public/cron/watch")({
         }
         const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" }).format(new Date())) % 24;
         let actions = 0;
+        const notes: { userId: string; title: string; body: string }[] = [];
         for (const [userId, { rules, account }] of users) {
           const active = (rules ?? []).filter((r) => r.active);
           if (!active.length || !account?.startsWith("act_")) continue;
@@ -61,6 +62,18 @@ export const Route = createFileRoute("/api/public/cron/watch")({
             }
             await supabaseAdmin.from("watch_log").insert({ user_id: userId, rule_id: rule.id, target_id: c.id, campaign_name: c.name, action: d.kind, detail: d.reason, state, new_budget: d.newBudget ?? null });
             actions++;
+            const verb = { executado: "Feito", pendente: "Aguardando sua aprovação", aviso: "Atenção", erro: "Falhou" }[state] ?? state;
+            notes.push({ userId, title: `${verb}: ${c.name}`.slice(0, 80), body: d.reason });
+          }
+        }
+        if (notes.length) {
+          const { sendPush } = await import("@/lib/push.server");
+          const { data: subs } = await supabaseAdmin.from("app_state").select("user_id,key,value").like("key", "bg.push.%").in("user_id", [...new Set(notes.map((n) => n.userId))]);
+          for (const s of subs ?? []) for (const n of notes.filter((x) => x.userId === s.user_id)) {
+            try {
+              const alive = await sendPush(s.value as never, n.title, n.body);
+              if (!alive) { await supabaseAdmin.from("app_state").delete().eq("user_id", s.user_id).eq("key", s.key); break; }
+            } catch (e) { console.error("push", e); }
           }
         }
         return Response.json({ ok: true, users: users.size, actions });
