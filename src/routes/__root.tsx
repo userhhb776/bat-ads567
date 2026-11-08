@@ -12,7 +12,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot } from "lucide-react";
 import { CurrencyToggle } from "@/components/currency-toggle";
-import { loadRate, useCurrency } from "@/lib/currency";
+import { loadRate } from "@/lib/currency";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -119,7 +119,6 @@ function Logo({ size = "text-3xl" }: { size?: string }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const path = useRouterState({ select: (s) => s.location.pathname }).replace(/\/$/, "") || "/";
-  const currency = useCurrency();
   useEffect(() => { loadRate(); }, []);
 
   return (
@@ -156,7 +155,7 @@ function RootComponent() {
             <CurrencyToggle />
           </div>
         </aside>
-        <main className="min-w-0 flex-1" key={currency.view + currency.source + currency.rate}>
+        <main className="min-w-0 flex-1">
           <Outlet />
         </main>
       </div>
