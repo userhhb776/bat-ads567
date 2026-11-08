@@ -6,10 +6,10 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Bat Ads" },
-      { name: "description", content: "Gerenciador pessoal de anúncios e métricas." },
-      { property: "og:title", content: "Bat Ads" },
-      { property: "og:description", content: "Gerenciador pessoal de anúncios e métricas." },
+      { title: "Bat Gotham" },
+      { name: "description", content: "Central de operações: anúncios, métricas, funis e o assistente Crowley." },
+      { property: "og:title", content: "Bat Gotham" },
+      { property: "og:description", content: "Central de operações: anúncios, métricas, funis e o assistente Crowley." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],

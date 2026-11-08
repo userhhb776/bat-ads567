@@ -10,7 +10,9 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { LayoutGrid, PlusSquare, BarChart3, Plug } from "lucide-react";
+import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot } from "lucide-react";
+import { CurrencyToggle } from "@/components/currency-toggle";
+import { loadRate, useCurrency } from "@/lib/currency";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -60,12 +62,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Bat Ads" },
-      { name: "description", content: "Gerenciador pessoal de anúncios e métricas." },
+      { name: "theme-color", content: "#14161d" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { title: "Bat Gotham" },
+      { name: "description", content: "Central de operações: anúncios, métricas, funis e o assistente Crowley." },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       {
         rel: "stylesheet",
@@ -93,71 +99,64 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-const metNav = [
+const nav = [
   { to: "/met", label: "Campanhas", icon: LayoutGrid },
-  { to: "/met/criar", label: "Criar anúncio", icon: PlusSquare },
+  { to: "/met/criar", label: "Criar", icon: PlusSquare },
+  { to: "/utm", label: "Métricas", icon: BarChart3 },
+  { to: "/funis", label: "Funis", icon: Workflow },
+  { to: "/crowley", label: "Crowley", icon: Bot },
 ] as const;
-const utmNav = [
-  { to: "/utm", label: "Resumo", icon: BarChart3 },
-  { to: "/utm/integracoes", label: "Integrações", icon: Plug },
-] as const;
+
+function Logo({ size = "text-3xl" }: { size?: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <img src="/favicon.svg" alt="" className="h-8 w-8" />
+      <span className={`font-display ${size} tracking-wide text-primary`}>BAT GOTHAM</span>
+    </div>
+  );
+}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const path = useRouterState({ select: (s) => s.location.pathname });
-  const mode = path.startsWith("/utm") ? "utm" : "met";
-  const nav = mode === "met" ? metNav : utmNav;
+  const path = useRouterState({ select: (s) => s.location.pathname }).replace(/\/$/, "") || "/";
+  const currency = useCurrency();
+  useEffect(() => { loadRate(); }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <header className="sticky top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-sidebar-border bg-sidebar px-4 py-2 md:hidden">
-        <div className="truncate font-display text-2xl tracking-wide text-primary">BAT ADS</div>
-        <div className="grid grid-cols-2 rounded-md bg-sidebar-accent p-1 text-xs font-semibold">
-          <Link to="/met" className={`rounded px-3 py-1 ${mode === "met" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>MET</Link>
-          <Link to="/utm" className={`rounded px-3 py-1 ${mode === "utm" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>UTM</Link>
+      <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-sidebar-border bg-sidebar px-4 py-2 md:hidden">
+        <Logo size="text-2xl" />
+        <div className="flex items-center gap-2">
+          <CurrencyToggle />
+          <Link to="/utm/integracoes" className="text-muted-foreground" aria-label="Integrações"><Plug className="h-5 w-5" /></Link>
         </div>
       </header>
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-2 border-t border-sidebar-border bg-sidebar md:hidden">
-        {nav.map((n) => {
-          const active = path.replace(/\/$/, "") === n.to;
-          return (
-            <Link key={n.label} to={n.to} className={`flex flex-col items-center justify-center gap-1 text-xs ${active ? "text-primary" : "text-muted-foreground"}`}>
-              <n.icon className="h-5 w-5" />
-              {n.label}
-            </Link>
-          );
-        })}
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-sidebar-border bg-sidebar md:hidden">
+        {nav.map((n) => (
+          <Link key={n.label} to={n.to} className={`flex flex-col items-center justify-center gap-1 text-[11px] ${path === n.to ? "text-primary" : "text-muted-foreground"}`}>
+            <n.icon className="h-5 w-5" />
+            {n.label}
+          </Link>
+        ))}
       </nav>
       <div className="flex min-h-screen w-full pb-16 md:pb-0">
-        <aside className="hidden w-56 shrink-0 md:flex flex-col border-r border-sidebar-border bg-sidebar">
-          <div className="px-5 py-5">
-            <div className="font-display text-3xl tracking-wide text-primary">BAT ADS</div>
-          </div>
-          <div className="mx-4 mb-4 grid grid-cols-2 rounded-md bg-sidebar-accent p-1 text-sm font-semibold">
-            <Link to="/met" className={`rounded px-2 py-1.5 text-center ${mode === "met" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-              MET
-            </Link>
-            <Link to="/utm" className={`rounded px-2 py-1.5 text-center ${mode === "utm" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-              UTM
-            </Link>
-          </div>
+        <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+          <div className="px-5 py-5"><Logo /></div>
           <nav className="flex flex-col gap-1 px-3">
-            {nav.map((n) => {
-              const active = path.replace(/\/$/, "") === n.to;
-              return (
-                <Link
-                  key={n.label}
-                  to={n.to}
-                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${active ? "bg-sidebar-accent text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}
-                >
-                  <n.icon className="h-4 w-4" />
-                  {n.label}
-                </Link>
-              );
-            })}
+            {[...nav, { to: "/utm/integracoes", label: "Integrações", icon: Plug } as const].map((n) => (
+              <Link key={n.label} to={n.to}
+                className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${path === n.to ? "bg-sidebar-accent text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}>
+                <n.icon className="h-4 w-4" />
+                {n.label}
+              </Link>
+            ))}
           </nav>
+          <div className="mt-auto space-y-1 p-4">
+            <div className="text-xs text-muted-foreground">Moeda</div>
+            <CurrencyToggle />
+          </div>
         </aside>
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1" key={currency.view + currency.source + currency.rate}>
           <Outlet />
         </main>
       </div>

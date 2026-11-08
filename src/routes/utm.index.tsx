@@ -14,9 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export const Route = createFileRoute("/utm/")({
   head: () => ({
     meta: [
-      { title: "Resumo UTM — Bat Ads" },
+      { title: "Resumo UTM — Bat Gotham" },
       { name: "description", content: "Faturamento, lucro, ROAS e CPA de todas as contas." },
-      { property: "og:title", content: "Resumo UTM — Bat Ads" },
+      { property: "og:title", content: "Resumo UTM — Bat Gotham" },
       { property: "og:description", content: "Faturamento, lucro, ROAS e CPA de todas as contas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
