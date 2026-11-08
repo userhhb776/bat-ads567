@@ -6,7 +6,7 @@ describe("gateway webhooks", () => {
     const e = normalizeGateway({ order_id: "K1", order_status: "paid", Commissions: { charge_amount: 9700, currency: "BRL" }, TrackingParameters: { utm_source: "FB", utm_campaign: "Produto X" } })!;
     expect(e.status).toBe("approved");
     expect(e.amount).toBe(97);
-    expect(e.utm.utm_campaign).toBe("Produto X");
+    expect(e.utm["utm_campaign"]).toBe("Produto X");
   });
   it("reads a Hotmart purchase", () => {
     const e = normalizeGateway({ event: "PURCHASE_APPROVED", data: { purchase: { transaction: "HP1", status: "APPROVED", price: { value: 47, currency_value: "BRL" } } } })!;
