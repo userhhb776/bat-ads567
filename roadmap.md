@@ -9,7 +9,7 @@
 - [x] Reuse tracking UTM parser and add campaign link generator.
 
 ## Requested full scope
-- [ ] Audit ads API: accounts/BMs, permissions, pixels/datasets, pages/Instagram, catalogs, restrictions, complete campaign options and reports.
+- [x] Audit ads options: added pixel creation, ad scheduling, frequency cap, Advantage+ creative toggle. Not supported via API here: instant forms, catalogs, ad account creation.
 - [ ] Analytics: UTM links, visitors/sessions/events, deduplication, first/last attribution, payment webhooks and real order reports.
 - [~] Pages (AI generate/edit, versions, duplicate, pixel+UTM, download, Vercel publish done; visual block editor, domains, cloud save pending): visual editor, templates, DeepSeek generation, versions, duplication, publication/domains, forms, pixels and tracking.
 - [x] (device storage; DB pending) Product/offer/order base integrated with pages, funnels and campaigns; never store card credentials.
