@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const KEY = "batads.account";
+const KEY = "batgotham.account";
 
 export function useAccount() {
   const [account, setAccountState] = useState<string>("");
@@ -14,8 +14,7 @@ export function useAccount() {
   return [account, setAccount] as const;
 }
 
-export const brl = (v: number | string | undefined | null) =>
-  v == null || v === "" ? "—" : Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+export { money as brl } from "./currency";
 
 export function actionValue(list: { action_type: string; value: string }[] | undefined, types: string[]) {
   const f = list?.find((a) => types.includes(a.action_type));
