@@ -120,9 +120,10 @@ function CrowleyPage() {
             <SelectContent><SelectItem value="deepseek">DeepSeek</SelectItem><SelectItem value="ollama">Ollama</SelectItem></SelectContent>
           </Select>
           <Button variant="secondary" size="sm" onClick={async () => {
-            if (typeof Notification === "undefined") return toast.error("Este navegador não suporta notificações.");
+            if (typeof Notification === "undefined") { toast.error("Este navegador não suporta notificações."); return; }
             const p = await Notification.requestPermission();
-            p === "granted" ? notify("Notificações ligadas", "O Crowley vai te avisar por aqui.") : toast.error("Permissão negada.");
+            if (p === "granted") notify("Notificações ligadas", "O Crowley vai te avisar por aqui.");
+            else toast.error("Permissão negada.");
           }}><Bell className="mr-1 h-4 w-4" />Notificações</Button>
         </div>
       </div>
