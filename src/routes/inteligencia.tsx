@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, Empty, Field, NativeSelect, PageHead, Stat, head } from "@/components/ui-kit";
 import { AccountBar } from "@/components/account-bar";
+import { PushButton } from "@/components/push-button";
 import { useStore, uid } from "@/lib/store";
 import { useAccount, actionValue } from "@/lib/use-account";
 import { evaluate, type CampaignStats, type Decision, type IntelRule } from "@/lib/intel";
@@ -124,7 +125,7 @@ function IntelRoute() {
   return (
     <div className="space-y-4 p-4 pb-24 md:p-6">
       <PageHead title="Inteligência" sub="Perfis de teste, escala e manutenção com limites, horários e autonomia.">
-        <Button variant="outline" onClick={() => Notification.requestPermission().then((p) => toast(p === "granted" ? "Notificações ativadas" : "Notificações bloqueadas"))}><Bell className="h-4 w-4" /> Notificações</Button>
+        <PushButton />
         <Button onClick={() => setWatching(!watching)} variant={watching ? "outline" : "default"}><Play className="h-4 w-4" /> {watching ? "Parar vigia" : "Iniciar vigia"}</Button>
       </PageHead>
       <AccountBar account={account} setAccount={setAccount} />
