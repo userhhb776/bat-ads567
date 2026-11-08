@@ -30,8 +30,8 @@ function Entrar() {
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
     setBusy(false);
-    if (res.error) return toast.error(res.error.message);
-    if (mode === "up" && !res.data.session) return toast.success("Conta criada. Confirme pelo e-mail e depois entre.");
+    if (res.error) { toast.error(res.error.message); return; }
+    if (mode === "up" && !res.data.session) { toast.success("Conta criada. Confirme pelo e-mail e depois entre."); return; }
     toast.success("Bem-vindo de volta, patrão."); nav({ to: "/" });
   }
 
