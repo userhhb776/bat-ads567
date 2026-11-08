@@ -45,7 +45,7 @@ function metrics(rows: any[]) {
   return t;
 }
 
-function Card({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
+function Card({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" | undefined }) {
   return (
     <div className="min-w-0 rounded-lg border border-border bg-card p-3 sm:p-4">
       <div className="truncate text-[11px] uppercase text-muted-foreground sm:text-xs">{label}</div>
