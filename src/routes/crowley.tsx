@@ -7,6 +7,7 @@ import { AccountBar } from "@/components/account-bar";
 import { getObjects, updateObject } from "@/lib/meta.functions";
 import { crowleyChat } from "@/lib/crowley.functions";
 import { actionValue, brl, useAccount } from "@/lib/use-account";
+import { useCurrency } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,6 +37,7 @@ function notify(title: string, body: string) {
 }
 
 function CrowleyPage() {
+  useCurrency();
   const [account, setAccount] = useAccount();
   const [provider, setProvider] = useState<"deepseek" | "ollama">("deepseek");
   const [msgs, setMsgs] = useState<Msg[]>([]);

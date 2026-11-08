@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Copy, FolderOpen, LayoutGrid, Pencil, RefreshCw, Smartphone } from "lucide-react";
 import { AccountBar } from "@/components/account-bar";
 import { useAccount, brl, actionValue } from "@/lib/use-account";
+import { useCurrency } from "@/lib/currency";
 import { duplicateObject, getObjects, updateObject } from "@/lib/meta.functions";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +41,7 @@ const presets: [string, string][] = [
 ];
 
 function Manager() {
+  useCurrency();
   const [account, setAccount] = useAccount();
   const [level, setLevel] = useState<Level>("campaigns");
   const [preset, setPreset] = useState("today");
