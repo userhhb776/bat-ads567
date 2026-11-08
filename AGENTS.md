@@ -33,3 +33,5 @@ use the editor.
 - Mobile layout: below `md` the sidebar becomes a top bar + fixed bottom nav (h-16); pages add bottom padding so content clears it.
 - AI assistant (Crowley) calls DeepSeek/Ollama only from `src/lib/crowley.functions.ts` server functions using `DEEPSEEK_API_KEY` / `OLLAMA_API_KEY` — keeps AI keys server-side.
 - Money display goes through `money()` in `src/lib/currency.ts` (account currency → chosen view with live USD/BRL rate); pages call `useCurrency()` to re-render on toggle.
+- Reused funnel catalog, graph model and simulation live in `src/lib/funnel`; render the editor through a lazy client boundary to isolate React Flow from SSR. Graph validation prevents cycles and traffic duplication.
+- The central dashboard uses one selected ad account at a time and labels ad-attributed purchases separately from approved gateway payments, avoiding mixed-currency totals and false sales claims.
