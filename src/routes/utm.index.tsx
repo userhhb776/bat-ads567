@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, TrendingUp, Target, Wallet, ShoppingCart, Activity, type LucideIcon } from "lucide-react";
 import { useAdAccounts } from "@/components/account-bar";
 import { getInsights } from "@/lib/meta.functions";
 import { actionValue, brl } from "@/lib/use-account";
@@ -46,11 +46,11 @@ function metrics(rows: any[]) {
   return t;
 }
 
-function Card({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" | undefined }) {
+function Card({ label, value, tone, icon: Icon = Activity }: { label: string; value: string; tone?: "good" | "bad" | undefined; icon?: LucideIcon }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-card p-3 sm:p-4">
-      <div className="truncate text-[11px] uppercase text-muted-foreground sm:text-xs">{label}</div>
-      <div className={`mt-1 truncate text-lg font-bold sm:text-2xl ${tone === "good" ? "text-primary" : tone === "bad" ? "text-destructive" : ""}`}>{value}</div>
+    <div className="metric-card min-w-0 rounded-lg border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-2"><div className="text-xs text-muted-foreground">{label}</div><span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span></div>
+      <div className={`mt-4 break-words text-xl font-semibold tabular-nums sm:text-3xl ${tone === "good" ? "text-success" : tone === "bad" ? "text-destructive" : ""}`}>{value}</div>
     </div>
   );
 }
@@ -111,18 +111,17 @@ function Utm() {
     if (cur) currencyStore.setSource(cur);
   }, [scope, accounts.data]);
 
-  if (status.data && !status.data.connected) return <div className="p-6 text-sm text-destructive">Conta da Meta não conectada.</div>;
-
   return (
     <div className="space-y-4 p-3 pb-24 sm:space-y-5 sm:p-6">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <h1 className="truncate font-display text-3xl tracking-wide sm:text-4xl">Dashboard — Principal</h1>
+        <div><div className="mb-1 text-[10px] uppercase text-primary">Resultados da operação</div><h1 className="font-display text-3xl sm:text-4xl">Métricas</h1></div>
         <Button size="sm" onClick={() => q.refetch()} disabled={q.isFetching}>
           <RefreshCw className={`h-4 w-4 sm:mr-2 ${q.isFetching ? "animate-spin" : ""}`} /><span className="hidden sm:inline">Atualizar</span>
         </Button>
       </div>
 
       <div className="grid gap-3 sm:flex sm:flex-wrap">
+        <Button asChild variant="secondary"><Link to="/utm/links">Links de campanha</Link></Button>
         <Select value={preset} onValueChange={setPreset}>
           <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
           <SelectContent>{presets.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}</SelectContent>
@@ -139,11 +138,11 @@ function Utm() {
       {q.error && <div className="text-sm text-destructive">{(q.error as Error).message}</div>}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card label="Faturamento líquido" value={brl(t.revenue)} />
-        <Card label="Gastos com anúncios" value={brl(t.spend)} />
-        <Card label="ROAS" value={roas ? roas.toFixed(2) : "—"} tone={roas >= 1 ? "good" : roas ? "bad" : undefined} />
-        <Card label="Lucro" value={brl(profit)} tone={profit >= 0 ? "good" : "bad"} />
-        <Card label="Vendas" value={String(t.sales)} />
+        <Card label="Receita atribuída" value={brl(t.revenue)} icon={Wallet} />
+        <Card label="Investimento" value={brl(t.spend)} icon={TrendingUp} />
+        <Card label="ROAS" value={roas ? roas.toFixed(2) : "—"} icon={Target} tone={roas >= 1 ? "good" : roas ? "bad" : undefined} />
+        <Card label="Lucro estimado" value={brl(profit)} tone={profit >= 0 ? "good" : "bad"} />
+        <Card label="Compras atribuídas" value={String(t.sales)} icon={ShoppingCart} />
         <Card label="CPA" value={t.sales ? brl(t.spend / t.sales) : "—"} />
         <Card label="Ticket médio" value={t.sales ? brl(t.revenue / t.sales) : "—"} />
         <Card label="Margem" value={t.revenue ? `${((profit / t.revenue) * 100).toFixed(1)}%` : "—"} />
@@ -153,8 +152,8 @@ function Utm() {
         <Card label="CTR (link)" value={t.impr ? `${((t.clicks / t.impr) * 100).toFixed(2)}%` : "—"} />
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-3 sm:p-4">
-        <div className="mb-3 text-sm font-semibold">Gasto x Faturamento por dia</div>
+      <div className="border-y border-border py-5">
+        <div className="mb-4 flex items-center gap-2 font-display text-2xl"><Activity className="h-5 w-5 text-primary" />Investimento e receita</div>
         <div className="h-56 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chart}>
@@ -163,7 +162,7 @@ function Utm() {
               <YAxis stroke="var(--muted-foreground)" fontSize={11} width={48} />
               <Tooltip contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)" }} formatter={(v: number) => brl(v)} />
               <Area type="monotone" dataKey="faturamento" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.2} />
-              <Area type="monotone" dataKey="gasto" stroke="var(--destructive)" fill="var(--destructive)" fillOpacity={0.15} />
+              <Area type="monotone" dataKey="gasto" stroke="var(--signal)" fill="var(--signal)" fillOpacity={0.15} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -222,7 +221,7 @@ function Utm() {
           ))}
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Por enquanto o faturamento vem das compras que o pixel registrou na Meta. Quando você ligar um gateway de vendas, ele passa a usar as vendas reais.
+          Receita e compras atribuídas pela plataforma de anúncios; pagamentos aprovados ainda não estão conectados.
         </p>
       </div>
     </div>

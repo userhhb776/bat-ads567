@@ -1,9 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { OperationsDashboard } from '@/components/operations-dashboard';
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => {
-    throw redirect({ to: "/met" });
-  },
+  component: OperationsDashboard,
   head: () => ({
     meta: [
       { title: "Bat Gotham" },

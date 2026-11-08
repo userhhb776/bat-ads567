@@ -10,7 +10,8 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot } from "lucide-react";
+import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { CurrencyToggle } from "@/components/currency-toggle";
 import { loadRate } from "@/lib/currency";
 
@@ -43,7 +44,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold text-foreground">Esta página não carregou</h1>
         <p className="mt-2 text-sm text-muted-foreground">{(error as Error)?.message}</p>
-        <button
+        <Button
           onClick={() => {
             router.invalidate();
             reset();
@@ -51,7 +52,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
           className="mt-6 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
         >
           Tentar de novo
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -100,6 +101,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 const nav = [
+  { to: "/", label: "Central", icon: Gauge },
   { to: "/met", label: "Campanhas", icon: LayoutGrid },
   { to: "/met/criar", label: "Criar", icon: PlusSquare },
   { to: "/utm", label: "Métricas", icon: BarChart3 },
@@ -111,7 +113,7 @@ function Logo({ size = "text-3xl" }: { size?: string }) {
   return (
     <div className="flex items-center gap-2">
       <img src="/favicon.svg" alt="" className="h-8 w-8" />
-      <span className={`font-display ${size} tracking-wide text-primary`}>BAT GOTHAM</span>
+      <span className={`font-display ${size} text-foreground`}>BAT <span className="text-primary">GOTHAM</span></span>
     </div>
   );
 }
@@ -131,7 +133,7 @@ function RootComponent() {
         </div>
       </header>
       <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-sidebar-border bg-sidebar md:hidden">
-        {nav.map((n) => (
+        {nav.filter((n) => n.to !== "/met/criar").map((n) => (
           <Link key={n.label} to={n.to} className={`flex flex-col items-center justify-center gap-1 text-[11px] ${path === n.to ? "text-primary" : "text-muted-foreground"}`}>
             <n.icon className="h-5 w-5" />
             {n.label}
@@ -139,18 +141,20 @@ function RootComponent() {
         ))}
       </nav>
       <div className="flex min-h-screen w-full pb-16 md:pb-0">
-        <aside className="hidden w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-          <div className="px-5 py-5"><Logo /></div>
+        <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+          <div className="border-b border-sidebar-border px-5 py-6"><Logo /><div className="mt-1 pl-10 text-[10px] uppercase text-muted-foreground">Central de operações</div></div>
+          <div className="px-6 pb-2 pt-6 text-[10px] uppercase text-muted-foreground">Operação</div>
           <nav className="flex flex-col gap-1 px-3">
             {[...nav, { to: "/utm/integracoes", label: "Integrações", icon: Plug } as const].map((n) => (
               <Link key={n.label} to={n.to}
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${path === n.to ? "bg-sidebar-accent text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}>
                 <n.icon className="h-4 w-4" />
-                {n.label}
+                 {n.label}
+                 {path === n.to && <ChevronRight className="ml-auto h-3 w-3" />}
               </Link>
             ))}
           </nav>
-          <div className="mt-auto space-y-1 p-4">
+          <div className="mt-auto space-y-2 border-t border-sidebar-border p-4">
             <div className="text-xs text-muted-foreground">Moeda</div>
             <CurrencyToggle />
           </div>
