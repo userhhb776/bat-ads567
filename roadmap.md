@@ -21,6 +21,7 @@
 - [ ] Real installed-app push notifications and 24h checks. Current browser checks are not background monitoring.
 
 ## External inputs
+- [ ] Reconnect Meta ads in the new workspace.
 - [ ] Render WhatsApp URL and service contract, then secure credentials.
 - [ ] Verify provider credentials securely, callback URLs and production permissions.
 - [ ] Database tables in user's Supabase for cloud save, gateway webhooks and 24h watch (needs user to allow schema changes).
