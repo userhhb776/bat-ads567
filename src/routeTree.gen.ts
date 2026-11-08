@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CrmRouteImport } from './routes/crm'
 import { Route as CrowleyRouteImport } from './routes/crowley'
 import { Route as FunisRouteImport } from './routes/funis'
 import { Route as MetRouteImport } from './routes/met'
 import { Route as PaginasRouteImport } from './routes/paginas'
+import { Route as ProdutosRouteImport } from './routes/produtos'
 import { Route as UtmRouteImport } from './routes/utm'
 import { Route as MetIndexRouteImport } from './routes/met.index'
 import { Route as MetCriarRouteImport } from './routes/met.criar'
@@ -24,6 +26,11 @@ import { Route as UtmLinksRouteImport } from './routes/utm.links'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrmRoute = CrmRouteImport.update({
+  id: '/crm',
+  path: '/crm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrowleyRoute = CrowleyRouteImport.update({
@@ -44,6 +51,11 @@ const MetRoute = MetRouteImport.update({
 const PaginasRoute = PaginasRouteImport.update({
   id: '/paginas',
   path: '/paginas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProdutosRoute = ProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UtmRoute = UtmRouteImport.update({
@@ -79,10 +91,12 @@ const UtmLinksRoute = UtmLinksRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/funis': typeof FunisRoute
   '/met': typeof MetRouteWithChildren
   '/paginas': typeof PaginasRoute
+  '/produtos': typeof ProdutosRoute
   '/utm': typeof UtmRouteWithChildren
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
@@ -92,9 +106,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/funis': typeof FunisRoute
   '/paginas': typeof PaginasRoute
+  '/produtos': typeof ProdutosRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
@@ -104,10 +120,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/funis': typeof FunisRoute
   '/met': typeof MetRouteWithChildren
   '/paginas': typeof PaginasRoute
+  '/produtos': typeof ProdutosRoute
   '/utm': typeof UtmRouteWithChildren
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
@@ -119,10 +137,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/crm'
     | '/crowley'
     | '/funis'
     | '/met'
     | '/paginas'
+    | '/produtos'
     | '/utm'
     | '/met/criar'
     | '/utm/integracoes'
@@ -132,9 +152,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/crm'
     | '/crowley'
     | '/funis'
     | '/paginas'
+    | '/produtos'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
@@ -143,10 +165,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/crm'
     | '/crowley'
     | '/funis'
     | '/met'
     | '/paginas'
+    | '/produtos'
     | '/utm'
     | '/met/criar'
     | '/utm/integracoes'
@@ -157,10 +181,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CrmRoute: typeof CrmRoute
   CrowleyRoute: typeof CrowleyRoute
   FunisRoute: typeof FunisRoute
   MetRoute: typeof MetRouteWithChildren
   PaginasRoute: typeof PaginasRoute
+  ProdutosRoute: typeof ProdutosRoute
   UtmRoute: typeof UtmRouteWithChildren
 }
 
@@ -171,6 +197,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crm': {
+      id: '/crm'
+      path: '/crm'
+      fullPath: '/crm'
+      preLoaderRoute: typeof CrmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crowley': {
@@ -199,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/paginas'
       fullPath: '/paginas'
       preLoaderRoute: typeof PaginasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/produtos': {
+      id: '/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof ProdutosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/utm': {
@@ -274,10 +314,12 @@ const UtmRouteWithChildren = UtmRoute._addFileChildren(UtmRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CrmRoute: CrmRoute,
   CrowleyRoute: CrowleyRoute,
   FunisRoute: FunisRoute,
   MetRoute: MetRouteWithChildren,
   PaginasRoute: PaginasRoute,
+  ProdutosRoute: ProdutosRoute,
   UtmRoute: UtmRouteWithChildren,
 }
 export const routeTree = rootRouteImport
