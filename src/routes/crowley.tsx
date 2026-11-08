@@ -1,3 +1,6 @@
+import { readStore } from "@/lib/store";
+import type { IntelRule } from "@/lib/intel";
+import { salesSummary } from "@/lib/biz";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -87,7 +90,7 @@ function CrowleyPage() {
   const context = () =>
     (camps.data ?? [])
       .map((c: any) => `- ${c.name} (id ${c.id}) status ${c.status}, orçamento diário ${c.daily_budget ? Number(c.daily_budget) / 100 : "—"}, gasto hoje ${c.insights?.spend ?? 0}, vendas hoje ${actionValue(c.insights?.actions, SALE)}`)
-      .join("\n");
+      .join("\n") + "\n\n" + panelSummary();
 
   async function send() {
     const text = input.trim();
@@ -102,8 +105,21 @@ function CrowleyPage() {
     setBusy(false);
   }
 
-  async function runAction(a: { id: string; status: "ACTIVE" | "PAUSED" }) {
+  async function runAction(a: any) {
     try {
+      if (a.tipo === "regra") {
+        const r: IntelRule = { id: crypto.randomUUID(), name: a.nome || "Regra do Crowley", profile: a.perfil || "teste", campaignId: a.id || "*", maxSpendNoSale: Number(a.gastoSemVenda) || 0, maxCpa: Number(a.cpaMax) || 0, minRoasToScale: Number(a.roasEscala) || 0, scalePercent: 20, maxDailyBudget: 0, maxFrequency: 0, hours: [0, 24], autonomy: a.autonomia || "auto", active: true };
+        localStorage.setItem("bg.intel-rules", JSON.stringify([r, ...readStore<IntelRule[]>("intel-rules", [])]));
+        toast.success("Regra criada. Abra Inteligência e inicie o vigia."); return;
+      }
+      if (a.tipo === "automacao") {
+        const list = readStore<any[]>("automations", []).map((x) => (x.name.toLowerCase() === String(a.nome).toLowerCase() ? { ...x, active: !!a.ativa } : x));
+        localStorage.setItem("bg.automations", JSON.stringify(list)); toast.success("Automação atualizada"); return;
+      }
+      if (a.tipo === "orcamento") {
+        await updateObject({ data: { id: a.id, daily_budget: Math.round(Number(a.valor) * 100) } });
+        toast.success("Orçamento alterado"); camps.refetch(); return;
+      }
       await updateObject({ data: { id: a.id, status: a.status } });
       toast.success(a.status === "PAUSED" ? "Campanha pausada" : "Campanha ativada");
       camps.refetch();
@@ -140,9 +156,9 @@ function CrowleyPage() {
               return (
                 <div key={i} className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${m.role === "user" ? "ml-auto bg-primary text-primary-foreground" : "bg-secondary"}`}>
                   {m.content.replace(/ACAO:.*$/s, "").trim()}
-                  {act?.id && (
+                  {(act?.id || act?.tipo) && (
                     <Button size="sm" className="mt-2 block" onClick={() => runAction(act)}>
-                      Confirmar: {act.status === "PAUSED" ? "pausar" : "ativar"} {(camps.data ?? []).find((c: any) => c.id === act.id)?.name ?? act.id}
+                      Confirmar: {act.tipo === "regra" ? `criar regra “${act.nome ?? ""}”` : act.tipo === "automacao" ? `${act.ativa ? "ativar" : "pausar"} automação ${act.nome}` : act.tipo === "orcamento" ? `orçamento ${act.valor}` : act.status === "PAUSED" ? "pausar" : "ativar"} {act.id && act.id !== "*" ? ((camps.data ?? []).find((c: any) => c.id === act.id)?.name ?? act.id) : ""}
                     </Button>
                   )}
                 </div>
@@ -187,4 +203,18 @@ function CrowleyPage() {
       </div>
     </div>
   );
+}
+
+function panelSummary() {
+  const products = readStore<any[]>("products", []);
+  const orders = readStore<any[]>("orders", []);
+  const autos = readStore<any[]>("automations", []);
+  const rules = readStore<IntelRule[]>("intel-rules", []);
+  const s = salesSummary(orders);
+  return [
+    `Vendas aprovadas: ${s.count}, faturamento R$ ${s.revenue.toFixed(2)}, pendente R$ ${s.pending.toFixed(2)}, reembolsos R$ ${s.refunded.toFixed(2)}.`,
+    `Produtos: ${products.map((p) => `${p.name} (R$ ${p.price}, ${salesSummary(orders, p.id).count} vendas)`).join("; ") || "nenhum"}.`,
+    `Automações: ${autos.map((a) => `${a.name} [${a.active ? "ativa" : "pausada"}]`).join("; ") || "nenhuma"}.`,
+    `Regras de vigia: ${rules.map((r) => `${r.name} (${r.profile}, ${r.autonomy}, ${r.active ? "ativa" : "pausada"})`).join("; ") || "nenhuma"}.`,
+  ].join("\n");
 }
