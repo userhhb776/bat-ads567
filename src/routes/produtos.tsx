@@ -24,7 +24,7 @@ function ProductsRoute() {
   const [sel, setSel] = useState<string>("");
   const [tab, setTab] = useState<"produto" | "pedidos">("produto");
   const [pages, setPages] = useState<SalesPage[]>([]);
-  useEffect(() => setPages(loadPages()), []);
+  useEffect(() => { setPages(loadPages()); }, []);
   const p = products.find((x) => x.id === sel) ?? products[0];
   const patch = (c: Partial<Product>) => p && setProducts(products.map((x) => (x.id === p.id ? { ...x, ...c } : x)));
   const total = salesSummary(orders);
