@@ -10,7 +10,7 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronRight, FileText } from "lucide-react";
+import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronRight, FileText, Package, Zap, Users, MessagesSquare, Radar, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencyToggle } from "@/components/currency-toggle";
 import { loadRate } from "@/lib/currency";
@@ -107,8 +107,14 @@ const nav = [
   { to: "/utm", label: "Métricas", icon: BarChart3 },
   { to: "/paginas", label: "Páginas", icon: FileText },
   { to: "/funis", label: "Funis", icon: Workflow },
+  { to: "/produtos", label: "Produtos", icon: Package },
+  { to: "/automacoes", label: "Automações", icon: Zap },
+  { to: "/crm", label: "CRM", icon: Users },
+  { to: "/suporte", label: "Atendimento", icon: MessagesSquare },
+  { to: "/inteligencia", label: "Inteligência", icon: Radar },
   { to: "/crowley", label: "Crowley", icon: Bot },
 ] as const;
+const mobileNav = [nav[0], nav[1], nav[3], { to: "/crowley", label: "Crowley", icon: Bot }, { to: "/mais", label: "Mais", icon: Grid3x3 }] as const;
 
 function Logo({ size = "text-3xl" }: { size?: string }) {
   return (
@@ -134,7 +140,7 @@ function RootComponent() {
         </div>
       </header>
       <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-sidebar-border bg-sidebar md:hidden">
-        {nav.filter((n) => n.to !== "/met/criar").map((n) => (
+        {mobileNav.map((n) => (
           <Link key={n.label} to={n.to} className={`flex flex-col items-center justify-center gap-1 text-[11px] ${path === n.to ? "text-primary" : "text-muted-foreground"}`}>
             <n.icon className="h-5 w-5" />
             {n.label}
@@ -145,7 +151,7 @@ function RootComponent() {
         <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
           <div className="border-b border-sidebar-border px-5 py-6"><Logo /><div className="mt-1 pl-10 text-[10px] uppercase text-muted-foreground">Central de operações</div></div>
           <div className="px-6 pb-2 pt-6 text-[10px] uppercase text-muted-foreground">Operação</div>
-          <nav className="flex flex-col gap-1 px-3">
+          <nav className="flex flex-col gap-1 overflow-y-auto px-3">
             {[...nav, { to: "/utm/integracoes", label: "Integrações", icon: Plug } as const].map((n) => (
               <Link key={n.label} to={n.to}
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${path === n.to ? "bg-sidebar-accent text-primary" : "text-sidebar-foreground hover:bg-sidebar-accent"}`}>
