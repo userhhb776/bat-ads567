@@ -14,7 +14,7 @@ export const Route = createFileRoute("/notificacoes")({
   component: Notifications,
 });
 
-const KINDS: Record<string, string> = { campanha: "Campanhas", tarefa: "Tarefas", falha: "Falhas", venda: "Vendas", sistema: "Sistema", aprovacao: "Aprovações" };
+const KINDS: Record<string, string> = { campanha: "Campanhas", tarefa: "Tarefas", falha: "Falhas", venda: "Vendas", sistema: "Sistema", aprovacao: "Aprovações", atendimento: "Atendimento" };
 
 function Notifications() {
   const qc = useQueryClient();
