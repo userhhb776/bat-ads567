@@ -212,6 +212,72 @@ export type Database = {
         }
         Relationships: []
       }
+      copies: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      creatives: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       crowley_messages: {
         Row: {
           created_at: string
@@ -629,6 +695,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           webhook_token?: string
+        }
+        Relationships: []
+      }
+      utm_links: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
