@@ -10,7 +10,7 @@ export const TABLE_KEYS: Record<string, string> = {
   "bg.messages": "messages", "bg.automations": "automations", "bg.automation-logs": "automation_runs",
   "bg.intel-rules": "monitor_rules", "bg.intel-history": "monitor_history", "bg.offers": "offer_radar",
   "bat-gotham-pages": "sales_pages", "bg.crowley-messages": "crowley_messages",
-  "bg.creatives": "creatives", "bg.copies": "copies", "bg.utm-links": "utm_links",
+  "bg.creatives": "creatives", "bg.copies": "copies", "bg.utm-links": "utm_links", "bg.crm-tasks": "crm_tasks",
 };
 /** High-volume logs are not duplicated into the audit trail. */
 const NO_AUDIT = new Set(["messages", "automation_runs", "monitor_history", "crowley_messages"]);

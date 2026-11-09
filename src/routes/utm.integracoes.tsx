@@ -42,6 +42,18 @@ function GatewayLinks() {
           </div>
         ))}
       </div>
+      <p className="mb-2 mt-6 text-xs text-muted-foreground">Mensagens recebidas (caixa de entrada do Atendimento): configure no seu servidor do WhatsApp (Render) o envio de cada mensagem recebida para o link abaixo, com JSON {"{"} phone, name, message {"}"}. No Telegram, registre o link com setWebhook do seu bot.</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {["whatsapp", "telegram"].map((c) => { const url = `${base}/api/public/inbound/${c}?token=${token.data ?? "..."}`; return (
+          <div key={c} className="min-w-0 rounded-md border border-border p-3 text-sm">
+            <span className="font-medium capitalize">{c} (entrada)</span>
+            <div className="mt-2 flex gap-2">
+              <input readOnly value={url} className="min-w-0 flex-1 truncate rounded border border-border bg-background px-2 py-1 text-[11px]" />
+              <button className="shrink-0 rounded bg-primary px-2 text-xs text-primary-foreground" onClick={() => { navigator.clipboard.writeText(url); toast.success("Link copiado"); }}>Copiar</button>
+            </div>
+          </div>
+        ); })}
+      </div>
     </>
   );
 }
