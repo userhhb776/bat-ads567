@@ -42,3 +42,5 @@ use the editor.
 - Account creation uses the official Business `/adaccount` edge through the existing connector after review; never store a second raw token or infer unlimited access from administrator status.
 - Dashboard filters and currency-safe payment aggregation live in `src/lib/dashboard.ts`; attributed ad revenue is never combined with gateway revenue or labeled net profit without costs.
 - Operational lists sync per-row into domain tables via `TABLE_KEYS` in `src/lib/cloud-sync.ts`; localStorage is only a cache, so pages keep `useStore` while the database stays the source of truth.
+- Background work runs in `src/lib/worker.server.ts`, invoked by the secret-protected `/api/public/cron/watch` pass: jobs are claimed with an atomic status switch, retried with backoff, and skipped for users with `bg.kill-switch`; automations share `runEngine` with the client so behavior never diverges.
+- Every Meta write and scheduled/agent action records an `audit_log` row and user-facing results go to `notifications`; menu entries live only in `src/lib/nav.ts`.
