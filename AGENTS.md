@@ -41,3 +41,4 @@ use the editor.
 - Public presentation and login render outside operational navigation; session controls live in Settings to keep the mobile header compact.
 - Account creation uses the official Business `/adaccount` edge through the existing connector after review; never store a second raw token or infer unlimited access from administrator status.
 - Dashboard filters and currency-safe payment aggregation live in `src/lib/dashboard.ts`; attributed ad revenue is never combined with gateway revenue or labeled net profit without costs.
+- Operational lists sync per-row into domain tables via `TABLE_KEYS` in `src/lib/cloud-sync.ts`; localStorage is only a cache, so pages keep `useStore` while the database stays the source of truth.
