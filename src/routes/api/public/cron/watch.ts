@@ -24,14 +24,19 @@ export const Route = createFileRoute("/api/public/cron/watch")({
         if (!expected || got.length !== expected.length || !timingSafeEqual(Buffer.from(got), Buffer.from(expected)))
           return new Response("Unauthorized", { status: 401 });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: rows, error } = await supabaseAdmin.from("app_state").select("user_id,key,value").in("key", ["bg.intel-rules", "batgotham.account"]);
-        if (error) return new Response(error.message, { status: 500 });
+        const [{ data: rows, error }, { data: ruleRows, error: ruleErr }] = await Promise.all([
+          supabaseAdmin.from("app_state").select("user_id,key,value").eq("key", "batgotham.account"),
+          supabaseAdmin.from("monitor_rules").select("user_id,data").order("position"),
+        ]);
+        if (error || ruleErr) return new Response((error ?? ruleErr)!.message, { status: 500 });
         const users = new Map<string, { rules?: IntelRule[]; account?: string }>();
-        for (const r of rows ?? []) {
+        for (const r of ruleRows ?? []) {
           const u = users.get(r.user_id) ?? {};
-          if (r.key === "bg.intel-rules") u.rules = r.value as unknown as IntelRule[];
-          else u.account = String(r.value);
+          (u.rules ??= []).push(r.data as unknown as IntelRule);
           users.set(r.user_id, u);
+        }
+        for (const r of rows ?? []) {
+          const u = users.get(r.user_id); if (u) u.account = String(r.value);
         }
         const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" }).format(new Date())) % 24;
         let actions = 0;
