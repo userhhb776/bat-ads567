@@ -33,5 +33,6 @@
 - [x] Render WhatsApp URL/key and Vercel token saved; live send untested.
 - [ ] Verify provider credentials securely, callback URLs and production permissions.
 - [x] Database tables, login, cloud sync, gateway webhooks, 24h watch endpoint.
-- [ ] User: create account in app, set cron-job.org job, paste gateway links.
+- [x] Personal login created and cron configured in earlier work.
+- [ ] Gateway provider setup and live order ingestion verification: require the user's gateway configuration and a real/test provider event.
 - [x] Installed-app push notifications: device subscribes in Inteligência; 24h watch pushes each decision. Live phone delivery untested.
