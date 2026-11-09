@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, FolderOpen, LayoutGrid, Pencil, RefreshCw, Smartphone } from "lucide-react";
+import { Copy, Eye, FolderOpen, LayoutGrid, Pencil, RefreshCw, Smartphone, Trash2 } from "lucide-react";
+import { AdReviewDialog } from "@/components/ad-review";
 import { AccountBar } from "@/components/account-bar";
 import { useAccount, brl, actionValue } from "@/lib/use-account";
 import { useCurrency } from "@/lib/currency";
@@ -75,6 +76,12 @@ function Manager() {
     },
     onError: (e) => toast.error((e as Error).message),
   });
+  const del = useMutation({
+    mutationFn: async (ids: string[]) => { for (const id of ids) await updateObject({ data: { id, status: "DELETED" } }); },
+    onSuccess: () => { toast.success("Excluído na Meta"); setSelected((s) => ({ ...s, [level]: [] })); qc.invalidateQueries({ queryKey: ["objects"] }); },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  const [review, setReview] = useState("");
 
   const rows = (q.data ?? []).filter(
     (r: any) =>
@@ -178,6 +185,10 @@ function Manager() {
           <Button variant="secondary" disabled={!sel.length || dup.isPending} onClick={() => dup.mutate(sel)}>
             <Copy className="mr-2 h-4 w-4" /> Duplicar
           </Button>
+          <Button variant="outline" disabled={!sel.length || del.isPending} onClick={() => { if (confirm(`Excluir ${sel.length} item(ns) na Meta? Isso não pode ser desfeito.`)) del.mutate(sel); }}>
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+          </Button>
+          {level === "ads" && <Button variant="outline" disabled={sel.length !== 1} onClick={() => setReview(sel[0]!)}><Eye className="mr-2 h-4 w-4" /> Prévia e revisão</Button>}
           <Button className="sm:ml-auto" onClick={() => q.refetch()} disabled={q.isFetching}>
             <RefreshCw className={`mr-2 h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`} /> Atualizar
           </Button>
