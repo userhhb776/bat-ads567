@@ -75,27 +75,37 @@ export function CrowleyChat({ compact = false, agents = false }: { compact?: boo
   const stt = useServerFn(transcribeVoice); const tts = useServerFn(speakVoice);
   const [voice, setVoice] = useState<'off'|'ouvindo'|'pensando'|'falando'>('off');
   const voiceSig = useRef({ stop: true }); const audioRef = useRef<HTMLAudioElement | null>(null);
-  async function startVoice() {
+  // Push-to-talk: só grava enquanto o dedo está no botão; tocar enquanto ele fala/pensa interrompe.
+  const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; at: number; busy: boolean } | null>(null);
+  async function holdStart() {
+    voiceSig.current.stop = true; audioRef.current?.pause();
+    if (recRef.current) return;
     let stream: MediaStream;
     try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
-    catch { toast.error('Libere o microfone para falar com o Crowley.'); return; }
+    catch { toast.error('Libere o microfone para falar com o Crowley.'); setVoice('off'); return; }
+    const rec = new MediaRecorder(stream); const chunks: Blob[] = [];
+    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    rec.start(200); recRef.current = { rec, stream, chunks, at: Date.now(), busy: voice!=='off' }; setVoice('ouvindo');
+  }
+  async function holdEnd() {
+    const r = recRef.current; if (!r) return; recRef.current = null;
+    await new Promise<void>((res) => { r.rec.onstop = () => res(); r.rec.stop(); });
+    r.stream.getTracks().forEach((t) => t.stop());
+    if (Date.now() - r.at < 500 || !r.chunks.length) { setVoice('off'); if (!r.busy) toast('Segure o microfone enquanto fala, chefe.'); return; }
     const sig = { stop: false }; voiceSig.current = sig;
     try {
-      while (!sig.stop) {
-        setVoice('ouvindo');
-        const blob = await recordUtterance(stream, sig); if (sig.stop) break; if (!blob) continue;
-        setVoice('pensando');
-        const t = await stt({ data: { audio: await blobToB64(blob), mime: blob.type } });
-        if ('error' in t) { toast.error(t.error); continue; } if (!t.text) continue;
-        const reply = await send(t.text); if (sig.stop || !reply) continue;
-        const v = getVoiceSettings(); const said = speakable(reply); if (!said) continue;
-        const a = await tts({ data: { text: said, ...v } }); if ('error' in a) { toast.error(a.error); continue; }
-        if (sig.stop) break; setVoice('falando');
-        await new Promise<void>((res) => { const el = new Audio(`data:audio/mpeg;base64,${a.audio}`); audioRef.current = el; el.onended = () => res(); el.onerror = () => res(); el.play().catch(() => res()); });
-      }
-    } finally { stream.getTracks().forEach((t) => t.stop()); setVoice('off'); }
+      const blob = new Blob(r.chunks, { type: r.rec.mimeType || 'audio/webm' });
+      setVoice('pensando');
+      const t = await stt({ data: { audio: await blobToB64(blob), mime: blob.type } });
+      if ('error' in t) { toast.error(t.error); return; } if (!t.text || sig.stop) return;
+      const reply = await send(t.text); if (sig.stop || !reply) return;
+      const said = speakable(reply); if (!said) return;
+      const a = await tts({ data: { text: said, ...getVoiceSettings() } }); if ('error' in a) { toast.error(a.error); return; }
+      if (sig.stop) return; setVoice('falando');
+      await new Promise<void>((res) => { const el = new Audio(`data:audio/mpeg;base64,${a.audio}`); audioRef.current = el; el.onended = () => res(); el.onerror = () => res(); el.onpause = () => res(); el.play().catch(() => res()); });
+    } finally { if (voiceSig.current === sig && !recRef.current) setVoice('off'); }
   }
-  function stopVoice() { voiceSig.current.stop = true; audioRef.current?.pause(); setVoice('off'); }
+  void recordUtterance;
   useEffect(() => () => { voiceSig.current.stop = true; audioRef.current?.pause(); }, []);
   async function send(spoken?: string): Promise<string | null> {
     const text = (spoken ?? input).trim(); if (!text || (busy && !spoken)) return null;
@@ -163,7 +173,7 @@ export function CrowleyChat({ compact = false, agents = false }: { compact?: boo
     } catch(e) { toast.error((e as Error).message); } finally {setExecuting(null);}
   }
   return <div className={`flex min-h-0 flex-col ${compact ? 'h-full' : 'h-[70dvh] min-h-[420px]'}`}>
-    <div className="flex items-center gap-3 border-b border-border pb-3"><img src={portrait} width={48} height={48} className="h-12 w-12 rounded-full object-cover ring-1 ring-primary" alt="Crowley"/><div className="flex-1"><div className="font-display text-2xl">{agents ? 'Criar agente ADS' : 'Crowley'}</div><div className="text-xs text-muted-foreground">{voice==='ouvindo'?'Ouvindo… pode falar, chefe.':voice==='pensando'?'Pensando…':voice==='falando'?'Falando… toque no microfone para encerrar.':'Às suas ordens, chefe.'}</div></div><Button variant={voice==='off'?'outline':'default'} size="icon" aria-label={voice==='off'?'Conversar por voz':'Encerrar conversa por voz'} title={voice==='off'?'Conversar por voz':'Encerrar voz'} className={voice!=='off'?'animate-pulse':''} onClick={() => voice==='off' ? void startVoice() : stopVoice()}>{voice==='off'?<Mic className="h-4 w-4"/>:<MicOff className="h-4 w-4"/>}</Button><Button variant="ghost" size="icon" aria-label="Limpar conversa" title="Limpar conversa" onClick={() => { if(window.confirm('Apagar o histórico desta conversa?')) {saveMsgs([]);saveDone([]);} }}><Trash2 className="h-4 w-4"/></Button></div>
+    <div className="flex items-center gap-3 border-b border-border pb-3"><img src={portrait} width={48} height={48} className="h-12 w-12 rounded-full object-cover ring-1 ring-primary" alt="Crowley"/><div className="flex-1"><div className="font-display text-2xl">{agents ? 'Criar agente ADS' : 'Crowley'}</div><div className="text-xs text-muted-foreground">{voice==='ouvindo'?'Ouvindo… solte quando terminar.':voice==='pensando'?'Pensando… toque no microfone para interromper.':voice==='falando'?'Falando… toque no microfone para interromper.':'Segure o microfone para falar.'}</div></div><Button variant={voice==='off'?'outline':'default'} size="icon" aria-label="Segure para falar com o Crowley" title="Segure para falar" className={`touch-none select-none ${voice==='ouvindo'?'scale-110 animate-pulse':''}`} onContextMenu={(e)=>e.preventDefault()} onPointerDown={(e)=>{e.preventDefault();(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);void holdStart();}} onPointerUp={()=>void holdEnd()} onPointerCancel={()=>void holdEnd()}>{voice==='falando'||voice==='pensando'?<MicOff className="h-4 w-4"/>:<Mic className="h-4 w-4"/>}</Button><Button variant="ghost" size="icon" aria-label="Limpar conversa" title="Limpar conversa" onClick={() => { if(window.confirm('Apagar o histórico desta conversa?')) {saveMsgs([]);saveDone([]);} }}><Trash2 className="h-4 w-4"/></Button></div>
     <div className="flex-1 space-y-4 overflow-y-auto py-4">
       {!msgs.length && <div className="py-8 text-center"><p className="text-lg">{agents ? 'Qual estratégia vamos acompanhar?' : 'Boa hora para uma nova operação.'}</p><p className="mt-2 text-sm text-muted-foreground">{agents ? 'Estou ouvindo, chefe.' : 'No que vamos trabalhar, chefe?'}</p></div>}
       {msgs.map((m,i) => {const a = m.role === 'assistant' ? parseAction(m.content) : null; return <div key={i} className={`max-w-[92%] break-words rounded-lg p-3 text-sm ${m.role === 'user' ? 'ml-auto bg-primary text-primary-foreground':'bg-secondary text-secondary-foreground'}`}><div className="chat-markdown"><ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content.replace(/ACAO:.*$/s,'').trim()}</ReactMarkdown></div>{a && <div className="mt-3 border-t border-border pt-3"><p className="mb-2 text-xs">{a.tipo === 'regra' ? `${a.nome} · ${a.autonomia === 'auto' ? 'agir sozinho' : a.autonomia === 'aprovar' ? 'pedir aprovação' : 'apenas avisar'} · ${currency.source}` : a.tipo === 'orcamento' ? `Orçamento diário: ${a.valor} ${currency.source}` : a.tipo === 'status' ? `${a.status === 'PAUSED' ? 'Pausar' : 'Ativar'} campanha` : a.tipo === 'agendar' ? `Agendar ${a.acao === 'ORCAMENTO' ? `orçamento ${a.valor}` : a.acao === 'ACTIVE' ? 'ativação' : 'pausa'} em ${new Date(a.quando).toLocaleString('pt-BR')}` : a.tipo === 'lembrete' ? `Lembrete: ${a.titulo} em ${new Date(a.quando).toLocaleString('pt-BR')}` : a.tipo === 'produto' ? `Criar produto ${a.nome} (${a.preco})` : a.tipo === 'oferta' ? `Guardar oferta ${a.nome} no radar` : a.tipo === 'funil' ? `Criar funil ${a.nome} (${a.etapas.length} etapas)` : a.tipo === 'pagina' ? `Criar página ${a.nome} (${a.blocos.length} blocos)` : a.tipo === 'notificar' ? `Enviar aviso: ${a.titulo}` : `${a.ativa ? 'Ativar' : 'Pausar'} ${a.nome}`}</p><Button size="sm" disabled={done.includes(i) || executing !== null} onClick={() => approve(i,a)}><ShieldCheck className="h-4 w-4"/>{done.includes(i) ? 'Aprovado' : 'Aprovar ação'}</Button></div>}</div>})}

@@ -93,3 +93,14 @@ export const whatsappRemove = createServerFn({ method: "POST" }).middleware([req
     await context.supabase.from("audit_log").insert({ user_id: context.userId, module: "whatsapp", action: data.mode === "delete" ? "excluir" : "desconectar", target: data.name });
     return { ok: true };
   });
+
+/** Saldo real da conta DeepSeek (API oficial /user/balance). */
+export const deepseekBalance = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+  const key = process.env["DEEPSEEK_API_KEY"];
+  if (!key) return { ok: false, error: "Chave da DeepSeek não cadastrada.", available: false, balance: 0, currency: "USD" };
+  const r = await fetch("https://api.deepseek.com/user/balance", { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(15000) });
+  if (!r.ok) return { ok: false, error: `DeepSeek respondeu ${r.status}.`, available: false, balance: 0, currency: "USD" };
+  const j = (await r.json()) as { is_available?: boolean; balance_infos?: { currency: string; total_balance: string }[] };
+  const b = j.balance_infos?.[0];
+  return { ok: true, error: "", available: !!j.is_available, balance: Number(b?.total_balance ?? 0), currency: b?.currency ?? "USD" };
+});
