@@ -27,6 +27,7 @@ import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as PaginasRouteImport } from './routes/paginas'
 import { Route as ProdutosRouteImport } from './routes/produtos'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as SistemaRouteImport } from './routes/sistema'
 import { Route as SuporteRouteImport } from './routes/suporte'
 import { Route as UtmRouteImport } from './routes/utm'
@@ -128,6 +129,11 @@ const ProdutosRoute = ProdutosRouteImport.update({
   path: '/produtos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SistemaRoute = SistemaRouteImport.update({
   id: '/sistema',
   path: '/sistema',
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
+  '/relatorios': typeof RelatoriosRoute
   '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
+  '/relatorios': typeof RelatoriosRoute
   '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/met/criar': typeof MetCriarRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
+  '/relatorios': typeof RelatoriosRoute
   '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/ofertas'
     | '/paginas'
     | '/produtos'
+    | '/relatorios'
     | '/sistema'
     | '/suporte'
     | '/utm'
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/ofertas'
     | '/paginas'
     | '/produtos'
+    | '/relatorios'
     | '/sistema'
     | '/suporte'
     | '/met/criar'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/ofertas'
     | '/paginas'
     | '/produtos'
+    | '/relatorios'
     | '/sistema'
     | '/suporte'
     | '/utm'
@@ -379,6 +391,7 @@ export interface RootRouteChildren {
   OfertasRoute: typeof OfertasRoute
   PaginasRoute: typeof PaginasRoute
   ProdutosRoute: typeof ProdutosRoute
+  RelatoriosRoute: typeof RelatoriosRoute
   SistemaRoute: typeof SistemaRoute
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
@@ -514,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProdutosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sistema': {
       id: '/sistema'
       path: '/sistema'
@@ -632,6 +652,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfertasRoute: OfertasRoute,
   PaginasRoute: PaginasRoute,
   ProdutosRoute: ProdutosRoute,
+  RelatoriosRoute: RelatoriosRoute,
   SistemaRoute: SistemaRoute,
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
