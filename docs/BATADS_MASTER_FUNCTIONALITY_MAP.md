@@ -6,11 +6,11 @@ Legenda: IMPLEMENTADA · INTEGRADA · PARCIAL · PENDENTE · BLOQUEADA · NÃO S
 ## 0. Diagnóstico técnico geral
 | Item | Situação | Impacto |
 |---|---|---|
-| Persistência | Produtos, pedidos, contatos, conversas, mensagens, automações, logs, regras e histórico da IA usam `useStore` (localStorage do aparelho) com cópia JSON em `app_state` (cloud-sync). | Viola a regra "Supabase como fonte principal". Sem relações, índices, busca nem uso pelo servidor. **Correção prioritária.** |
+| Persistência | **FASE 1 CONCLUÍDA (09/11):** tabelas próprias por área com RLS, dados antigos copiados; aparelho virou só cache. Antes: Produtos, pedidos, contatos, conversas, mensagens, automações, logs, regras e histórico da IA usam `useStore` (localStorage do aparelho) com cópia JSON em `app_state` (cloud-sync). | Viola a regra "Supabase como fonte principal". Sem relações, índices, busca nem uso pelo servidor. **Correção prioritária.** |
 | Tabelas reais | `app_state`, `gateway_events`, `user_settings`, `watch_log`. RLS por `auth.uid()` em todas. | Base segura, mas insuficiente para os domínios pedidos. |
 | Backend | Server functions TanStack (Meta, IA, canais, páginas, push). Rotas públicas: `/api/public/webhooks/$platform` (gateways) e `/api/public/cron/watch` (vigia 24h). Sem Edge Functions. | Correto para a stack. Falta fila/worker genérico. |
 | Execução em 2º plano | Só o vigia de campanhas roda com navegador fechado (cron). Automações rodam apenas com o app aberto. | Requisito 9.5 não atendido. |
-| Auditoria | `watch_log` registra decisões do vigia. Não há trilha global (antes/depois, agente, módulo). | Requisito 17 não atendido. |
+| Auditoria | PARCIAL: `audit_log` registra criar/editar/excluir (antes/depois) e ações dos agentes 24h; `notifications` recebe alertas; fila `jobs` criada (worker pendente). Antes: `watch_log` registra decisões do vigia. Não há trilha global (antes/depois, agente, módulo). | Requisito 17 não atendido. |
 | Testes | 44 testes unitários (regras, moeda, dashboard, roteamento IA, páginas, vendas, automação). | Sem testes de servidor/integração. |
 | Organizações/permissões | Uso pessoal, 1 usuário. Sem papéis nem permissões por agente. | Requisito 17 pendente. |
 
