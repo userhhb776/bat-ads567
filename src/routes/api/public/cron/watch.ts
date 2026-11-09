@@ -67,11 +67,13 @@ export const Route = createFileRoute("/api/public/cron/watch")({
             }
             await supabaseAdmin.from("watch_log").insert({ user_id: userId, rule_id: rule.id, target_id: c.id, campaign_name: c.name, action: d.kind, detail: d.reason, state, new_budget: d.newBudget ?? null });
             actions++;
+            await supabaseAdmin.from("audit_log").insert({ user_id: userId, actor: `agente:${rule.name ?? rule.id}`, module: "campanhas", action: d.kind, target: c.id, after: { reason: d.reason, newBudget: d.newBudget ?? null } as never, result: state });
             const verb = { executado: "Feito", pendente: "Aguardando sua aprovação", aviso: "Atenção", erro: "Falhou" }[state] ?? state;
             notes.push({ userId, title: `${verb}: ${c.name}`.slice(0, 80), body: d.reason });
           }
         }
         if (notes.length) {
+          await supabaseAdmin.from("notifications").insert(notes.map((n) => ({ user_id: n.userId, kind: "campanha", title: n.title, body: n.body, link: "/inteligencia" })));
           const { sendPush } = await import("@/lib/push.server");
           const { data: subs } = await supabaseAdmin.from("app_state").select("user_id,key,value").like("key", "bg.push.%").in("user_id", [...new Set(notes.map((n) => n.userId))]);
           for (const s of subs ?? []) for (const n of notes.filter((x) => x.userId === s.user_id)) {
