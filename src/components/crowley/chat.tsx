@@ -56,6 +56,7 @@ export function CrowleyChat({ compact = false, agents = false }: { compact?: boo
     try {
       if ('id' in a && a.id !== '*' && !campaigns.data?.some((c) => c.id === a.id)) throw new Error('A campanha não pertence à conta carregada. Atualize as campanhas antes de confirmar.');
       if (a.tipo === 'regra') {
+        if (!account) throw new Error('Selecione a conta do agente antes de aprovar.');
         if (!(a.gastoSemVenda || a.cpaMax || a.roasEscala || a.frequenciaMax)) throw new Error('Defina pelo menos uma condição para o agente.');
         const rule: IntelRule = {id:crypto.randomUUID(),name:a.nome,profile:a.perfil,campaignId:a.id,accountId:account,maxSpendNoSale:a.gastoSemVenda,maxCpa:a.cpaMax,minRoasToScale:a.roasEscala,scalePercent:a.percentualEscala,maxDailyBudget:a.tetoDiario,maxFrequency:a.frequenciaMax,hours:a.horas,autonomy:a.autonomia,active:true};
         localStorage.setItem('bg.intel-rules',JSON.stringify([...readStore<IntelRule[]>('intel-rules',[]),rule]));

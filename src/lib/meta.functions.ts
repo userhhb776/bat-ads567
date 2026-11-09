@@ -77,14 +77,16 @@ export const getAdAccounts = createServerFn({ method: "GET" }).middleware([requi
 export const getAssets = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ accountId: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    const empty = { data: [] };
+    const failures: string[] = [];
+    const failed = (label: string) => (error: unknown) => { failures.push(`${label}: ${error instanceof Error ? error.message : "consulta falhou"}`); return { data: [] }; };
     const [pages, pixels, ig, audiences] = await Promise.all([
-      graph("me/accounts", { params: { fields: "id,name", limit: "100" } }).catch(() => empty),
-      graph(`${data.accountId}/adspixels`, { params: { fields: "id,name" } }).catch(() => empty),
-      graph(`${data.accountId}/instagram_accounts`, { params: { fields: "id,username" } }).catch(() => empty),
-      graph(`${data.accountId}/customaudiences`, { params: { fields: "id,name,subtype", limit: "200" } }).catch(() => empty),
+      graph("me/accounts", { params: { fields: "id,name", limit: "100" } }).catch(failed("Páginas")),
+      graph(`${data.accountId}/adspixels`, { params: { fields: "id,name" } }).catch(failed("Pixels")),
+      graph(`${data.accountId}/instagram_accounts`, { params: { fields: "id,username" } }).catch(failed("Instagram")),
+      graph(`${data.accountId}/customaudiences`, { params: { fields: "id,name,subtype", limit: "200" } }).catch(failed("Públicos")),
     ]);
     return {
+      errors: failures,
       pages: pages.data as { id: string; name: string }[],
       pixels: pixels.data as { id: string; name: string }[],
       instagram: (ig.data as any[]).map((i) => ({ id: i.id as string, name: (i.username as string) ?? i.id })),
