@@ -9,7 +9,7 @@ const LEAD = ["lead", "offsite_conversion.fb_pixel_lead", "onsite_conversion.lea
 export type AdScore = { id: string; name: string; thumb: string; spend: number; impressions: number; ctr: number; purchases: number; leads: number; revenue: number; cpa: number | null; roas: number | null; verdict: "vencedor" | "ruim" | "em teste" };
 
 /** Scores ads; verdicts need minimum spend/impressions so early data never labels a creative. */
-export function scoreAds(ads: any[], opts: { minSpend: number; targetCpa?: number; minRoas?: number }): AdScore[] {
+export function scoreAds(ads: any[], opts: { minSpend: number; targetCpa?: number | undefined; minRoas?: number | undefined }): AdScore[] {
   const rows = ads.map((a) => {
     const i = a.insights ?? {};
     const spend = Number(i.spend ?? 0), impressions = Number(i.impressions ?? 0);

@@ -36,7 +36,7 @@ function Schedules() {
     setBusy(true);
     try {
       const runAt = new Date(when).toISOString();
-      let job: Parameters<typeof createJob>[0]["data"]["job"];
+      let job: any;
       if (kind === "meta_update") {
         const c = (camps.data ?? []).find((x: any) => x.id === target.id);
         if (!c) throw new Error("Escolha a campanha.");

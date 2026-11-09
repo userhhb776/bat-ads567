@@ -82,7 +82,7 @@ export function CrowleyChat({ compact = false, agents = false }: { compact?: boo
         window.dispatchEvent(new Event('bg-store-change')); toast.success('Produto criado.');
       } else if (a.tipo === 'oferta') {
         const list = readStore<any[]>('offers',[]);
-        localStorage.setItem('bg.offers',JSON.stringify([{id:crypto.randomUUID(),name:a.nome,status:a.status,libraryUrl:a.link,angle:a.angulo,createdAt:Date.now()},...list]));
+        localStorage.setItem('bg.offers',JSON.stringify([{id:crypto.randomUUID(),name:a.nome,niche:'',status:a.status,library:a.link,page:'',creative:'',angle:a.angulo,price:'',notes:'Guardada pelo Crowley'},...list]));
         window.dispatchEvent(new Event('bg-store-change')); toast.success('Oferta guardada no radar.');
       } else if (a.tipo === 'automacao') {
         const list = readStore<{name:string;active:boolean}[]>('automations',[]);

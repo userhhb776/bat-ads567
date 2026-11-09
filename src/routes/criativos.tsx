@@ -69,11 +69,11 @@ function Library() {
   async function remove(c: Creative) {
     if (!confirm(`Apagar ${c.name}?`)) return;
     const { error } = await supabase.storage.from("creatives").remove([c.path]);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setItems(items.filter((x) => x.id !== c.id));
   }
   async function sendToMeta(c: Creative) {
-    if (!account) return toast.error("Escolha a conta de anúncios.");
+    if (!account) { toast.error("Escolha a conta de anúncios."); return; }
     setBusy(true);
     try {
       const blob = await (await fetch(urls[c.id]!)).blob();

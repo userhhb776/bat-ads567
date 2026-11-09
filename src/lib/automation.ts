@@ -58,7 +58,7 @@ type Send = (channel: "whatsapp" | "email" | "telegram" | "webhook", to: string,
 export type TagOp = { phone: string; email: string; tag: string };
 
 /** One engine for the open app and the 24h worker: idempotent per automation+order, waits are re-evaluated on the next pass. */
-export async function runEngine(p: { autos: Automation[]; orders: Order[]; products: Product[]; logs: RunLog[]; send: Send; now?: number; only?: { automationId: string; key: string }; newId: () => string }) {
+export async function runEngine(p: { autos: Automation[]; orders: Order[]; products: Product[]; logs: RunLog[]; send: Send; now?: number | undefined; only?: { automationId: string; key: string } | undefined; newId: () => string }) {
   const now = p.now ?? Date.now();
   const out: RunLog[] = []; const tags: TagOp[] = [];
   for (const au of p.autos.filter((x) => x.active && (!p.only || x.id === p.only.automationId))) {
