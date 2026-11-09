@@ -8,6 +8,8 @@ import { Card, Empty, Field, NativeSelect, PageHead, Stat, head } from "@/compon
 import { useStore, uid, toCsv, fromCsv, download } from "@/lib/store";
 import { STAGES, type Contact, type Order } from "@/lib/biz";
 
+type CrmTask = { id: string; title: string; due: string; owner: string; contactId: string; status: "aberta" | "feita"; createdAt: number };
+
 export const Route = createFileRoute("/crm")({
   head: () => head("CRM", "Leads e clientes com tags, funil de vendas, notas e listas inteligentes."),
   component: CrmRoute,
@@ -21,6 +23,9 @@ function CrmRoute() {
   const [view, setView] = useState<"lista" | "pipeline">("lista");
   const [sel, setSel] = useState("");
   const [note, setNote] = useState("");
+  const [tasks, setTasks] = useStore<CrmTask[]>("crm-tasks", []);
+  const [task, setTask] = useState({ title: "", due: "", owner: "" });
+  const [msgs] = useStore<{ contactId: string; text: string; at: number; from: string; channel: string }[]>("messages", []);
   const spent = (c: Contact) => orders.filter((o) => o.status === "aprovado" && ((c.email && o.email === c.email) || (c.phone && o.phone === c.phone)));
   const smart: Record<string, (c: Contact) => boolean> = {
     todos: () => true,
@@ -57,6 +62,7 @@ function CrmRoute() {
         <Stat label="Recorrentes" value={contacts.filter(smart["recorrentes"]!).length} />
         <Stat label="Pix pendente" value={contacts.filter(smart["pix_pendente"]!).length} />
       </div>
+      {tasks.some((t) => t.status === "aberta") && <Card className="space-y-1"><div className="text-xs font-medium">Tarefas abertas ({tasks.filter((t) => t.status === "aberta").length})</div>{tasks.filter((t) => t.status === "aberta").sort((a, b) => (a.due || "9").localeCompare(b.due || "9")).slice(0, 8).map((t) => <button key={t.id} onClick={() => setSel(t.contactId)} className="flex w-full justify-between text-left text-xs"><span>{t.title} · {contacts.find((x) => x.id === t.contactId)?.name}</span><span className={t.due && t.due < new Date().toISOString().slice(0, 10) ? "text-destructive" : "text-muted-foreground"}>{t.due || "sem prazo"}{t.owner ? ` · ${t.owner}` : ""}</span></button>)}</Card>}
       <div className="flex flex-wrap gap-2">
         <Input className="max-w-xs" placeholder="Buscar nome, tag, telefone…" value={q} onChange={(e) => setQ(e.target.value)} />
         <NativeSelect value={list} onChange={(e) => setList(e.target.value)}>
@@ -102,6 +108,12 @@ function CrmRoute() {
               <div className="text-xs text-muted-foreground">Compras: {spent(c).length} · {spent(c).reduce((s, o) => s + o.amount, 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</div>
               <div className="flex gap-2"><Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nova nota/atividade" /><Button onClick={() => { if (note) { patch({ notes: [{ at: Date.now(), text: note }, ...c.notes] }); setNote(""); } }}>Salvar</Button></div>
               {c.notes.map((n) => <div key={n.at} className="text-xs"><span className="text-muted-foreground">{new Date(n.at).toLocaleString("pt-BR")}</span> — {n.text}</div>)}
+              <Field label="Responsável"><Input value={c.fields["responsavel"] ?? ""} onChange={(e) => patch({ fields: { ...c.fields, responsavel: e.target.value } })} /></Field>
+              <div className="border-t border-border pt-2 text-xs font-medium">Tarefas</div>
+              <div className="flex gap-1"><Input className="h-8 text-xs" placeholder="Tarefa" value={task.title} onChange={(e) => setTask({ ...task, title: e.target.value })} /><Input className="h-8 w-32 text-xs" type="date" value={task.due} onChange={(e) => setTask({ ...task, due: e.target.value })} /><Button size="sm" onClick={() => { if (!task.title) return; setTasks([{ id: uid(), title: task.title, due: task.due, owner: task.owner || c.fields["responsavel"] || "", contactId: c.id, status: "aberta", createdAt: Date.now() }, ...tasks]); setTask({ title: "", due: "", owner: "" }); }}>+</Button></div>
+              {tasks.filter((t) => t.contactId === c.id).map((t) => <label key={t.id} className="flex items-center gap-2 text-xs"><input type="checkbox" checked={t.status === "feita"} onChange={(e) => setTasks(tasks.map((x) => x.id === t.id ? { ...x, status: e.target.checked ? "feita" : "aberta" } : x))} /><span className={t.status === "feita" ? "line-through text-muted-foreground" : ""}>{t.title}</span><span className="ml-auto text-muted-foreground">{t.due}</span></label>)}
+              <div className="border-t border-border pt-2 text-xs font-medium">Histórico de atividades</div>
+              <div className="max-h-48 space-y-1 overflow-y-auto">{[...spent(c).map((o) => ({ at: o.at, text: `Compra aprovada R$ ${o.amount.toFixed(2)}` })), ...msgs.filter((m) => m.contactId === c.id).map((m) => ({ at: m.at, text: `${m.channel} · ${m.from}: ${m.text.slice(0, 80)}` })), ...c.notes].sort((a, b) => b.at - a.at).slice(0, 40).map((n, i) => <div key={i} className="text-[11px]"><span className="text-muted-foreground">{new Date(n.at).toLocaleString("pt-BR")}</span> — {n.text}</div>)}</div>
               <Button variant="ghost" onClick={() => { setContacts(contacts.filter((x) => x.id !== c.id)); setSel(""); }}><Trash2 className="h-4 w-4" /> Excluir</Button>
             </Card>
           )}
