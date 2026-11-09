@@ -28,7 +28,7 @@ function Entrar() {
     const res = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
     if (res.error) { toast.error("E-mail ou senha incorretos."); return; }
-    toast.success("Bem-vindo de volta, patrão."); nav({ to: "/" });
+    toast.success("Bem-vindo de volta, chefe."); nav({ to: "/" });
   }
 
   return (
