@@ -710,6 +710,51 @@ export type Database = {
         }
         Relationships: []
       }
+      track_events: {
+        Row: {
+          created_at: string
+          email: string | null
+          event: string
+          id: string
+          phone: string | null
+          referrer: string | null
+          session_id: string
+          source: string | null
+          url: string | null
+          user_id: string
+          utm: Json
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          event?: string
+          id?: string
+          phone?: string | null
+          referrer?: string | null
+          session_id: string
+          source?: string | null
+          url?: string | null
+          user_id: string
+          utm?: Json
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          event?: string
+          id?: string
+          phone?: string | null
+          referrer?: string | null
+          session_id?: string
+          source?: string | null
+          url?: string | null
+          user_id?: string
+          utm?: Json
+          visitor_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           created_at: string
