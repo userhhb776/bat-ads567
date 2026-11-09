@@ -37,6 +37,8 @@ import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
 import { Route as UtmLinksRouteImport } from './routes/utm.links'
+import { Route as UtmVisitantesRouteImport } from './routes/utm.visitantes'
+import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
 import { Route as ApiPublicCronWatchRouteImport } from './routes/api/public/cron/watch'
 import { Route as ApiPublicInboundChannelRouteImport } from './routes/api/public/inbound/$channel'
 import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/public/webhooks.$platform'
@@ -181,6 +183,16 @@ const UtmLinksRoute = UtmLinksRouteImport.update({
   path: '/links',
   getParentRoute: () => UtmRoute,
 } as any)
+const UtmVisitantesRoute = UtmVisitantesRouteImport.update({
+  id: '/visitantes',
+  path: '/visitantes',
+  getParentRoute: () => UtmRoute,
+} as any)
+const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
+  id: '/api/public/track',
+  path: '/api/public/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronWatchRoute = ApiPublicCronWatchRouteImport.update({
   id: '/api/public/cron/watch',
   path: '/api/public/cron/watch',
@@ -225,8 +237,10 @@ export interface FileRoutesByFullPath {
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
+  '/utm/visitantes': typeof UtmVisitantesRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
@@ -256,8 +270,10 @@ export interface FileRoutesByTo {
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
+  '/utm/visitantes': typeof UtmVisitantesRoute
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
+  '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
@@ -290,8 +306,10 @@ export interface FileRoutesById {
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
+  '/utm/visitantes': typeof UtmVisitantesRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
@@ -325,8 +343,10 @@ export interface FileRouteTypes {
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
+    | '/utm/visitantes'
     | '/met/'
     | '/utm/'
+    | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
     | '/api/public/webhooks/$platform'
@@ -356,8 +376,10 @@ export interface FileRouteTypes {
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
+    | '/utm/visitantes'
     | '/met'
     | '/utm'
+    | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
     | '/api/public/webhooks/$platform'
@@ -389,8 +411,10 @@ export interface FileRouteTypes {
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
+    | '/utm/visitantes'
     | '/met/'
     | '/utm/'
+    | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
     | '/api/public/webhooks/$platform'
@@ -420,6 +444,7 @@ export interface RootRouteChildren {
   SistemaRoute: typeof SistemaRoute
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
+  ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
   ApiPublicInboundChannelRoute: typeof ApiPublicInboundChannelRoute
   ApiPublicWebhooksPlatformRoute: typeof ApiPublicWebhooksPlatformRoute
@@ -623,6 +648,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmLinksRouteImport
       parentRoute: typeof UtmRoute
     }
+    '/utm/visitantes': {
+      id: '/utm/visitantes'
+      path: '/visitantes'
+      fullPath: '/utm/visitantes'
+      preLoaderRoute: typeof UtmVisitantesRouteImport
+      parentRoute: typeof UtmRoute
+    }
+    '/api/public/track': {
+      id: '/api/public/track'
+      path: '/api/public/track'
+      fullPath: '/api/public/track'
+      preLoaderRoute: typeof ApiPublicTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/watch': {
       id: '/api/public/cron/watch'
       path: '/api/public/cron/watch'
@@ -662,12 +701,14 @@ const MetRouteWithChildren = MetRoute._addFileChildren(MetRouteChildren)
 interface UtmRouteChildren {
   UtmIntegracoesRoute: typeof UtmIntegracoesRoute
   UtmLinksRoute: typeof UtmLinksRoute
+  UtmVisitantesRoute: typeof UtmVisitantesRoute
   UtmIndexRoute: typeof UtmIndexRoute
 }
 
 const UtmRouteChildren: UtmRouteChildren = {
   UtmIntegracoesRoute: UtmIntegracoesRoute,
   UtmLinksRoute: UtmLinksRoute,
+  UtmVisitantesRoute: UtmVisitantesRoute,
   UtmIndexRoute: UtmIndexRoute,
 }
 
@@ -697,6 +738,7 @@ const rootRouteChildren: RootRouteChildren = {
   SistemaRoute: SistemaRoute,
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
+  ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
   ApiPublicInboundChannelRoute: ApiPublicInboundChannelRoute,
   ApiPublicWebhooksPlatformRoute: ApiPublicWebhooksPlatformRoute,

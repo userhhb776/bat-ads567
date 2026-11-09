@@ -17,6 +17,7 @@ export const NAV_GROUPS = [
   { title: "Analytics", items: [
     { to: "/utm", label: "Métricas", icon: BarChart3 },
     { to: "/utm/links", label: "Links UTM", icon: Link2 },
+    { to: "/utm/visitantes", label: "Visitantes", icon: Users },
     { to: "/utm/integracoes", label: "Integrações", icon: Plug },
   ] },
   { title: "Criação", items: [
