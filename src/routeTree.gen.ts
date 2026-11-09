@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AgendamentosRouteImport } from './routes/agendamentos'
 import { Route as AgentesRouteImport } from './routes/agentes'
 import { Route as AtivosRouteImport } from './routes/ativos'
 import { Route as AutomacoesRouteImport } from './routes/automacoes'
@@ -39,6 +40,11 @@ import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/publ
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendamentosRoute = AgendamentosRouteImport.update({
+  id: '/agendamentos',
+  path: '/agendamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentesRoute = AgentesRouteImport.update({
@@ -170,6 +176,7 @@ const ApiPublicWebhooksPlatformRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
@@ -225,6 +233,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
@@ -255,6 +264,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agendamentos'
     | '/agentes'
     | '/ativos'
     | '/automacoes'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agendamentos'
     | '/agentes'
     | '/ativos'
     | '/automacoes'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/agendamentos'
     | '/agentes'
     | '/ativos'
     | '/automacoes'
@@ -338,6 +350,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgendamentosRoute: typeof AgendamentosRoute
   AgentesRoute: typeof AgentesRoute
   AtivosRoute: typeof AtivosRoute
   AutomacoesRoute: typeof AutomacoesRoute
@@ -367,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agendamentos': {
+      id: '/agendamentos'
+      path: '/agendamentos'
+      fullPath: '/agendamentos'
+      preLoaderRoute: typeof AgendamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agentes': {
@@ -575,6 +595,7 @@ const UtmRouteWithChildren = UtmRoute._addFileChildren(UtmRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgendamentosRoute: AgendamentosRoute,
   AgentesRoute: AgentesRoute,
   AtivosRoute: AtivosRoute,
   AutomacoesRoute: AutomacoesRoute,
