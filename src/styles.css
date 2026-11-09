@@ -181,3 +181,72 @@ body { letter-spacing: 0; color-scheme: dark; }
 .panel { border: 1px solid var(--border); border-radius: calc(var(--radius) + 6px); background: linear-gradient(180deg, color-mix(in oklab, var(--card) 100%, var(--primary) 3%), var(--card)); box-shadow: 0 10px 30px -18px color-mix(in oklab, var(--primary) 25%, transparent); }
 .kpi { position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: calc(var(--radius) + 6px); background: linear-gradient(135deg, color-mix(in oklab, var(--tone) 16%, var(--card)), var(--card) 70%); }
 .kpi-icon { background: color-mix(in oklab, var(--tone) 85%, transparent); color: var(--primary-foreground); }
+
+/* ===== Gotham (padrão) refinado ===== */
+html:not([data-theme]) body, html[data-theme="gotham"] body {
+  background-image: radial-gradient(60rem 30rem at 85% -10%, color-mix(in oklab, var(--primary) 7%, transparent), transparent 70%), radial-gradient(40rem 25rem at -10% 110%, color-mix(in oklab, var(--signal) 6%, transparent), transparent 70%);
+  background-attachment: fixed;
+}
+
+/* ===== Glassmorphism claro ===== */
+html[data-theme="glass-light"] {
+  --background: oklch(0.9 0.012 260);
+  --foreground: oklch(0.2 0.015 260);
+  --card: oklch(0.98 0.005 260 / 0.45);
+  --card-foreground: oklch(0.2 0.015 260);
+  --popover: oklch(0.97 0.006 260 / 0.92);
+  --popover-foreground: oklch(0.2 0.015 260);
+  --primary: oklch(0.7 0.15 80);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(1 0 0 / 0.5);
+  --secondary-foreground: oklch(0.22 0.015 260);
+  --muted: oklch(1 0 0 / 0.4);
+  --muted-foreground: oklch(0.45 0.02 260);
+  --accent: oklch(1 0 0 / 0.6);
+  --accent-foreground: oklch(0.2 0.015 260);
+  --border: oklch(1 0 0 / 0.7);
+  --input: oklch(1 0 0 / 0.75);
+  --ring: oklch(0.7 0.15 80);
+  --sidebar: oklch(0.97 0.006 260 / 0.5);
+  --sidebar-foreground: oklch(0.22 0.015 260);
+  --sidebar-accent: oklch(1 0 0 / 0.6);
+  --sidebar-accent-foreground: oklch(0.2 0.015 260);
+  --sidebar-border: oklch(1 0 0 / 0.7);
+  --sidebar-primary: oklch(0.7 0.15 80);
+  --grid: oklch(0.8 0.01 260);
+  --glass-edge: inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 -1px 0 oklch(0.7 0.02 260 / 0.35), 0 12px 32px -14px oklch(0.4 0.03 260 / 0.35);
+  --glass-bg: linear-gradient(160deg, oklch(1 0 0 / 0.62), oklch(0.96 0.008 260 / 0.28));
+  --shadow-metric: var(--glass-edge);
+}
+html[data-theme="glass-light"] body { color-scheme: light; background: linear-gradient(160deg, oklch(0.95 0.008 260), oklch(0.82 0.018 262) 60%, oklch(0.88 0.012 260)); background-attachment: fixed; }
+
+/* ===== Glassmorphism escuro ===== */
+html[data-theme="glass-dark"] {
+  --background: oklch(0.13 0.008 260);
+  --card: oklch(0.3 0.01 260 / 0.28);
+  --popover: oklch(0.2 0.01 260 / 0.92);
+  --secondary: oklch(1 0 0 / 0.07);
+  --muted: oklch(1 0 0 / 0.06);
+  --accent: oklch(1 0 0 / 0.1);
+  --border: oklch(1 0 0 / 0.13);
+  --input: oklch(1 0 0 / 0.16);
+  --sidebar: oklch(0.18 0.01 260 / 0.45);
+  --sidebar-accent: oklch(1 0 0 / 0.08);
+  --sidebar-border: oklch(1 0 0 / 0.12);
+  --glass-edge: inset 0 1px 0 oklch(1 0 0 / 0.16), inset 0 -1px 0 oklch(0 0 0 / 0.4), 0 16px 40px -16px oklch(0 0 0 / 0.7);
+  --glass-bg: linear-gradient(160deg, oklch(1 0 0 / 0.1), oklch(1 0 0 / 0.02));
+  --shadow-metric: var(--glass-edge);
+}
+html[data-theme="glass-dark"] body { background: radial-gradient(50rem 30rem at 80% 0%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 70%), radial-gradient(45rem 30rem at 0% 100%, oklch(0.45 0.05 250 / 0.35), transparent 70%), linear-gradient(160deg, oklch(0.16 0.01 260), oklch(0.09 0.005 260)); background-attachment: fixed; }
+
+/* Superfícies de vidro (ambos os modos) */
+html[data-theme^="glass"] :is(.bg-card, .bg-sidebar, .bg-popover, .panel, .kpi, .metric-card, [data-slot="card"], [role="dialog"]) {
+  background-image: var(--glass-bg);
+  backdrop-filter: blur(22px) saturate(160%);
+  box-shadow: var(--glass-edge);
+}
+html[data-theme^="glass"] :is(.panel, .kpi, [data-slot="card"]) { border-radius: 1.4rem; }
+html[data-theme^="glass"] :is(button, input, select, textarea, [role="combobox"]) { backdrop-filter: blur(12px); }
+html[data-theme^="glass"] .rounded-md { border-radius: 0.9rem; }
+html[data-theme^="glass"] .kpi { background: var(--glass-bg), linear-gradient(135deg, color-mix(in oklab, var(--tone) 14%, transparent), transparent 70%); }
+html[data-theme^="glass"] .ops-header, html[data-theme^="glass"] .public-cover { background-image: none; }
