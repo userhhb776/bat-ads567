@@ -62,14 +62,53 @@ function parse(raw: string) {
   return { text: text.replace(/^\[HUMANO\]\s*/, ""), handoff: text.startsWith("[HUMANO]"), category: cat, error: "" };
 }
 
-/** Asks the user's Render WhatsApp server for its session status (GET /status). */
-export const whatsappStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
-  const url = process.env["RENDER_WHATSAPP_URL"]; const key = process.env["RENDER_WHATSAPP_KEY"];
-  if (!url) return { configured: false, ok: false, ms: 0, body: "Servidor não cadastrado." };
+export type WaInstance = { name: string; status: string; profile: string; number: string; pic: string };
+
+/** Lists the WhatsApp numbers on the user's Evolution API server. */
+export const whatsappList = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+  if (!process.env["RENDER_WHATSAPP_URL"]) return { configured: false, ok: false, ms: 0, instances: [] as WaInstance[], error: "Servidor não cadastrado." };
+  const { evo } = await import("@/lib/channels.server");
   const t = Date.now();
   try {
-    const r = await fetch(url.replace(/\/$/, "") + "/status", { headers: key ? { Authorization: `Bearer ${key}` } : {}, signal: AbortSignal.timeout(15000) });
-    const body = (await r.text()).slice(0, 1500);
-    return { configured: true, ok: r.ok, ms: Date.now() - t, status: r.status, body };
-  } catch { return { configured: true, ok: false, ms: Date.now() - t, body: "Servidor não respondeu (pode estar dormindo no Render; tente de novo em 1 minuto)." }; }
+    const r = await evo("/instance/fetchInstances");
+    if (!r.ok) return { configured: true, ok: false, ms: Date.now() - t, instances: [] as WaInstance[], error: `Servidor respondeu ${r.status}.` };
+    const list = (await r.json()) as any[];
+    const instances: WaInstance[] = list.map((i) => ({ name: String(i.name), status: String(i.connectionStatus ?? "close"), profile: String(i.profileName ?? ""), number: String(i.ownerJid ?? "").replace(/@.*$/, ""), pic: String(i.profilePicUrl ?? "") }));
+    return { configured: true, ok: true, ms: Date.now() - t, instances, error: "" };
+  } catch { return { configured: true, ok: false, ms: Date.now() - t, instances: [] as WaInstance[], error: "Servidor não respondeu (pode estar acordando no Render; tente de novo em 1 minuto)." }; }
 });
+
+/** Creates a number (or reconnects one) and returns the QR Code; also points incoming messages to the support inbox. */
+export const whatsappConnect = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ name: z.string().regex(/^[a-zA-Z0-9_-]{2,40}$/), isNew: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { evo } = await import("@/lib/channels.server");
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const { data: st } = await context.supabase.from("user_settings").select("webhook_token").eq("user_id", context.userId).maybeSingle();
+    const origin = new URL(getRequest().url).origin;
+    const hook = st?.webhook_token ? `${origin}/api/public/inbound/whatsapp?token=${st.webhook_token}` : "";
+    let r: Response;
+    if (data.isNew) {
+      r = await evo("/instance/create", { method: "POST", body: JSON.stringify({ instanceName: data.name, qrcode: true, integration: "WHATSAPP-BAILEYS", ...(hook ? { webhook: { url: hook, byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] } } : {}) }) });
+    } else {
+      r = await evo(`/instance/connect/${encodeURIComponent(data.name)}`);
+      if (hook) await evo(`/webhook/set/${encodeURIComponent(data.name)}`, { method: "POST", body: JSON.stringify({ webhook: { enabled: true, url: hook, byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] } }) }).catch(() => null);
+    }
+    const j: any = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(`Servidor respondeu ${r.status}: ${JSON.stringify(j?.response?.message ?? j?.message ?? j).slice(0, 200)}`);
+    const qr = j?.qrcode?.base64 ?? j?.base64 ?? "";
+    const code = j?.qrcode?.pairingCode ?? j?.pairingCode ?? "";
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "user", action: data.isNew ? "whatsapp.create" : "whatsapp.connect", target: data.name, detail: {} });
+    return { qr: String(qr), pairingCode: String(code ?? ""), webhook: !!hook };
+  });
+
+/** Disconnects (logout) or removes a number from the server. */
+export const whatsappRemove = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ name: z.string().regex(/^[a-zA-Z0-9_-]{2,60}$/), mode: z.enum(["logout", "delete"]) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { evo } = await import("@/lib/channels.server");
+    const r = await evo(`/instance/${data.mode}/${encodeURIComponent(data.name)}`, { method: "DELETE" });
+    if (!r.ok) throw new Error(`Servidor respondeu ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "user", action: `whatsapp.${data.mode}`, target: data.name, detail: {} });
+    return { ok: true };
+  });
