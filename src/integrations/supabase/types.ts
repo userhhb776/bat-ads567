@@ -710,6 +710,39 @@ export type Database = {
         }
         Relationships: []
       }
+      support_bots: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          product_id: string
+          secret: string
+          token: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          product_id?: string
+          secret: string
+          token: string
+          user_id: string
+          username?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          product_id?: string
+          secret?: string
+          token?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       track_events: {
         Row: {
           created_at: string
