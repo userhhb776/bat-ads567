@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { generatePage, publishPage } from "@/lib/pages.functions";
 import { finalizeHtml, loadPages, savePages, type SalesPage } from "@/lib/pages";
+import { blocksToHtml } from "@/lib/page-blocks";
+import { BlockEditor, DEFAULT_STYLE } from "@/components/block-editor";
 
 export const Route = createFileRoute("/paginas")({
   head: () => ({
@@ -28,7 +30,7 @@ function PagesRoute() {
   const [sel, setSel] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
-  const [tab, setTab] = useState<"preview" | "code">("preview");
+  const [tab, setTab] = useState<"preview" | "code" | "blocks">("preview");
   const gen = useServerFn(generatePage);
   const pub = useServerFn(publishPage);
 
@@ -96,7 +98,9 @@ function PagesRoute() {
               <Button onClick={run} disabled={busy} className="sm:self-stretch"><Sparkles className="h-4 w-4" /> {busy ? "Aguarde…" : html ? "Editar com IA" : "Gerar com IA"}</Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setTab(tab === "preview" ? "code" : "preview")}>{tab === "preview" ? "Ver código" : "Ver prévia"}</Button>
+              <Button variant={tab === "preview" ? "default" : "outline"} size="sm" onClick={() => setTab("preview")}>Prévia</Button>
+              <Button variant={tab === "blocks" ? "default" : "outline"} size="sm" onClick={() => setTab("blocks")}>Editor visual</Button>
+              <Button variant={tab === "code" ? "default" : "outline"} size="sm" onClick={() => setTab("code")}>Código</Button>
               <Button variant="outline" size="sm" disabled={page.versions.length < 2} onClick={() => patch({ versions: page.versions.slice(1) })}><Undo2 className="h-4 w-4" /> Desfazer</Button>
               <Button variant="outline" size="sm" onClick={() => { const c = { ...page, id: crypto.randomUUID(), name: page.name + " (cópia)", publishedUrl: undefined }; update([c, ...pages]); setSel(c.id); }}><Copy className="h-4 w-4" /> Duplicar</Button>
               <Button variant="outline" size="sm" disabled={!html} onClick={download}><Download className="h-4 w-4" /> Baixar</Button>
@@ -104,7 +108,13 @@ function PagesRoute() {
               <Button variant="ghost" size="sm" onClick={() => { const n = pages.filter((p) => p.id !== page.id); update(n); setSel(n[0]?.id ?? null); }}><Trash2 className="h-4 w-4" /></Button>
             </div>
             {page.publishedUrl && <a href={page.publishedUrl} target="_blank" rel="noreferrer" className="block text-sm text-primary underline">{page.publishedUrl}</a>}
-            {tab === "preview" ? (
+            {tab === "blocks" ? (
+              <div className="grid gap-3 xl:grid-cols-2">
+                <BlockEditor blocks={page.blocks ?? []} style={page.style ?? DEFAULT_STYLE} onChange={(b, s) => patch({ blocks: b, style: s })}
+                  onApply={() => { addVersion(blocksToHtml(page.blocks ?? [], page.style ?? DEFAULT_STYLE, page.name), "Editor visual"); toast.success("Versão salva"); }} />
+                <iframe title="Prévia dos blocos" srcDoc={finalizeHtml(page, blocksToHtml(page.blocks ?? [], page.style ?? DEFAULT_STYLE, page.name))} sandbox="allow-scripts" className="h-[70vh] w-full rounded-lg border border-border" />
+              </div>
+            ) : tab === "preview" ? (
               html ? <iframe title="Prévia" srcDoc={final} sandbox="allow-scripts" className="h-[70vh] w-full rounded-lg border border-border bg-background" />
                 : <div className="grid h-60 place-items-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">Descreva a página e toque em “Gerar com IA”.</div>
             ) : (

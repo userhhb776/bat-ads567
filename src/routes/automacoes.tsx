@@ -70,8 +70,15 @@ function AutomationsRoute() {
               <Field label="Gatilho"><NativeSelect value={a.trigger} onChange={(e) => patch({ trigger: e.target.value as Trigger })}>{Object.entries(TRIGGERS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</NativeSelect></Field>
               <Field label="Produto"><NativeSelect value={a.productId} onChange={(e) => patch({ productId: e.target.value })}><option value="">Todos</option>{products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</NativeSelect></Field>
             </Card>
+            <div className="mx-auto w-fit rounded-full border-2 border-primary bg-primary/15 px-4 py-2 text-sm font-medium">⚡ Quando: {TRIGGERS[a.trigger]}</div>
             {a.steps.map((s, i) => (
-              <Card key={i} className="space-y-2">
+              <div key={i}>
+              <div className="flex flex-col items-center">
+                <span className="h-4 w-0.5 bg-primary/50" />
+                <button title="Inserir etapa aqui" className="grid h-6 w-6 place-items-center rounded-full border border-primary/60 text-xs text-primary hover:bg-primary/20" onClick={() => patch({ steps: [...a.steps.slice(0, i), { type: "esperar", minutes: 30 }, ...a.steps.slice(i)] })}>+</button>
+                <span className="h-4 w-0.5 bg-primary/50" />
+              </div>
+              <Card className={`space-y-2 border-l-4 ${s.type === "esperar" ? "border-l-muted-foreground" : s.type === "condicao" ? "border-l-chart-4" : s.type === "tag" || s.type === "webhook" ? "border-l-chart-2" : "border-l-primary"}`}>
                 <div className="flex items-center gap-2">
                   <span className="font-display text-lg text-primary">{i + 1}</span>
                   <NativeSelect value={s.type} onChange={(e) => {
@@ -98,8 +105,12 @@ function AutomationsRoute() {
                 {(s.type === "whatsapp" || s.type === "email" || s.type === "telegram") && <Textarea value={s.message} onChange={(e) => setStep(i, { ...s, message: e.target.value })} placeholder="Use {nome} {valor} {produto} {checkout} {entrega}" />}
                 {s.type === "webhook" && <Input value={s.url} onChange={(e) => setStep(i, { ...s, url: e.target.value })} />}
                 {s.type === "tag" && <Input value={s.tag} onChange={(e) => setStep(i, { ...s, tag: e.target.value })} placeholder="nome da tag" />}
+                {s.type === "condicao" && <p className="text-xs text-muted-foreground">✔ Verdadeiro → segue para a próxima etapa · ✖ Falso → {s.else === "parar" ? "encerra o fluxo" : "pula esta verificação e segue"}</p>}
               </Card>
+              </div>
             ))}
+            <div className="flex justify-center"><span className="h-4 w-0.5 bg-primary/50" /></div>
+            <div className="mx-auto w-fit rounded-full border border-border px-4 py-1 text-xs text-muted-foreground">Fim do fluxo</div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => patch({ steps: [...a.steps, { type: "whatsapp", message: "" }] })}><Plus className="h-4 w-4" /> Etapa</Button>
               <Button variant={a.active ? "outline" : "default"} onClick={() => patch({ active: !a.active })}>{a.active ? <><Pause className="h-4 w-4" /> Pausar</> : <><Play className="h-4 w-4" /> Ativar</>}</Button>
