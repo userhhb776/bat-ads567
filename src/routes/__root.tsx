@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
@@ -96,7 +95,7 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        <script dangerouslySetInnerHTML={{ __html: "try{var t=localStorage.getItem('batgotham.theme');if(t)document.documentElement.dataset.theme=t}catch(e){}" }} />
         <HeadContent />
       </head>
       <body className="font-sans">
