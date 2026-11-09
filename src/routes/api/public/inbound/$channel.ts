@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/public/inbound/$channel")({
         const { error } = await supabaseAdmin.from("messages").insert({ id, user_id: uid, position: pos, data: { id, contactId, channel: channel.data, from: "cliente", text: msg.text.slice(0, 4000), at: Date.now() } });
         if (error) { console.error("inbound store", error); return new Response("Store failed", { status: 500 }); }
         const { data: conv } = await supabaseAdmin.from("conversations").select("data").eq("user_id", uid).eq("id", contactId).maybeSingle();
-        const prev = (conv?.data ?? {}) as Record<string, unknown>;
+        const prev = (conv?.data ?? {}) as Record<string, string>;
         await supabaseAdmin.from("conversations").upsert({ id: contactId, user_id: uid, position: -pos, data: { contactId, productId: prev["productId"] ?? "", mode: prev["mode"] ?? "ia", status: "aberta", category: prev["category"] ?? "", updatedAt: Date.now() } }, { onConflict: "user_id,id" });
         await supabaseAdmin.from("notifications").insert({ user_id: uid, kind: "atendimento", title: `Mensagem de ${msg.name || msg.from}`, body: msg.text.slice(0, 200), link: "/suporte" });
         return Response.json({ ok: true });
