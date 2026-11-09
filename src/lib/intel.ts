@@ -5,6 +5,7 @@ export type IntelRule = {
   name: string;
   profile: Profile;
   campaignId: string; // "*" = todas
+  accountId?: string;
   maxSpendNoSale: number; // pausa se gastar >= isso sem venda (0 = desligado)
   maxCpa: number; // pausa se CPA acima (0 = desligado)
   minRoasToScale: number; // escala se ROAS >= (0 = desligado)
@@ -15,11 +16,12 @@ export type IntelRule = {
   autonomy: Autonomy;
   active: boolean;
 };
-export type CampaignStats = { id: string; name: string; spend: number; purchases: number; revenue: number; frequency: number; dailyBudget: number; status: string };
+export type CampaignStats = { id: string; name: string; spend: number; purchases: number; revenue: number; frequency: number; dailyBudget: number; status: string; accountId?: string };
 export type Decision = { kind: "pausar" | "escalar" | "alerta"; reason: string; newBudget?: number };
 
 export function evaluate(rule: IntelRule, c: CampaignStats, hour: number): Decision | null {
   if (!rule.active || c.status !== "ACTIVE") return null;
+  if (rule.accountId && rule.accountId !== c.accountId) return null;
   if (rule.campaignId !== "*" && rule.campaignId !== c.id) return null;
   const [from, to] = rule.hours;
   if (!(from <= to ? hour >= from && hour < to : hour >= from || hour < to)) return null;

@@ -5,6 +5,11 @@ const rule: IntelRule = { id: "r", name: "Teste", profile: "teste", campaignId: 
 const c: CampaignStats = { id: "1", name: "X", spend: 31, purchases: 0, revenue: 0, frequency: 1, dailyBudget: 3000, status: "ACTIVE" };
 
 describe("campaign watch", () => {
+  it("does not apply an account-specific agent to another account", () => expect(evaluate({ ...rule, accountId: "act_1" }, { ...c, accountId: "act_2" }, 12)).toBeNull());
+  it("accepts a custom threshold rather than imposing the sample strategy", () => {
+    expect(evaluate({ ...rule, maxSpendNoSale: 75 }, { ...c, spend: 74 }, 12)).toBeNull();
+    expect(evaluate({ ...rule, maxSpendNoSale: 75 }, { ...c, spend: 75 }, 12)?.kind).toBe("pausar");
+  });
   it("pauses after spending more than R$30 without a sale", () => expect(evaluate(rule, c, 12)?.kind).toBe("pausar"));
   it("keeps running under R$30", () => expect(evaluate(rule, { ...c, spend: 29 }, 12)).toBeNull());
   it("keeps running when it sold", () => expect(evaluate(rule, { ...c, purchases: 1, revenue: 97 }, 12)).toBeNull());

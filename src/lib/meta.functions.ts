@@ -61,13 +61,15 @@ export const getStatus = createServerFn({ method: "GET" }).middleware([requireSu
 
 export const getAdAccounts = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const r = await graph("me/adaccounts", {
-    params: { fields: "id,name,account_status,currency,timezone_name,business{id,name}", limit: "200" },
+    params: { fields: "id,name,account_status,currency,timezone_id,timezone_name,business{id,name}", limit: "200" },
   });
   return (r.data as any[]).map((a) => ({
     id: a.id as string,
     name: String(a.name).trim(),
     account_status: a.account_status as number,
     currency: a.currency as string,
+    timezone_id: Number(a.timezone_id),
+    timezone_name: String(a.timezone_name ?? ""),
     business: (a.business?.name as string) ?? "Conta pessoal",
   }));
 });
@@ -75,14 +77,16 @@ export const getAdAccounts = createServerFn({ method: "GET" }).middleware([requi
 export const getAssets = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ accountId: z.string() }).parse(d))
   .handler(async ({ data }) => {
-    const empty = { data: [] };
+    const failures: string[] = [];
+    const failed = (label: string) => (error: unknown) => { failures.push(`${label}: ${error instanceof Error ? error.message : "consulta falhou"}`); return { data: [] }; };
     const [pages, pixels, ig, audiences] = await Promise.all([
-      graph("me/accounts", { params: { fields: "id,name", limit: "100" } }).catch(() => empty),
-      graph(`${data.accountId}/adspixels`, { params: { fields: "id,name" } }).catch(() => empty),
-      graph(`${data.accountId}/instagram_accounts`, { params: { fields: "id,username" } }).catch(() => empty),
-      graph(`${data.accountId}/customaudiences`, { params: { fields: "id,name,subtype", limit: "200" } }).catch(() => empty),
+      graph("me/accounts", { params: { fields: "id,name", limit: "100" } }).catch(failed("Páginas")),
+      graph(`${data.accountId}/adspixels`, { params: { fields: "id,name" } }).catch(failed("Pixels")),
+      graph(`${data.accountId}/instagram_accounts`, { params: { fields: "id,username" } }).catch(failed("Instagram")),
+      graph(`${data.accountId}/customaudiences`, { params: { fields: "id,name,subtype", limit: "200" } }).catch(failed("Públicos")),
     ]);
     return {
+      errors: failures,
       pages: pages.data as { id: string; name: string }[],
       pixels: pixels.data as { id: string; name: string }[],
       instagram: (ig.data as any[]).map((i) => ({ id: i.id as string, name: (i.username as string) ?? i.id })),
@@ -123,6 +127,7 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
         accountId: z.string(),
         level: levelSchema,
         datePreset: z.string(),
+        timeRange: z.object({ since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).optional(),
         parentIds: z.array(z.string()).optional(),
       })
       .parse(d),
@@ -136,7 +141,7 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
           ? "campaign_id,campaign{name},daily_budget,lifetime_budget,optimization_goal"
           : "campaign_id,adset_id,adset{name},creative{thumbnail_url}";
     const params: Record<string, unknown> = {
-      fields: `${base},${extra},insights.date_preset(${data.datePreset}){${INSIGHT_FIELDS}}`,
+      fields: `${base},${extra},insights.${data.timeRange ? `time_range(${JSON.stringify(data.timeRange)})` : `date_preset(${data.datePreset})`}{${INSIGHT_FIELDS}}`,
       limit: "200",
     };
     if (data.parentIds?.length) {
@@ -150,18 +155,20 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
 
 export const getInsights = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({ accountIds: z.array(z.string()).min(1), datePreset: z.string() }).parse(d),
+    z.object({ accountIds: z.array(z.string()).min(1), datePreset: z.string(), campaignIds: z.array(z.string()).optional(), timeRange: z.object({ since: z.string(), until: z.string() }).optional() }).parse(d),
   )
   .handler(async ({ data }) => {
     const results = await Promise.all(
       data.accountIds.map(async (acc) => {
+        const range = data.timeRange ? { time_range: data.timeRange } : { date_preset: data.datePreset };
+        const filters = data.campaignIds?.length ? { filtering: [{ field: "campaign.id", operator: "IN", value: data.campaignIds }] } : {};
         const [daily, byCampaign] = await Promise.all([
           graph(`${acc}/insights`, {
-            params: { fields: INSIGHT_FIELDS, date_preset: data.datePreset, time_increment: "1", limit: "100" },
-          }).catch(() => ({ data: [] })),
+            params: { fields: INSIGHT_FIELDS, ...range, ...filters, time_increment: "1", limit: "100" },
+          }),
           graph(`${acc}/insights`, {
-            params: { fields: `campaign_id,campaign_name,${INSIGHT_FIELDS}`, date_preset: data.datePreset, level: "campaign", limit: "200" },
-          }).catch(() => ({ data: [] })),
+            params: { fields: `campaign_id,campaign_name,${INSIGHT_FIELDS}`, ...range, ...filters, level: "campaign", limit: "200" },
+          }),
         ]);
         return { daily: daily.data as any[], campaigns: byCampaign.data as any[] };
       }),
@@ -282,6 +289,28 @@ export const createPixel = createServerFn({ method: "POST" }).middleware([requir
   .handler(async ({ data }) => {
     const r = await graph(`${data.accountId}/adspixels`, { method: "POST", params: { name: data.name } });
     return { id: String(r.id) };
+  });
+
+export const getBusinesses = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+  const r = await graph("me/businesses", { params: { fields: "id,name", limit: 50 } });
+  return (r.data ?? []) as { id: string; name: string }[];
+});
+
+export const getAccountSettings = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ accountId: z.string().startsWith("act_") }).parse(d))
+  .handler(async ({ data }) => {
+    const r = await graph(data.accountId, { params: { fields: "id,name,currency,timezone_id,timezone_name,account_status,user_tasks,business{id,name}" } });
+    return r as { id: string; name: string; currency: string; timezone_id: number; timezone_name: string; account_status: number; user_tasks?: string[]; business?: { id: string; name: string } };
+  });
+
+/** Official Business /adaccount create edge. Eligibility is decided by the provider. */
+export const createAdAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/), name: z.string().trim().min(1).max(100), currency: z.enum(["BRL", "USD"]), timezoneId: z.number().int().positive(), confirmed: z.literal(true) }).parse(d))
+  .handler(async ({ data }) => {
+    const result = await graph(`${data.businessId}/adaccount`, { method: "POST", params: { name: data.name, currency: data.currency, timezone_id: data.timezoneId, end_advertiser: data.businessId } });
+    const id = String(result.id ?? result.account_id ?? "");
+    if (!id) throw new Error("A criação não retornou um identificador. Atualize a lista antes de tentar novamente.");
+    return { id: id.startsWith("act_") ? id : `act_${id}` };
   });
 
 export type PublishInput = z.infer<typeof createSchema>;

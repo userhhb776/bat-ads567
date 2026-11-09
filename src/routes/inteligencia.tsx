@@ -93,7 +93,7 @@ function IntelRoute() {
     if (!account) return;
     const raw: any[] = await fetchObjects({ data: { accountId: account, level: "campaigns", datePreset: "today" } }).catch(() => []);
     const stats: CampaignStats[] = raw.map((c) => ({
-      id: c.id, name: c.name, status: c.effective_status ?? c.status, dailyBudget: Number(c.daily_budget ?? 0),
+      id: c.id, accountId: account, name: c.name, status: c.effective_status ?? c.status, dailyBudget: Number(c.daily_budget ?? 0),
       spend: Number(c.insights?.spend ?? 0), frequency: Number(c.insights?.frequency ?? 0),
       purchases: actionValue(c.insights?.actions, PURCHASE), revenue: actionValue(c.insights?.action_values, PURCHASE),
     }));
@@ -142,7 +142,7 @@ function IntelRoute() {
       </Card>
       <CloudWatch />
 
-      <div className="flex items-center justify-between"><h2 className="font-display text-2xl">Regras</h2><Button size="sm" onClick={() => setRules([blank(), ...rules])}><Plus className="h-4 w-4" /> Regra</Button></div>
+      <div className="flex items-center justify-between"><h2 className="font-display text-2xl">Regras</h2><Button size="sm" onClick={() => setRules([{ ...blank(), accountId: account, name: "Nova estratégia", maxSpendNoSale: 0, autonomy: "aprovar", active: false }, ...rules])}><Plus className="h-4 w-4" /> Regra manual</Button></div>
       {rules.length === 0 && <Empty>Ex.: “Se a campanha X gastar R$ 30 e não vender, pausar.” Toque em “Regra”.</Empty>}
       {rules.map((r) => (
         <Card key={r.id} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

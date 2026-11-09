@@ -36,3 +36,8 @@ use the editor.
 - Reused funnel catalog, graph model and simulation live in `src/lib/funnel`; render the editor through a lazy client boundary to isolate React Flow from SSR. Graph validation prevents cycles and traffic duplication.
 - The central dashboard uses one selected ad account at a time and labels ad-attributed purchases separately from approved gateway payments, avoiding mixed-currency totals and false sales claims.
 - Reused attribution parsing lives in `src/lib/tracking`; keep click identifiers and provider IDs intact to support later order/event ingestion.
+- Crowley full-page, floating chat and conversational ADS creation reuse one persisted chat and validated action parser; tools require explicit approval and campaigns must match the loaded account.
+- ADS rules carry an optional account scope, enforced in both client and scheduled evaluation, to prevent applying a strategy to a different selected account.
+- Public presentation and login render outside operational navigation; session controls live in Settings to keep the mobile header compact.
+- Account creation uses the official Business `/adaccount` edge through the existing connector after review; never store a second raw token or infer unlimited access from administrator status.
+- Dashboard filters and currency-safe payment aggregation live in `src/lib/dashboard.ts`; attributed ad revenue is never combined with gateway revenue or labeled net profit without costs.

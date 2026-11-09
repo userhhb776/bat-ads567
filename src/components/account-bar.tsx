@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { currencyStore } from "@/lib/currency";
+import { Link } from "@tanstack/react-router";
 
 export function useAdAccounts() {
   const status = useQuery({ queryKey: ["meta-status"], queryFn: () => getStatus(), staleTime: 5 * 60_000 });
@@ -17,7 +18,8 @@ export function AccountBar({ account, setAccount, children }: { account: string;
   const { status, accounts } = useAdAccounts();
 
   useEffect(() => {
-    if (accounts.data?.length && !accounts.data.some((a) => a.id === account)) setAccount(accounts.data[0]!.id);
+    const first = accounts.data?.[0];
+    if (first && !accounts.data?.some((a) => a.id === account)) setAccount(first.id);
   }, [account, accounts.data, setAccount]);
   useEffect(() => {
     const cur = accounts.data?.find((a) => a.id === account)?.currency;
@@ -28,7 +30,7 @@ export function AccountBar({ account, setAccount, children }: { account: string;
   if (!status.data?.connected)
     return (
       <div className="rounded-lg border border-destructive/50 bg-card p-4 text-sm">
-        <div className="font-semibold text-destructive">Conta da Meta não conectada</div>
+        <div className="font-semibold text-destructive">Conta de anúncios indisponível</div>
         <div className="mt-1 break-words text-muted-foreground">{status.data?.error}</div>
       </div>
     );
@@ -61,11 +63,9 @@ export function AccountBar({ account, setAccount, children }: { account: string;
           <Button variant="secondary" size="sm" className="shrink-0"><Plus className="h-4 w-4 sm:mr-1" /><span className="hidden sm:inline">Conectar mais</span></Button>
         </PopoverTrigger>
         <PopoverContent className="w-72 text-sm">
-          <div className="font-semibold">Adicionar contas ou BMs</div>
-          <p className="mt-2 text-muted-foreground">
-            Todas as contas que o seu perfil do Facebook acessa aparecem aqui automaticamente, de qualquer BM. Para incluir outra BM ou perfil,
-            reconecte a Meta nos conectores do Lovable e marque as novas contas e páginas.
-          </p>
+          <div className="font-semibold">Contas e portfólios</div>
+          <p className="mt-2 text-muted-foreground">A lista mostra as contas compartilhadas com a conexão atual. Para autorizar outra conta ou BM, abra os conectores do Lovable, reconecte o Facebook e revise os ativos compartilhados.</p>
+          <Button asChild size="sm" variant="outline" className="mt-3 w-full"><Link to="/ativos">Contas, páginas e pixels</Link></Button>
           <Button size="sm" className="mt-3 w-full" onClick={() => { accounts.refetch(); }}>Atualizar lista de contas</Button>
         </PopoverContent>
       </Popover>
