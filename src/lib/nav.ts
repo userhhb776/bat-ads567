@@ -1,4 +1,4 @@
-import { Bell, Bot, BarChart3, Building2, CalendarClock, Eye, FileBarChart, FileText, Gauge, Image, LayoutGrid, Link2, MessagesSquare, Package, Plug, PlusSquare, Radar, Settings, ShieldCheck, Users, Workflow, Zap, Activity } from "lucide-react";
+import { Bell, Bot, BarChart3, Building2, CalendarClock, Eye, FileBarChart, FileText, Gauge, Image, LayoutGrid, Link2, MessagesSquare, Package, Plug, PlusSquare, Radar, Settings, ShieldCheck, Users, Workflow, Zap, Activity, BookOpen } from "lucide-react";
 
 /** Single menu definition shared by the sidebar and the mobile "Mais" page. */
 export const NAV_GROUPS = [
@@ -43,6 +43,7 @@ export const NAV_GROUPS = [
   ] },
   { title: "Sistema", items: [
     { to: "/sistema", label: "Atividades e saúde", icon: Activity },
+    { to: "/guia", label: "Guia do usuário", icon: BookOpen },
     { to: "/configuracoes", label: "Configurações", icon: Settings },
   ] },
 ] as const;
