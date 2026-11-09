@@ -7,6 +7,8 @@ export type SalesPage = {
   pixelId: string;
   versions: PageVersion[];
   publishedUrl?: string | undefined;
+  blocks?: import("./page-blocks").Block[] | undefined;
+  style?: import("./page-blocks").Style | undefined;
 };
 
 /** Injects checkout link, Meta pixel and UTM forwarding so every published page tracks the same way. */
