@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, Empty, Field, NativeSelect, PageHead, Stat, head } from "@/components/ui-kit";
 import { useStore, uid } from "@/lib/store";
-import { TRIGGERS, alreadyRan, checkCondition, render, type Automation, type RunLog, type Step, type Trigger } from "@/lib/automation";
+import { TRIGGERS, runEngine, type Automation, type RunLog, type Step, type Trigger } from "@/lib/automation";
 import type { Order, Product } from "@/lib/biz";
 import { sendMessage } from "@/lib/channels.functions";
 
@@ -17,10 +17,6 @@ export const Route = createFileRoute("/automacoes")({
   component: AutomationsRoute,
 });
 
-const TRIGGER_STATUS: Partial<Record<Trigger, Order["status"][]>> = {
-  pix_gerado: ["pix_gerado"], pix_nao_pago: ["pix_gerado"], carrinho_abandonado: ["pendente"],
-  pagamento_aprovado: ["aprovado"], pagamento_recusado: ["recusado"], reembolso: ["reembolsado", "chargeback"],
-};
 const TEMPLATES: { name: string; trigger: Trigger; steps: Step[] }[] = [
   { name: "Recuperar Pix não pago", trigger: "pix_nao_pago", steps: [{ type: "esperar", minutes: 15 }, { type: "whatsapp", message: "Oi {nome}! Seu Pix de R$ {valor} do {produto} ainda está aguardando. Posso ajudar a finalizar?" }, { type: "esperar", minutes: 60 }, { type: "email", message: "Seu pedido está reservado\nOlá {nome}, finalize aqui: {checkout}" }] },
   { name: "Boas-vindas pós-compra", trigger: "pagamento_aprovado", steps: [{ type: "whatsapp", message: "Parabéns {nome}! Seu acesso ao {produto}: {entrega}" }, { type: "tag", tag: "cliente" }] },
@@ -42,32 +38,8 @@ function AutomationsRoute() {
 
   async function runAll(only?: { automationId: string; key: string }) {
     setRunning(true);
-    const out: RunLog[] = [];
-    for (const au of autos.filter((x) => x.active && (!only || x.id === only.automationId))) {
-      const statuses = TRIGGER_STATUS[au.trigger];
-      if (!statuses) continue;
-      for (const o of orders.filter((o) => statuses.includes(o.status) && (!au.productId || o.productId === au.productId))) {
-        const key = o.id;
-        if (only && only.key !== key) continue;
-        if (alreadyRan([...logs, ...out], au.id, key)) continue;
-        const prod = products.find((p) => p.id === o.productId);
-        const data = { nome: o.customer.split(" ")[0] ?? "", valor: o.amount.toFixed(2), produto: prod?.name ?? "", checkout: prod?.checkoutUrl ?? "", entrega: prod?.deliveryUrl ?? "", status: o.status, metodo: o.method, utm_campaign: o.utm_campaign };
-        let elapsed = 0; let status: RunLog["status"] = "ok"; const detail: string[] = [];
-        for (const s of au.steps) {
-          if (s.type === "esperar") { elapsed += s.minutes; if (o.at + elapsed * 60000 > Date.now()) { status = "agendado"; detail.push(`aguardando ${s.minutes} min`); break; } continue; }
-          if (s.type === "condicao") { if (!checkCondition(s, data)) { if (s.else === "parar") { status = "parado"; detail.push("condição falsa"); break; } } continue; }
-          if (s.type === "tag") { setContacts((cs: any[]) => cs.map((c) => (c.phone === o.phone || c.email === o.email ? { ...c, tags: [...new Set([...(c.tags ?? []), s.tag])] } : c))); detail.push("tag " + s.tag); continue; }
-          const to = s.type === "whatsapp" ? o.phone : s.type === "email" ? o.email : s.type === "webhook" ? s.url : o.phone;
-          const text = s.type === "webhook" ? JSON.stringify({ event: au.trigger, order: o }) : render(s.message, data);
-          const r = await send({ data: { channel: s.type, to: to || "-", text } }).catch(() => ({ ok: false, error: "falha" }));
-          if (!r.ok) { status = "falhou"; detail.push(`${s.type}: ${r.error}`); break; }
-          detail.push(`${s.type} enviado`);
-        }
-        if (status === "agendado") continue; // reavaliado na próxima execução
-        const prev = logs.find((l) => l.automationId === au.id && l.key === key);
-        out.push({ id: uid(), automationId: au.id, key, at: Date.now(), status, detail: detail.join(" · "), attempts: (prev?.attempts ?? 0) + 1 });
-      }
-    }
+    const { out, tags } = await runEngine({ autos, orders, products, logs, only, newId: uid, send: async (channel, to, text) => send({ data: { channel, to, text } }) });
+    if (tags.length) setContacts((cs: any[]) => cs.map((c) => { const add = tags.filter((t) => (t.phone && c.phone === t.phone) || (t.email && c.email === t.email)).map((t) => t.tag); return add.length ? { ...c, tags: [...new Set([...(c.tags ?? []), ...add])] } : c; }));
     setLogs([...out, ...logs.filter((l) => !out.some((o) => o.automationId === l.automationId && o.key === l.key))].slice(0, 500));
     setRunning(false);
     toast.success(`${out.length} execução(ões) processadas`);
@@ -77,7 +49,7 @@ function AutomationsRoute() {
   const fail = logs.filter((l) => l.status === "falhou").length;
   return (
     <div className="space-y-4 p-4 pb-24 md:p-6">
-      <PageHead title="Automações" sub="Gatilhos, condições, esperas e mensagens. Roda quando você toca em Executar (e no vigia 24h quando ativado).">
+      <PageHead title="Automações" sub="Gatilhos, condições, esperas e mensagens. Rodam sozinhas 24h no servidor, mesmo com o app fechado. Executar agora força uma passada.">
         <Button onClick={() => runAll()} disabled={running}><Play className="h-4 w-4" /> {running ? "Executando…" : "Executar agora"}</Button>
       </PageHead>
       <div className="grid grid-cols-3 gap-3"><Stat label="Automações ativas" value={autos.filter((x) => x.active).length} /><Stat label="Sucesso" value={ok} /><Stat label="Falhas" value={fail} /></div>
