@@ -38,6 +38,7 @@ import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
 import { Route as UtmLinksRouteImport } from './routes/utm.links'
 import { Route as ApiPublicCronWatchRouteImport } from './routes/api/public/cron/watch'
+import { Route as ApiPublicInboundChannelRouteImport } from './routes/api/public/inbound/$channel'
 import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/public/webhooks.$platform'
 
 const IndexRoute = IndexRouteImport.update({
@@ -185,6 +186,11 @@ const ApiPublicCronWatchRoute = ApiPublicCronWatchRouteImport.update({
   path: '/api/public/cron/watch',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicInboundChannelRoute = ApiPublicInboundChannelRouteImport.update({
+  id: '/api/public/inbound/$channel',
+  path: '/api/public/inbound/$channel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksPlatformRoute =
   ApiPublicWebhooksPlatformRouteImport.update({
     id: '/api/public/webhooks/$platform',
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
+  '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesByTo {
@@ -252,6 +259,7 @@ export interface FileRoutesByTo {
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
+  '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesById {
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
+  '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRouteTypes {
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/met/'
     | '/utm/'
     | '/api/public/cron/watch'
+    | '/api/public/inbound/$channel'
     | '/api/public/webhooks/$platform'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -349,6 +359,7 @@ export interface FileRouteTypes {
     | '/met'
     | '/utm'
     | '/api/public/cron/watch'
+    | '/api/public/inbound/$channel'
     | '/api/public/webhooks/$platform'
   id:
     | '__root__'
@@ -381,6 +392,7 @@ export interface FileRouteTypes {
     | '/met/'
     | '/utm/'
     | '/api/public/cron/watch'
+    | '/api/public/inbound/$channel'
     | '/api/public/webhooks/$platform'
   fileRoutesById: FileRoutesById
 }
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
+  ApiPublicInboundChannelRoute: typeof ApiPublicInboundChannelRoute
   ApiPublicWebhooksPlatformRoute: typeof ApiPublicWebhooksPlatformRoute
 }
 
@@ -617,6 +630,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronWatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/inbound/$channel': {
+      id: '/api/public/inbound/$channel'
+      path: '/api/public/inbound/$channel'
+      fullPath: '/api/public/inbound/$channel'
+      preLoaderRoute: typeof ApiPublicInboundChannelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/$platform': {
       id: '/api/public/webhooks/$platform'
       path: '/api/public/webhooks/$platform'
@@ -678,6 +698,7 @@ const rootRouteChildren: RootRouteChildren = {
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
+  ApiPublicInboundChannelRoute: ApiPublicInboundChannelRoute,
   ApiPublicWebhooksPlatformRoute: ApiPublicWebhooksPlatformRoute,
 }
 export const routeTree = rootRouteImport
