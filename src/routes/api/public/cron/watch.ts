@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/public/cron/watch")({
         let actions = 0;
         const notes: { userId: string; title: string; body: string }[] = [];
         for (const [userId, { rules, account }] of users) {
-          const active = (rules ?? []).filter((r) => r.active);
+          const active = (rules ?? []).filter((r) => r.active && (!r.accountId || r.accountId === account));
           if (!active.length || !account?.startsWith("act_")) continue;
           const url = new URL(`${GATEWAY}/${account}/campaigns`);
           url.searchParams.set("fields", FIELDS); url.searchParams.set("limit", "200");
@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/cron/watch")({
           const body = (await res.json()) as { data: any[] };
           const stats: CampaignStats[] = body.data.map((c) => {
             const i = c.insights?.data?.[0];
-            return { id: c.id, name: c.name, status: c.effective_status ?? c.status, dailyBudget: Number(c.daily_budget ?? 0), spend: Number(i?.spend ?? 0), frequency: Number(i?.frequency ?? 0), purchases: pick(i?.actions), revenue: pick(i?.action_values) };
+            return { id: c.id, accountId: account, name: c.name, status: c.effective_status ?? c.status, dailyBudget: Number(c.daily_budget ?? 0), spend: Number(i?.spend ?? 0), frequency: Number(i?.frequency ?? 0), purchases: pick(i?.actions), revenue: pick(i?.action_values) };
           });
           const since = new Date(Date.now() - 6 * 3600e3).toISOString();
           const { data: recent } = await supabaseAdmin.from("watch_log").select("rule_id,target_id,action,state").eq("user_id", userId).gte("created_at", since);

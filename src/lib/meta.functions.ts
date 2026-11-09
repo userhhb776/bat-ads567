@@ -123,6 +123,7 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
         accountId: z.string(),
         level: levelSchema,
         datePreset: z.string(),
+        timeRange: z.object({ since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).optional(),
         parentIds: z.array(z.string()).optional(),
       })
       .parse(d),
@@ -136,7 +137,7 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
           ? "campaign_id,campaign{name},daily_budget,lifetime_budget,optimization_goal"
           : "campaign_id,adset_id,adset{name},creative{thumbnail_url}";
     const params: Record<string, unknown> = {
-      fields: `${base},${extra},insights.date_preset(${data.datePreset}){${INSIGHT_FIELDS}}`,
+      fields: `${base},${extra},insights.${data.timeRange ? `time_range(${JSON.stringify(data.timeRange)})` : `date_preset(${data.datePreset})`}{${INSIGHT_FIELDS}}`,
       limit: "200",
     };
     if (data.parentIds?.length) {
@@ -150,18 +151,20 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
 
 export const getInsights = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({ accountIds: z.array(z.string()).min(1), datePreset: z.string() }).parse(d),
+    z.object({ accountIds: z.array(z.string()).min(1), datePreset: z.string(), campaignIds: z.array(z.string()).optional(), timeRange: z.object({ since: z.string(), until: z.string() }).optional() }).parse(d),
   )
   .handler(async ({ data }) => {
     const results = await Promise.all(
       data.accountIds.map(async (acc) => {
+        const range = data.timeRange ? { time_range: data.timeRange } : { date_preset: data.datePreset };
+        const filters = data.campaignIds?.length ? { filtering: [{ field: "campaign.id", operator: "IN", value: data.campaignIds }] } : {};
         const [daily, byCampaign] = await Promise.all([
           graph(`${acc}/insights`, {
-            params: { fields: INSIGHT_FIELDS, date_preset: data.datePreset, time_increment: "1", limit: "100" },
-          }).catch(() => ({ data: [] })),
+            params: { fields: INSIGHT_FIELDS, ...range, ...filters, time_increment: "1", limit: "100" },
+          }),
           graph(`${acc}/insights`, {
-            params: { fields: `campaign_id,campaign_name,${INSIGHT_FIELDS}`, date_preset: data.datePreset, level: "campaign", limit: "200" },
-          }).catch(() => ({ data: [] })),
+            params: { fields: `campaign_id,campaign_name,${INSIGHT_FIELDS}`, ...range, ...filters, level: "campaign", limit: "200" },
+          }),
         ]);
         return { daily: daily.data as any[], campaigns: byCampaign.data as any[] };
       }),
