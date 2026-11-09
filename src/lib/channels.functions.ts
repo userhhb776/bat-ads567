@@ -98,7 +98,7 @@ export const whatsappConnect = createServerFn({ method: "POST" }).middleware([re
     if (!r.ok) throw new Error(`Servidor respondeu ${r.status}: ${JSON.stringify(j?.response?.message ?? j?.message ?? j).slice(0, 200)}`);
     const qr = j?.qrcode?.base64 ?? j?.base64 ?? "";
     const code = j?.qrcode?.pairingCode ?? j?.pairingCode ?? "";
-    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "user", action: data.isNew ? "whatsapp.create" : "whatsapp.connect", target: data.name, detail: {} });
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, module: "whatsapp", action: data.isNew ? "criar" : "conectar", target: data.name });
     return { qr: String(qr), pairingCode: String(code ?? ""), webhook: !!hook };
   });
 
@@ -109,6 +109,6 @@ export const whatsappRemove = createServerFn({ method: "POST" }).middleware([req
     const { evo } = await import("@/lib/channels.server");
     const r = await evo(`/instance/${data.mode}/${encodeURIComponent(data.name)}`, { method: "DELETE" });
     if (!r.ok) throw new Error(`Servidor respondeu ${r.status}: ${(await r.text()).slice(0, 200)}`);
-    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "user", action: `whatsapp.${data.mode}`, target: data.name, detail: {} });
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, module: "whatsapp", action: data.mode === "delete" ? "excluir" : "desconectar", target: data.name });
     return { ok: true };
   });
