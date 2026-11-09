@@ -38,7 +38,7 @@ function VisitorsPage() {
 
   return <div className="max-w-5xl space-y-5 p-4 pb-24 sm:p-7">
     <header><div className="text-xs text-primary">RASTREAMENTO</div><h1 className="mt-2 font-display text-4xl">Visitantes</h1></header>
-    {!on ? <Empty title="Entre na sua conta" description="Os visitantes ficam salvos na sua conta." /> : <>
+    {!on ? <Empty>Entre na sua conta para ver os visitantes.</Empty> : <>
       <Card className="space-y-2">
         <div className="text-sm font-medium">Script de rastreamento</div>
         <p className="text-xs text-muted-foreground">Cole no &lt;head&gt; das suas páginas. Registra visitas, sessões, UTMs, fbclid/gclid e formulários enviados (lead). Para compras, chame <code>batTrack("purchase")</code> na página de obrigado.</p>

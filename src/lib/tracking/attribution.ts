@@ -20,8 +20,8 @@ export function buildJourneys(events: TrackEvent[]): Journey[] {
       last: tagged[tagged.length - 1]?.source ?? 'direct',
       sessions: new Set(sorted.map((e) => e.session_id)).size,
       events: sorted.length,
-      email: sorted.findLast((e) => e.email)?.email ?? null,
-      phone: sorted.findLast((e) => e.phone)?.phone ?? null,
+      email: [...sorted].reverse().find((e) => e.email)?.email ?? null,
+      phone: [...sorted].reverse().find((e) => e.phone)?.phone ?? null,
       converted: sorted.some((e) => CONVERSION.has(e.event)),
     };
   });
