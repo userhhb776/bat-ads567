@@ -131,7 +131,7 @@ function Performance() {
   const scored = useMemo(() => scoreAds(ads.data ?? [], { minSpend: opts.minSpend, targetCpa: opts.targetCpa || undefined, minRoas: opts.minRoas || undefined }), [ads.data, opts]);
   const [sort, setSort] = useState<"ctr" | "cpa" | "roas">("roas");
   const sorted = [...scored].filter((s) => s.spend > 0).sort((a, b) => sort === "ctr" ? b.ctr - a.ctr : sort === "roas" ? (b.roas ?? -1) - (a.roas ?? -1) : (a.cpa ?? 1e9) - (b.cpa ?? 1e9));
-  const m = (v: number) => money(v, account);
+  const m = (v: number) => money(v);
   return (
     <div className="space-y-3">
       <AccountBar account={account} setAccount={setAccount} />

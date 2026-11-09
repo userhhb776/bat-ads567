@@ -15,6 +15,7 @@ import { Route as AgentesRouteImport } from './routes/agentes'
 import { Route as AtivosRouteImport } from './routes/ativos'
 import { Route as AutomacoesRouteImport } from './routes/automacoes'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as CriativosRouteImport } from './routes/criativos'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as CrowleyRouteImport } from './routes/crowley'
 import { Route as EntrarRouteImport } from './routes/entrar'
@@ -65,6 +66,11 @@ const AutomacoesRoute = AutomacoesRouteImport.update({
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriativosRoute = CriativosRouteImport.update({
+  id: '/criativos',
+  path: '/criativos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmRoute = CrmRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/ativos'
     | '/automacoes'
     | '/configuracoes'
+    | '/criativos'
     | '/crm'
     | '/crowley'
     | '/entrar'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/ativos'
     | '/automacoes'
     | '/configuracoes'
+    | '/criativos'
     | '/crm'
     | '/crowley'
     | '/entrar'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/ativos'
     | '/automacoes'
     | '/configuracoes'
+    | '/criativos'
     | '/crm'
     | '/crowley'
     | '/entrar'
@@ -355,6 +367,7 @@ export interface RootRouteChildren {
   AtivosRoute: typeof AtivosRoute
   AutomacoesRoute: typeof AutomacoesRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  CriativosRoute: typeof CriativosRoute
   CrmRoute: typeof CrmRoute
   CrowleyRoute: typeof CrowleyRoute
   EntrarRoute: typeof EntrarRoute
@@ -415,6 +428,13 @@ declare module '@tanstack/react-router' {
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criativos': {
+      id: '/criativos'
+      path: '/criativos'
+      fullPath: '/criativos'
+      preLoaderRoute: typeof CriativosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crm': {
@@ -600,6 +620,7 @@ const rootRouteChildren: RootRouteChildren = {
   AtivosRoute: AtivosRoute,
   AutomacoesRoute: AutomacoesRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  CriativosRoute: CriativosRoute,
   CrmRoute: CrmRoute,
   CrowleyRoute: CrowleyRoute,
   EntrarRoute: EntrarRoute,
