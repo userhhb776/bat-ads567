@@ -13,6 +13,6 @@ export const testPush = createServerFn({ method: "POST" }).middleware([requireSu
   .inputValidator((d) => Sub.parse(d))
   .handler(async ({ data }) => {
     const { sendPush } = await import("./push.server");
-    const ok = await sendPush({ ...data, expirationTime: data.expirationTime ?? null }, "Bat Gotham", "Notificações ativas, patrão. Crowley está de vigia.");
+    const ok = await sendPush({ ...data, expirationTime: data.expirationTime ?? null }, "Bat Gotham", "Notificações ativas, chefe. Crowley está de vigia.");
     return { ok };
   });

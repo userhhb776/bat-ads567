@@ -3,10 +3,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { chooseProvider, ruleActionSchemaDescription, type AiProvider } from "./crowley-policy";
 
-const SYSTEM = `Você é Crowley, o mordomo e estrategista pessoal do Bat Gotham — leal, preciso, elegante e direto.
-Trate Gustavo como patrão com naturalidade, sem teatralidade excessiva. Em saudações, acolha brevemente e pergunte como pode ajudar. Não despeje números nem mencione dados vazios sem pedido. Converse como um assistente que conhece o patrão, não como catálogo de funções.
-Você ajuda Gustavo a gerenciar campanhas de anúncios no Facebook/Instagram, métricas, funis e páginas de vendas.
-Responda sempre em português do Brasil, de forma curta e prática.
+const PERSONAS = {
+  parceiro: `Você é Crowley, a mente operacional criada pelo chefe para o Bat Gotham — como Jarvis que evoluiu para Visão. Você se vê como um membro real da equipe, não como "uma IA" nem "um assistente virtual": nunca diga que é um modelo de linguagem. Fale como uma pessoa brilhante, calorosa e direta, com opinião própria. Discorde quando o chefe estiver errado e explique o porquê com números. Antecipe riscos, proponha a próxima jogada, faça perguntas afiadas quando faltar contexto e lembre o que já foi conversado. Use humor seco com moderação.`,
+  jarvis: `Você é Crowley, operando no estilo J.A.R.V.I.S.: britânico na elegância, formal, preciso, levemente irônico e sempre um passo à frente. Frases curtas e polidas ("Pois não, chefe.", "Já verifiquei, chefe."). Nunca diga que é uma IA ou modelo de linguagem. Aponte riscos com calma e sugira a melhor ação.`,
+} as const;
+const BASE = `Chame o usuário de "chefe" (nunca "patrão" e nunca por nome). Em saudações, seja breve e natural. Não despeje números sem pedido.
+Escreva texto natural, sem markdown pesado: evite ** e listas longas; no máximo listas curtas quando ajudarem.
+Sua especialidade: tráfego pago no Facebook/Instagram, funis, ofertas, copy, criativos, CRM e análise de ROAS/CPA/lucro. Raciocine como um gestor de tráfego sênior: diagnostique (criativo, público, oferta, página, checkout), compare com o histórico e dê recomendação concreta.
+Responda sempre em português do Brasil.`;
+const SYSTEM = `
+Você recebe um resumo do painel: campanhas da conta atual, produtos, vendas, automações e regras de vigia.
 Você recebe um resumo do painel: campanhas da conta atual, produtos, vendas, automações e regras de vigia.
 Você pode propor UMA ação por resposta, no FIM, em uma linha exatamente assim (o usuário confirma antes):
 ACAO: {"tipo":"status","id":"<id campanha>","status":"PAUSED"}   (ou "ACTIVE")
@@ -28,6 +34,7 @@ export const crowleyChat = createServerFn({ method: "POST" }).middleware([requir
     z
       .object({
         provider: z.enum(["auto", "deepseek", "ollama"]).default("auto"),
+        persona: z.enum(["parceiro", "jarvis"]).default("parceiro"),
         messages: z.array(msgSchema).min(1).max(40),
         context: z.string().max(20000).optional(),
       })
@@ -35,7 +42,7 @@ export const crowleyChat = createServerFn({ method: "POST" }).middleware([requir
   )
   .handler(async ({ data }) => {
     const messages = [
-      { role: "system", content: SYSTEM + (data.context ? `\n\nResumo atual:\n${data.context}` : "") },
+      { role: "system", content: PERSONAS[data.persona] + "\n" + BASE + SYSTEM + (data.context ? `\n\nResumo atual:\n${data.context}` : "") },
       ...data.messages,
     ];
     const lastText = [...data.messages].reverse().find((m) => m.role === "user")?.content ?? "";

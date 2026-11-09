@@ -292,3 +292,39 @@ html[data-theme^="glass"] button:not([role="switch"]) { border-radius: 9999px; }
 #lovable-badge {
   display: none !important;
 }
+
+/* ===== Vidro claro ultra-translúcido (ajuste fino) ===== */
+html[data-theme="glass-light"] {
+  --card: oklch(1 0 0 / 0.1);
+  --sidebar: oklch(1 0 0 / 0.08);
+  --secondary: oklch(1 0 0 / 0.16);
+  --muted: oklch(1 0 0 / 0.12);
+  --accent: oklch(1 0 0 / 0.22);
+  --input: oklch(1 0 0 / 0.35);
+  --border: oklch(1 0 0 / 0.5);
+  --popover: oklch(0.98 0.005 260 / 0.55);
+  --glass-bg: linear-gradient(145deg, oklch(1 0 0 / 0.28), oklch(1 0 0 / 0.04) 55%, oklch(1 0 0 / 0.12));
+  --glass-edge: inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 -1px 0 oklch(1 0 0 / 0.25), inset 0 0 0 1px oklch(1 0 0 / 0.18), 0 10px 30px -12px oklch(0.3 0.04 260 / 0.25);
+}
+html[data-theme="glass-light"] body {
+  background:
+    radial-gradient(34rem 28rem at 88% 6%, oklch(0.78 0.16 45 / 0.75), transparent 62%),
+    radial-gradient(40rem 32rem at 6% 92%, oklch(0.6 0.19 255 / 0.7), transparent 62%),
+    radial-gradient(28rem 22rem at 50% 45%, oklch(0.75 0.13 315 / 0.55), transparent 68%),
+    radial-gradient(24rem 20rem at 15% 20%, oklch(0.82 0.12 190 / 0.5), transparent 65%),
+    linear-gradient(160deg, oklch(0.9 0.02 250), oklch(0.8 0.03 265));
+  background-attachment: fixed;
+}
+html[data-theme="glass-light"] :is(.bg-card, .bg-sidebar, .panel, .kpi, .metric-card, [data-slot="card"]) {
+  background-color: var(--card);
+  backdrop-filter: blur(28px) saturate(190%) brightness(1.06);
+}
+html[data-theme="glass-light"] :is(.bg-background) { background-color: oklch(1 0 0 / 0.06); }
+
+@keyframes guide-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes guide-pulse { 0%,100% { transform: scale(1); opacity: .7; } 50% { transform: scale(1.12); opacity: 1; } }
+@keyframes guide-flow { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+.guide-rise { animation: guide-rise .5s ease both; }
+.guide-pulse { animation: guide-pulse 2.2s ease-in-out infinite; }
+.guide-flow { stroke-dasharray: 6 6; animation: guide-flow 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .guide-rise, .guide-pulse, .guide-flow { animation: none; } }
