@@ -42,7 +42,7 @@ function Notifications() {
                 {n.body && <div className="text-xs text-muted-foreground">{n.body}</div>}
                 <div className="mt-1 text-[11px] text-muted-foreground">{KINDS[n.kind] ?? n.kind} · {new Date(n.created_at).toLocaleString("pt-BR")}</div>
               </div>
-              {n.link && <Link to={n.link} onClick={() => !n.read_at && act({ ids: [n.id] })} className="text-xs text-primary">Abrir</Link>}
+              {n.link && <Link to={n.link as "/"} onClick={() => !n.read_at && act({ ids: [n.id] })} className="text-xs text-primary">Abrir</Link>}
               {!n.read_at && <button className="text-xs text-muted-foreground" onClick={() => act({ ids: [n.id] })}>Lida</button>}
             </Card>
           ))}

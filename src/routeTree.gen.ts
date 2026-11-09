@@ -21,6 +21,7 @@ import { Route as FunisRouteImport } from './routes/funis'
 import { Route as InteligenciaRouteImport } from './routes/inteligencia'
 import { Route as MaisRouteImport } from './routes/mais'
 import { Route as MetRouteImport } from './routes/met'
+import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as PaginasRouteImport } from './routes/paginas'
 import { Route as ProdutosRouteImport } from './routes/produtos'
@@ -92,6 +93,11 @@ const MaisRoute = MaisRouteImport.update({
 const MetRoute = MetRouteImport.update({
   id: '/met',
   path: '/met',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacoesRoute = NotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfertasRoute = OfertasRouteImport.update({
@@ -169,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
+  '/notificacoes': typeof NotificacoesRoute
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
+  '/notificacoes': typeof NotificacoesRoute
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/inteligencia'
     | '/mais'
     | '/met'
+    | '/notificacoes'
     | '/ofertas'
     | '/paginas'
     | '/produtos'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/funis'
     | '/inteligencia'
     | '/mais'
+    | '/notificacoes'
     | '/ofertas'
     | '/paginas'
     | '/produtos'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/inteligencia'
     | '/mais'
     | '/met'
+    | '/notificacoes'
     | '/ofertas'
     | '/paginas'
     | '/produtos'
@@ -325,6 +337,7 @@ export interface RootRouteChildren {
   InteligenciaRoute: typeof InteligenciaRoute
   MaisRoute: typeof MaisRoute
   MetRoute: typeof MetRouteWithChildren
+  NotificacoesRoute: typeof NotificacoesRoute
   OfertasRoute: typeof OfertasRoute
   PaginasRoute: typeof PaginasRoute
   ProdutosRoute: typeof ProdutosRoute
@@ -418,6 +431,13 @@ declare module '@tanstack/react-router' {
       path: '/met'
       fullPath: '/met'
       preLoaderRoute: typeof MetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificacoes': {
+      id: '/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof NotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ofertas': {
@@ -546,6 +566,7 @@ const rootRouteChildren: RootRouteChildren = {
   InteligenciaRoute: InteligenciaRoute,
   MaisRoute: MaisRoute,
   MetRoute: MetRouteWithChildren,
+  NotificacoesRoute: NotificacoesRoute,
   OfertasRoute: OfertasRoute,
   PaginasRoute: PaginasRoute,
   ProdutosRoute: ProdutosRoute,
