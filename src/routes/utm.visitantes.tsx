@@ -1,3 +1,4 @@
+import { useStore } from '@/lib/store';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, Empty, head } from '@/components/ui-kit';
 import { supabase } from '@/integrations/supabase/client';
 import { useSession, useWebhookToken } from '@/lib/sales';
-import { buildJourneys, bySource, type TrackEvent } from '@/lib/tracking/attribution';
+import { buildJourneys, bySource, funnelSteps, type TrackEvent } from '@/lib/tracking/attribution';
 
 export const Route = createFileRoute('/utm/visitantes')({ head: () => head('Visitantes e atribuição', 'Visitantes, sessões e origem por primeiro e último clique.'), component: VisitorsPage });
 
@@ -31,6 +32,8 @@ function VisitorsPage() {
   });
   const journeys = useMemo(() => buildJourneys(events.data ?? []), [events.data]);
   const sources = bySource(journeys, model);
+  const [stepsTxt, setStepsTxt] = useStore<string>('funnel-step-urls', '/vsl\n/checkout\n/obrigado');
+  const steps = useMemo(() => funnelSteps(events.data ?? [], stepsTxt.split('\n').map((x) => x.trim()).filter(Boolean)), [events.data, stepsTxt]);
   const endpoint = token.data && typeof window !== 'undefined' ? `${window.location.origin}/api/public/track?token=${token.data}` : '';
   const sessions = new Set((events.data ?? []).map((e) => e.session_id)).size;
   const leads = journeys.filter((j) => j.converted).length;
@@ -58,6 +61,12 @@ function VisitorsPage() {
         {sources.length === 0 ? <p className="text-sm text-muted-foreground">{events.isLoading ? 'Carregando…' : 'Nenhuma visita ainda. Instale o script.'}</p> :
           <table className="w-full text-sm"><thead><tr className="text-left text-xs text-muted-foreground"><th>Origem</th><th>Visitantes</th><th>Conversões</th><th>Taxa</th></tr></thead>
             <tbody>{sources.map(([s, x]) => <tr key={s} className="border-t border-border"><td className="py-1">{s}</td><td>{x.visitors}</td><td>{x.conversions}</td><td>{((x.conversions / x.visitors) * 100).toFixed(1)}%</td></tr>)}</tbody></table>}
+      </Card>
+      <Card className="space-y-2">
+        <div className="text-sm font-medium">Funil por etapas (dados reais)</div>
+        <p className="text-xs text-muted-foreground">Uma etapa por linha: parte do endereço da página (ex.: /vsl, /checkout, /obrigado). Conta visitantes que passaram por cada etapa na ordem e quanto abandonou.</p>
+        <textarea value={stepsTxt} onChange={(e) => setStepsTxt(e.target.value)} className="min-h-20 w-full rounded-md border border-border bg-background p-2 text-xs" />
+        {steps.map((s, i) => { const max = steps[0]?.visitors || 1; return <div key={i} className="space-y-1 text-xs"><div className="flex justify-between"><span>{i + 1}. {s.pattern}</span><span>{s.visitors} visitantes{i > 0 ? ` · abandono ${s.dropOff}%` : ''}</span></div><div className="h-2 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${(s.visitors / max) * 100}%` }} /></div></div>; })}
       </Card>
       <Card>
         <div className="mb-2 text-sm font-medium">Jornadas recentes</div>
