@@ -280,6 +280,7 @@ function Manager() {
           </table>
         </div>
       </div>
+      <AdReviewDialog adId={review} onClose={() => setReview("")} />
     </div>
   );
 }
