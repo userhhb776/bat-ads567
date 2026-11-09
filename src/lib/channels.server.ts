@@ -14,8 +14,8 @@ export async function deliver(channel: Channel, to: string, text: string): Promi
     if (channel === "telegram" && to.startsWith("bot:")) {
       const [botId, chat] = to.slice(4).split("|") as [string, string];
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: bot } = await supabaseAdmin.from("support_bots" as never).select("token").eq("id", botId).maybeSingle();
-      const token = (bot as { token?: string } | null)?.token;
+      const { data: bot } = await supabaseAdmin.from("support_bots").select("token").eq("id", botId).maybeSingle();
+      const token = bot?.token;
       if (!token || !chat) return { ok: false, error: "Bot do agente não encontrado." };
       const { telegramSend } = await import("./support-ai.server");
       return telegramSend(token, chat, text);

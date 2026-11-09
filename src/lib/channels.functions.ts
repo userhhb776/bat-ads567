@@ -11,7 +11,12 @@ export const sendMessage = createServerFn({ method: "POST" }).middleware([requir
       text: z.string().min(1).max(4000),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    if (data.to.startsWith("bot:")) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: own } = await supabaseAdmin.from("support_bots").select("id").eq("id", data.to.slice(4).split("|")[0]!).eq("user_id", context.userId).maybeSingle();
+      if (!own) return { ok: false, error: "Esse bot não é seu." };
+    }
     const { deliver } = await import("@/lib/channels.server");
     return deliver(data.channel, data.to, data.text);
   });
