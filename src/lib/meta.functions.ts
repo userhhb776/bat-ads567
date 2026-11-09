@@ -187,12 +187,26 @@ export const updateObject = createServerFn({ method: "POST" }).middleware([requi
         status: z.enum(["ACTIVE", "PAUSED", "DELETED"]).optional(),
         daily_budget: z.number().int().positive().optional(),
         name: z.string().min(1).optional(),
+        lifetime_budget: z.number().int().positive().optional(),
+        spend_cap: z.number().int().positive().optional(),
+        bid_strategy: z.enum(["LOWEST_COST_WITHOUT_CAP", "LOWEST_COST_WITH_BID_CAP", "COST_CAP", "LOWEST_COST_WITH_MIN_ROAS"]).optional(),
+        bid_amount: z.number().int().positive().optional(),
+        start_time: z.string().optional(),
+        end_time: z.string().optional(),
+        actor: z.string().max(80).optional(),
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
-    const { id, ...rest } = data;
-    return graph(id, { method: "POST", params: rest });
+  .handler(async ({ data, context }) => {
+    const { id, actor, ...rest } = data;
+    try {
+      const r = await graph(id, { method: "POST", params: rest });
+      await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: rest.status === "DELETED" ? "excluir" : "editar", target: id, after: rest as never });
+      return r;
+    } catch (e) {
+      await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: "editar", target: id, after: rest as never, result: "erro", error: (e as Error).message.slice(0, 900) });
+      throw e;
+    }
   });
 
 export const duplicateObject = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
