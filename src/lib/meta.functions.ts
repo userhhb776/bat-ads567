@@ -187,12 +187,26 @@ export const updateObject = createServerFn({ method: "POST" }).middleware([requi
         status: z.enum(["ACTIVE", "PAUSED", "DELETED"]).optional(),
         daily_budget: z.number().int().positive().optional(),
         name: z.string().min(1).optional(),
+        lifetime_budget: z.number().int().positive().optional(),
+        spend_cap: z.number().int().positive().optional(),
+        bid_strategy: z.enum(["LOWEST_COST_WITHOUT_CAP", "LOWEST_COST_WITH_BID_CAP", "COST_CAP", "LOWEST_COST_WITH_MIN_ROAS"]).optional(),
+        bid_amount: z.number().int().positive().optional(),
+        start_time: z.string().optional(),
+        end_time: z.string().optional(),
+        actor: z.string().max(80).optional(),
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
-    const { id, ...rest } = data;
-    return graph(id, { method: "POST", params: rest });
+  .handler(async ({ data, context }) => {
+    const { id, actor, ...rest } = data;
+    try {
+      const r = await graph(id, { method: "POST", params: rest });
+      await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: rest.status === "DELETED" ? "excluir" : "editar", target: id, after: rest as never });
+      return r;
+    } catch (e) {
+      await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: "editar", target: id, after: rest as never, result: "erro", error: (e as Error).message.slice(0, 900) });
+      throw e;
+    }
   });
 
 export const duplicateObject = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
@@ -435,3 +449,60 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
     });
     return { campaignId: camp.id as string, adsetId: adset.id as string, adId: ad.id as string };
   });
+
+/** Business Manager center: linked accounts, pages, pixels, people and catalogs, as allowed by the connection. */
+export const getBusinessDetail = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/) }).parse(d))
+  .handler(async ({ data }) => {
+    const safe = async (path: string, fields: string) => {
+      try { const r = await graph(`${data.businessId}/${path}`, { params: { fields, limit: 100 } }); return { items: (r.data ?? []) as any[], error: null as string | null }; }
+      catch (e) { return { items: [] as any[], error: (e as Error).message }; }
+    };
+    const [info, owned, client, pages, pixels, people, catalogs, instagram] = await Promise.all([
+      graph(data.businessId, { params: { fields: "id,name,verification_status,created_time,primary_page{name}" } }).catch((e) => ({ error: (e as Error).message })),
+      safe("owned_ad_accounts", "id,name,account_status,currency"), safe("client_ad_accounts", "id,name,account_status,currency"),
+      safe("owned_pages", "id,name"), safe("adspixels", "id,name,last_fired_time"),
+      safe("business_users", "id,name,role"), safe("owned_product_catalogs", "id,name,product_count"),
+      safe("instagram_accounts", "id,username"),
+    ]);
+    return { info, owned, client, pages, pixels, people, catalogs, instagram };
+  });
+
+/** Approval state, rejection reasons and preview for one ad. */
+export const getAdReview = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ adId: z.string().regex(/^\d+$/), format: z.enum(["MOBILE_FEED_STANDARD", "DESKTOP_FEED_STANDARD", "INSTAGRAM_STANDARD", "INSTAGRAM_STORY"]).default("MOBILE_FEED_STANDARD") }).parse(d))
+  .handler(async ({ data }) => {
+    const ad = await graph(data.adId, { params: { fields: "id,name,status,effective_status,ad_review_feedback,issues_info,creative{id,title,body,thumbnail_url,object_story_spec,url_tags}" } });
+    let preview = "";
+    try { const p = await graph(`${data.adId}/previews`, { params: { ad_format: data.format } }); preview = String(p.data?.[0]?.body ?? ""); } catch { /* preview not available for this format */ }
+    const src = preview.match(/src="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "";
+    return { ad, previewUrl: src };
+  });
+
+/** Pixel health: last event, recent event counts and stats by event name. */
+export const getPixelHealth = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pixelId: z.string().regex(/^\d+$/) }).parse(d))
+  .handler(async ({ data }) => {
+    const info = await graph(data.pixelId, { params: { fields: "id,name,last_fired_time,is_unavailable,data_use_setting,enable_automatic_matching" } });
+    let stats: { event: string; count: number }[] = [];
+    try {
+      const r = await graph(`${data.pixelId}/stats`, { params: { aggregation: "event" } });
+      const acc = new Map<string, number>();
+      for (const bucket of r.data ?? []) for (const x of bucket.data ?? []) acc.set(String(x.value), (acc.get(String(x.value)) ?? 0) + Number(x.count ?? 0));
+      stats = [...acc].map(([event, count]) => ({ event, count })).sort((a, b) => b.count - a.count);
+    } catch { /* stats need extra permission */ }
+    return { info, stats };
+  });
+
+/** Sends a Conversions API test event (shows in Events Manager › Test events). */
+export const sendTestEvent = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pixelId: z.string().regex(/^\d+$/), testCode: z.string().min(3).max(40), event: z.enum(["PageView", "ViewContent", "Lead", "AddToCart", "InitiateCheckout", "Purchase"]), url: z.string().url() }).parse(d))
+  .handler(async ({ data }) => {
+    const eventId = `test-${Date.now()}`;
+    const r = await graph(`${data.pixelId}/events`, { method: "POST", params: { test_event_code: data.testCode, data: [{ event_name: data.event, event_time: Math.floor(Date.now() / 1000), event_id: eventId, action_source: "website", event_source_url: data.url, user_data: { client_user_agent: "BatGotham-Test" }, ...(data.event === "Purchase" ? { custom_data: { currency: "BRL", value: 1 } } : {}) }] } });
+    return { received: Number(r.events_received ?? 0), eventId };
+  });
+
+export const shareObjectToAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pixelId: z.string().regex(/^\d+$/), businessId: z.string().regex(/^\d+$/), accountId: z.string().regex(/^act_\d+$/) }).parse(d))
+  .handler(async ({ data }) => graph(`${data.pixelId}/shared_accounts`, { method: "POST", params: { account_id: data.accountId.replace("act_", ""), business: data.businessId } }));
