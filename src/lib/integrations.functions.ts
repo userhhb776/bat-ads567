@@ -18,7 +18,7 @@ export const saveGatewayCred = createServerFn({ method: "POST" }).middleware([re
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("gateway_credentials" as never).upsert({ user_id: context.userId, platform: data.platform, token: data.token.trim(), secret: data.secret.trim(), updated_at: new Date().toISOString() } as never, { onConflict: "user_id,platform" });
     if (error) throw new Error("Não consegui salvar o token.");
-    await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "user", action: "gateway_credentials.save", target: data.platform } as never);
+    await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "integracoes", action: "salvar_token", target: data.platform, result: "ok" });
     return { ok: true };
   });
 
@@ -53,6 +53,6 @@ export const purgeLogs = createServerFn({ method: "POST" }).middleware([requireS
       const { count } = await supabaseAdmin.from(t as never).delete({ count: "exact" }).eq("user_id", context.userId).lt("created_at", before);
       removed += count ?? 0;
     }
-    await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "user", action: "logs.purge", target: `${data.days}d`, detail: { removed } } as never);
+    await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "sistema", action: "limpar_logs", target: `${data.days}d`, after: { removed } as never, result: "ok" });
     return { removed };
   });
