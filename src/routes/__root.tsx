@@ -1,3 +1,4 @@
+import { installSfx } from "@/lib/sfx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
