@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const API = "https://api.elevenlabs.io";
 function key() {
-  const k = process.env.ELEVENLABS_API_KEY;
+  const k = process.env["ELEVENLABS_API_KEY"];
   if (!k) throw new Error("ElevenLabs não está conectada ao projeto.");
   return k;
 }
