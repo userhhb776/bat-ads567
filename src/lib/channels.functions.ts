@@ -61,3 +61,15 @@ function parse(raw: string) {
   const text = raw.replace(/CATEGORIA:.*$/im, "").trim();
   return { text: text.replace(/^\[HUMANO\]\s*/, ""), handoff: text.startsWith("[HUMANO]"), category: cat, error: "" };
 }
+
+/** Asks the user's Render WhatsApp server for its session status (GET /status). */
+export const whatsappStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+  const url = process.env["RENDER_WHATSAPP_URL"]; const key = process.env["RENDER_WHATSAPP_KEY"];
+  if (!url) return { configured: false, ok: false, ms: 0, body: "Servidor não cadastrado." };
+  const t = Date.now();
+  try {
+    const r = await fetch(url.replace(/\/$/, "") + "/status", { headers: key ? { Authorization: `Bearer ${key}` } : {}, signal: AbortSignal.timeout(15000) });
+    const body = (await r.text()).slice(0, 1500);
+    return { configured: true, ok: r.ok, ms: Date.now() - t, status: r.status, body };
+  } catch { return { configured: true, ok: false, ms: Date.now() - t, body: "Servidor não respondeu (pode estar dormindo no Render; tente de novo em 1 minuto)." }; }
+});
