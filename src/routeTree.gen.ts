@@ -10,7 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AgentesRouteImport } from './routes/agentes'
+import { Route as AtivosRouteImport } from './routes/ativos'
 import { Route as AutomacoesRouteImport } from './routes/automacoes'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as CrowleyRouteImport } from './routes/crowley'
 import { Route as EntrarRouteImport } from './routes/entrar'
@@ -18,6 +21,7 @@ import { Route as FunisRouteImport } from './routes/funis'
 import { Route as InteligenciaRouteImport } from './routes/inteligencia'
 import { Route as MaisRouteImport } from './routes/mais'
 import { Route as MetRouteImport } from './routes/met'
+import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as PaginasRouteImport } from './routes/paginas'
 import { Route as ProdutosRouteImport } from './routes/produtos'
 import { Route as SuporteRouteImport } from './routes/suporte'
@@ -35,9 +39,24 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentesRoute = AgentesRouteImport.update({
+  id: '/agentes',
+  path: '/agentes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AtivosRoute = AtivosRouteImport.update({
+  id: '/ativos',
+  path: '/ativos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AutomacoesRoute = AutomacoesRouteImport.update({
   id: '/automacoes',
   path: '/automacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmRoute = CrmRouteImport.update({
@@ -73,6 +92,11 @@ const MaisRoute = MaisRouteImport.update({
 const MetRoute = MetRouteImport.update({
   id: '/met',
   path: '/met',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfertasRoute = OfertasRouteImport.update({
+  id: '/ofertas',
+  path: '/ofertas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PaginasRoute = PaginasRouteImport.update({
@@ -134,7 +158,10 @@ const ApiPublicWebhooksPlatformRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agentes': typeof AgentesRoute
+  '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
@@ -142,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
+  '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
   '/suporte': typeof SuporteRoute
@@ -156,13 +184,17 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agentes': typeof AgentesRoute
+  '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
+  '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
   '/suporte': typeof SuporteRoute
@@ -177,7 +209,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agentes': typeof AgentesRoute
+  '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/configuracoes': typeof ConfiguracoesRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
@@ -185,6 +220,7 @@ export interface FileRoutesById {
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
+  '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
   '/suporte': typeof SuporteRoute
@@ -201,7 +237,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agentes'
+    | '/ativos'
     | '/automacoes'
+    | '/configuracoes'
     | '/crm'
     | '/crowley'
     | '/entrar'
@@ -209,6 +248,7 @@ export interface FileRouteTypes {
     | '/inteligencia'
     | '/mais'
     | '/met'
+    | '/ofertas'
     | '/paginas'
     | '/produtos'
     | '/suporte'
@@ -223,13 +263,17 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agentes'
+    | '/ativos'
     | '/automacoes'
+    | '/configuracoes'
     | '/crm'
     | '/crowley'
     | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
+    | '/ofertas'
     | '/paginas'
     | '/produtos'
     | '/suporte'
@@ -243,7 +287,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/agentes'
+    | '/ativos'
     | '/automacoes'
+    | '/configuracoes'
     | '/crm'
     | '/crowley'
     | '/entrar'
@@ -251,6 +298,7 @@ export interface FileRouteTypes {
     | '/inteligencia'
     | '/mais'
     | '/met'
+    | '/ofertas'
     | '/paginas'
     | '/produtos'
     | '/suporte'
@@ -266,7 +314,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgentesRoute: typeof AgentesRoute
+  AtivosRoute: typeof AtivosRoute
   AutomacoesRoute: typeof AutomacoesRoute
+  ConfiguracoesRoute: typeof ConfiguracoesRoute
   CrmRoute: typeof CrmRoute
   CrowleyRoute: typeof CrowleyRoute
   EntrarRoute: typeof EntrarRoute
@@ -274,6 +325,7 @@ export interface RootRouteChildren {
   InteligenciaRoute: typeof InteligenciaRoute
   MaisRoute: typeof MaisRoute
   MetRoute: typeof MetRouteWithChildren
+  OfertasRoute: typeof OfertasRoute
   PaginasRoute: typeof PaginasRoute
   ProdutosRoute: typeof ProdutosRoute
   SuporteRoute: typeof SuporteRoute
@@ -291,11 +343,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agentes': {
+      id: '/agentes'
+      path: '/agentes'
+      fullPath: '/agentes'
+      preLoaderRoute: typeof AgentesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ativos': {
+      id: '/ativos'
+      path: '/ativos'
+      fullPath: '/ativos'
+      preLoaderRoute: typeof AtivosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/automacoes': {
       id: '/automacoes'
       path: '/automacoes'
       fullPath: '/automacoes'
       preLoaderRoute: typeof AutomacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crm': {
@@ -345,6 +418,13 @@ declare module '@tanstack/react-router' {
       path: '/met'
       fullPath: '/met'
       preLoaderRoute: typeof MetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ofertas': {
+      id: '/ofertas'
+      path: '/ofertas'
+      fullPath: '/ofertas'
+      preLoaderRoute: typeof OfertasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/paginas': {
@@ -455,7 +535,10 @@ const UtmRouteWithChildren = UtmRoute._addFileChildren(UtmRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgentesRoute: AgentesRoute,
+  AtivosRoute: AtivosRoute,
   AutomacoesRoute: AutomacoesRoute,
+  ConfiguracoesRoute: ConfiguracoesRoute,
   CrmRoute: CrmRoute,
   CrowleyRoute: CrowleyRoute,
   EntrarRoute: EntrarRoute,
@@ -463,6 +546,7 @@ const rootRouteChildren: RootRouteChildren = {
   InteligenciaRoute: InteligenciaRoute,
   MaisRoute: MaisRoute,
   MetRoute: MetRouteWithChildren,
+  OfertasRoute: OfertasRoute,
   PaginasRoute: PaginasRoute,
   ProdutosRoute: ProdutosRoute,
   SuporteRoute: SuporteRoute,
