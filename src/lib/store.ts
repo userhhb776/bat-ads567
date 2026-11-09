@@ -4,12 +4,17 @@ import { useEffect, useState } from "react";
 export function useStore<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(initial);
   useEffect(() => {
-    try { const raw = localStorage.getItem("bg." + key); if (raw) setValue(JSON.parse(raw)); } catch { /* ignore */ }
+    const load = () => { try { const raw = localStorage.getItem("bg." + key); if (raw) setValue(JSON.parse(raw)); } catch { /* ignore */ } };
+    load();
+    window.addEventListener("bg-store-change", load);
+    window.addEventListener("storage", load);
+    return () => { window.removeEventListener("bg-store-change", load); window.removeEventListener("storage", load); };
   }, [key]);
   const save = (next: T | ((prev: T) => T)) => {
     setValue((prev) => {
       const v = typeof next === "function" ? (next as (p: T) => T)(prev) : next;
       localStorage.setItem("bg." + key, JSON.stringify(v));
+      queueMicrotask(() => window.dispatchEvent(new Event("bg-store-change")));
       return v;
     });
   };

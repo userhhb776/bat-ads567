@@ -164,6 +164,14 @@
 
 
 body { letter-spacing: 0; color-scheme: dark; }
+.public-cover { background: linear-gradient(90deg, color-mix(in oklab, var(--background) 92%, transparent), color-mix(in oklab, var(--background) 35%, transparent)); }
+.chat-markdown p + p { margin-top: .6rem; }
+.chat-markdown ul { list-style: disc; padding-left: 1.2rem; }
+.chat-markdown ol { list-style: decimal; padding-left: 1.2rem; }
+.chat-markdown pre { overflow-x: auto; background: var(--background); padding: .8rem; border-radius: 6px; }
+.chat-markdown a { text-decoration: underline; }
+.chat-markdown table { display: block; overflow-x: auto; }
+.chat-markdown th, .chat-markdown td { border: 1px solid var(--border); padding: .4rem; }
 .metric-card { box-shadow: var(--shadow-metric); transition: border-color .2s, transform .2s; }
 .metric-card:hover { border-color: var(--primary); transform: translateY(-2px); }
 .ops-header { background-image: linear-gradient(90deg, color-mix(in oklab, var(--primary) 7%, transparent), transparent 75%); }

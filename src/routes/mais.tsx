@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bot, BarChart3, FileText, LayoutGrid, Link2, Package, Plug, PlusSquare, Radar, Users, Workflow, Zap, MessagesSquare, Gauge } from "lucide-react";
+import { Bot, BarChart3, FileText, LayoutGrid, Link2, Package, Plug, PlusSquare, Radar, Users, Workflow, Zap, MessagesSquare, Gauge, Settings, Eye, ShieldCheck } from "lucide-react";
 import { PageHead, head } from "@/components/ui-kit";
 
 export const Route = createFileRoute("/mais")({
@@ -21,6 +21,10 @@ const items = [
   { to: "/suporte", label: "Atendimento", icon: MessagesSquare },
   { to: "/inteligencia", label: "Inteligência", icon: Radar },
   { to: "/crowley", label: "Crowley", icon: Bot },
+  { to: "/agentes", label: "Agentes ADS", icon: ShieldCheck },
+  { to: "/ofertas", label: "Radar de ofertas", icon: Eye },
+  { to: "/ativos", label: "Contas e ativos", icon: Plug },
+  { to: "/configuracoes", label: "Configurações", icon: Settings },
   { to: "/utm/integracoes", label: "Integrações", icon: Plug },
 ] as const;
 

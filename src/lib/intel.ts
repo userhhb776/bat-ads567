@@ -5,6 +5,7 @@ export type IntelRule = {
   name: string;
   profile: Profile;
   campaignId: string; // "*" = todas
+  accountId?: string;
   maxSpendNoSale: number; // pausa se gastar >= isso sem venda (0 = desligado)
   maxCpa: number; // pausa se CPA acima (0 = desligado)
   minRoasToScale: number; // escala se ROAS >= (0 = desligado)

@@ -17,6 +17,9 @@ import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronR
 import { Button } from "@/components/ui/button";
 import { CurrencyToggle } from "@/components/currency-toggle";
 import { loadRate } from "@/lib/currency";
+import { PublicHome } from "@/components/public-home";
+import { FloatingCrowley } from "@/components/crowley/floating-chat";
+import { Settings, Eye, ShieldCheck } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -116,6 +119,10 @@ const nav = [
   { to: "/suporte", label: "Atendimento", icon: MessagesSquare },
   { to: "/inteligencia", label: "Inteligência", icon: Radar },
   { to: "/crowley", label: "Crowley", icon: Bot },
+  { to: "/agentes", label: "Agentes ADS", icon: ShieldCheck },
+  { to: "/ofertas", label: "Radar de ofertas", icon: Eye },
+  { to: "/ativos", label: "Contas e ativos", icon: Plug },
+  { to: "/configuracoes", label: "Configurações", icon: Settings },
 ] as const;
 const mobileNav = [nav[0], nav[1], nav[3], { to: "/crowley", label: "Crowley", icon: Bot }, { to: "/mais", label: "Mais", icon: Grid3x3 }] as const;
 
@@ -160,14 +167,15 @@ function RootComponent() {
     ? <button onClick={() => supabase.auth.signOut()} title={`Nuvem ativa (${email}) — toque para sair`} className="text-primary"><Cloud className="h-5 w-5" /></button>
     : <Link to="/entrar" title="Entrar para salvar na nuvem" className="text-destructive"><CloudOff className="h-5 w-5" /></Link>;
 
+  if (!checked) return <QueryClientProvider client={queryClient}><div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Abrindo a central…</div><Toaster /></QueryClientProvider>;
+  if (path === "/entrar" || email === null) return <QueryClientProvider client={queryClient}>{path === "/entrar" ? <Outlet /> : <PublicHome />}<Toaster /></QueryClientProvider>;
+
   return (
     <QueryClientProvider client={queryClient}>
       <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-sidebar-border bg-sidebar px-4 py-2 md:hidden">
         <Logo size="text-2xl" />
         <div className="flex items-center gap-2">
           <CurrencyToggle />
-          {cloud}
-          <Link to="/utm/integracoes" className="text-muted-foreground" aria-label="Integrações"><Plug className="h-5 w-5" /></Link>
         </div>
       </header>
       <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-sidebar-border bg-sidebar md:hidden">
@@ -193,16 +201,15 @@ function RootComponent() {
             ))}
           </nav>
           <div className="mt-auto space-y-2 border-t border-sidebar-border p-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">{cloud}<span className="truncate">{email !== null ? email : "Entrar p/ salvar na nuvem"}</span></div>
-            <div className="text-xs text-muted-foreground">Moeda</div>
-            <CurrencyToggle />
+            <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Exibição</span><CurrencyToggle /></div>
           </div>
         </aside>
         <main className="min-w-0 flex-1">
-          {!checked && path !== "/entrar" ? null : email === null && path !== "/entrar" ? <EntrarGate /> : <Outlet />}
+          <Outlet />
         </main>
       </div>
       <Toaster />
+      {path !== "/crowley" && path !== "/agentes" && <FloatingCrowley />}
     </QueryClientProvider>
   );
 }
