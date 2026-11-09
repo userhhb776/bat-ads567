@@ -42,6 +42,7 @@ import { Route as UtmVisitantesRouteImport } from './routes/utm.visitantes'
 import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
 import { Route as ApiPublicCronWatchRouteImport } from './routes/api/public/cron/watch'
 import { Route as ApiPublicInboundChannelRouteImport } from './routes/api/public/inbound/$channel'
+import { Route as ApiPublicTelegramBotIdRouteImport } from './routes/api/public/telegram/$botId'
 import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/public/webhooks.$platform'
 
 const IndexRoute = IndexRouteImport.update({
@@ -209,6 +210,11 @@ const ApiPublicInboundChannelRoute = ApiPublicInboundChannelRouteImport.update({
   path: '/api/public/inbound/$channel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramBotIdRoute = ApiPublicTelegramBotIdRouteImport.update({
+  id: '/api/public/telegram/$botId',
+  path: '/api/public/telegram/$botId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksPlatformRoute =
   ApiPublicWebhooksPlatformRouteImport.update({
     id: '/api/public/webhooks/$platform',
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
+  '/api/public/telegram/$botId': typeof ApiPublicTelegramBotIdRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesByTo {
@@ -284,6 +291,7 @@ export interface FileRoutesByTo {
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
+  '/api/public/telegram/$botId': typeof ApiPublicTelegramBotIdRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRoutesById {
@@ -321,6 +329,7 @@ export interface FileRoutesById {
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
+  '/api/public/telegram/$botId': typeof ApiPublicTelegramBotIdRoute
   '/api/public/webhooks/$platform': typeof ApiPublicWebhooksPlatformRoute
 }
 export interface FileRouteTypes {
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
+    | '/api/public/telegram/$botId'
     | '/api/public/webhooks/$platform'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
+    | '/api/public/telegram/$botId'
     | '/api/public/webhooks/$platform'
   id:
     | '__root__'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
+    | '/api/public/telegram/$botId'
     | '/api/public/webhooks/$platform'
   fileRoutesById: FileRoutesById
 }
@@ -460,6 +472,7 @@ export interface RootRouteChildren {
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
   ApiPublicInboundChannelRoute: typeof ApiPublicInboundChannelRoute
+  ApiPublicTelegramBotIdRoute: typeof ApiPublicTelegramBotIdRoute
   ApiPublicWebhooksPlatformRoute: typeof ApiPublicWebhooksPlatformRoute
 }
 
@@ -696,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicInboundChannelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram/$botId': {
+      id: '/api/public/telegram/$botId'
+      path: '/api/public/telegram/$botId'
+      fullPath: '/api/public/telegram/$botId'
+      preLoaderRoute: typeof ApiPublicTelegramBotIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/$platform': {
       id: '/api/public/webhooks/$platform'
       path: '/api/public/webhooks/$platform'
@@ -762,6 +782,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
   ApiPublicInboundChannelRoute: ApiPublicInboundChannelRoute,
+  ApiPublicTelegramBotIdRoute: ApiPublicTelegramBotIdRoute,
   ApiPublicWebhooksPlatformRoute: ApiPublicWebhooksPlatformRoute,
 }
 export const routeTree = rootRouteImport
