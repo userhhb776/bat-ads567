@@ -1,6 +1,12 @@
 # Bat Gotham
 
 ## Current delivery
+- [ ] Move session/integrations to Settings, compact currency, separate public presentation/login.
+- [ ] Crowley: automatic provider/fallback, Markdown, saved history, portrait and floating chat.
+- [ ] ADS agents: conversational reviewed strategies; no fixed sample strategy; explicitly flag unsupported scheduling/CBO operations.
+- [ ] Offer radar with persistent statuses and competitor references.
+- [ ] Global dashboard filters, period charts, gateway/product/account performance, operations and daily AI briefing.
+- [ ] Dedicated assets/pixels and verified ad-account creation path; preserve connector and permissions, never promise full access.
 - [x] Apply BatRadar-inspired visual design without importing its structure.
 - [ ] Create a distinctive logo and matching install icons. Image generation blocked; awaiting alternative direction.
 - [x] Reuse supplied funnel editor: 297 elements, custom properties, appearance, templates, editing, simulation and local save. Real cross-module resource connections remain below.
