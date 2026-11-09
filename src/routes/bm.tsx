@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, Empty, Field, NativeSelect, PageHead, head } from "@/components/ui-kit";
 import { useAdAccounts } from "@/components/account-bar";
+import { ConnectBm } from "@/components/accounts-money";
 import { getBusinessDetail, getBusinesses, getPixelHealth, getStatus, sendTestEvent, shareObjectToAccount } from "@/lib/meta.functions";
 
 export const Route = createFileRoute("/bm")({
@@ -35,6 +36,7 @@ function BusinessCenter() {
         <Button size="sm" variant="outline" onClick={() => { void list.refetch(); void detail.refetch(); void status.refetch(); }}><RefreshCw className="h-4 w-4" />Atualizar</Button>
         <Button size="sm" variant="outline" asChild><Link to="/ativos">Criar conta / pixel</Link></Button>
       </PageHead>
+      <ConnectBm />
       <p className="text-xs text-muted-foreground">Para adicionar outra BM, autorize-a na conexão da Meta (Conexões do workspace) e toque em Atualizar. Cartões e pagamentos são configurados direto na Meta.</p>
       {list.error ? <Empty>{(list.error as Error).message}</Empty> : !list.data?.length ? <Empty>{list.isLoading ? "Carregando…" : "Nenhuma BM autorizada nesta conexão."}</Empty> : (
         <>

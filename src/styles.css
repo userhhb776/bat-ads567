@@ -328,3 +328,13 @@ html[data-theme="glass-light"] :is(.bg-background) { background-color: oklch(1 0
 .guide-pulse { animation: guide-pulse 2.2s ease-in-out infinite; }
 .guide-flow { stroke-dasharray: 6 6; animation: guide-flow 1s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .guide-rise, .guide-pulse, .guide-flow { animation: none; } }
+
+/* Mobile proportions: nothing wider than the screen, tighter headings and cards */
+@media (max-width: 767px) {
+  html, body { overflow-x: hidden; }
+  select, input, textarea { max-width: 100%; min-width: 0; }
+  main [class*="grid"] > *, main [class*="flex"] > * { min-width: 0; }
+  .kpi .font-display, .metric-card .font-display { font-size: 1.25rem; line-height: 1.6rem; }
+  [data-slot=card], .panel, .kpi, .metric-card { border-radius: 0.9rem; }
+  h2.font-display { font-size: 1.35rem; }
+}
