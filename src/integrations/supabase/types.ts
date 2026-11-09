@@ -38,6 +38,213 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_log: {
+        Row: {
+          action: string
+          actor: string
+          after: Json | null
+          before: Json | null
+          created_at: string
+          error: string | null
+          id: string
+          module: string
+          result: string
+          target: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          actor?: string
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          module: string
+          result?: string
+          target?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          actor?: string
+          after?: Json | null
+          before?: Json | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          module?: string
+          result?: string
+          target?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      automation_runs: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      automations: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      crowley_messages: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gateway_events: {
         Row: {
           amount: number
@@ -86,6 +293,321 @@ export type Database = {
           status?: string
           user_id?: string
           utm?: Json
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          locked_at: string | null
+          max_attempts: number
+          payload: Json
+          result: Json | null
+          run_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          payload?: Json
+          result?: Json | null
+          run_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          locked_at?: string | null
+          max_attempts?: number
+          payload?: Json
+          result?: Json | null
+          run_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monitor_history: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monitor_rules: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      offer_radar: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sales_pages: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          name: string | null
+          position: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          name?: string | null
+          position?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
