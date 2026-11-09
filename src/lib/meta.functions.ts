@@ -92,7 +92,7 @@ export const getAssets = createServerFn({ method: "GET" }).middleware([requireSu
       pixels: pixels.data as { id: string; name: string }[],
       instagram: (ig.data as any[]).map((i) => ({ id: i.id as string, name: (i.username as string) ?? i.id })),
       audiences: audiences.data as { id: string; name: string; subtype: string }[],
-      saved: saved.data as { id: string; name: string; targeting: Record<string, unknown> }[],
+      saved: (saved.data as any[]).map((x) => ({ id: String(x.id), name: String(x.name), targeting: JSON.stringify(x.targeting ?? {}) })),
     };
   });
 

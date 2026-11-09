@@ -241,7 +241,8 @@ function Create() {
       if (s.platforms.includes("messenger")) t["messenger_positions"] = s.msg;
     }
     if (s.devices !== "all") t["device_platforms"] = [s.devices];
-    const base = assets.data?.saved?.find((x) => x.id === s.saved)?.targeting;
+    const raw = assets.data?.saved?.find((x) => x.id === s.saved)?.targeting;
+    const base = raw ? (JSON.parse(raw) as Record<string, unknown>) : undefined;
     return base ? { ...base, ...t, geo_locations: inc.length ? t["geo_locations"] : base["geo_locations"] } : t;
   }
 
