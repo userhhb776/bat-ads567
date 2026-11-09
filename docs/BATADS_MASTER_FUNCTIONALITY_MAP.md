@@ -153,3 +153,33 @@ Ferramentas do Crowley ─> dependem de todos os serviços acima
 - Configuração do gateway apontando para o webhook e um evento de teste.
 - Provedor de e-mail (para ações de e-mail).
 - Custos por produto/taxas para lucro real.
+
+---
+## CHECKLIST ATUALIZADO — 09/11/2026 (execução completa)
+| Área | Estado | O que foi feito / o que falta |
+|---|---|---|
+| Banco por domínio | IMPLEMENTADA | 16 tabelas com RLS (produtos, pedidos, contatos, conversas, mensagens, automações, execuções, regras, histórico, radar, páginas, Crowley, criativos, copies, links UTM, tarefas CRM). |
+| Executor 24h (fila, retentativas, idempotência, travas, pausa/retomar/cancelar) | IMPLEMENTADA | Verificado: tarefa executou 1 vez, 2ª passada não repetiu, gerou aviso e auditoria. |
+| Automações com navegador fechado | IMPLEMENTADA | Mesmo motor no app e no servidor; reagem a pagamentos reais do gateway. Envio real depende de WhatsApp/Telegram/e-mail configurados. |
+| Botão "Parar tudo" | IMPLEMENTADA | Bloqueia agentes, automações e agendamentos. |
+| Auditoria (antes/depois, agente, resultado, erro) | IMPLEMENTADA | Tela Atividades e saúde + CSV. |
+| Saúde dos serviços | IMPLEMENTADA | Último sinal do executor, fila, falhas, integrações. |
+| Central de notificações + preferências + sininho | IMPLEMENTADA | |
+| Agendamentos (lançar/pausar/orçamento em data e hora) | IMPLEMENTADA | Também pelo Crowley com aprovação. |
+| Dashboard: CPC, CPM, CTR, impressões, alcance, frequência, pedidos, ticket, reembolsos, lucro/prejuízo estimado | IMPLEMENTADA | Lucro exige custo de cada produto vendido. |
+| Relatórios com comparação de períodos, níveis campanha/conjunto/anúncio, vendas por produto/campanha/criativo/origem, automações, atendimento, análise IA, CSV | IMPLEMENTADA | |
+| Creative Center (upload privado, tags, produto, busca, prévia, envio à Meta, ranking CTR/CPA/ROAS, vencedores/ruins, copies) | IMPLEMENTADA | |
+| Central de BMs (contas, páginas, Instagram, pessoas, catálogos, verificação) | IMPLEMENTADA | Itens sem permissão aparecem com o motivo. |
+| Pixels: saúde, eventos recebidos, teste Conversions API, compartilhar com conta | IMPLEMENTADA | |
+| Meta: excluir, prévia e motivos de reprovação, edição de lances/limite/datas | IMPLEMENTADA | ABO→CBO em campanha existente: NÃO SUPORTADA pela Meta (duplicar/recriar). |
+| Links UTM com histórico, produto, oferta, parâmetros personalizados | IMPLEMENTADA | |
+| Caixa de entrada recebendo WhatsApp/Telegram | IMPLEMENTADA (código) / BLOQUEADA (configuração) | Link de entrada em Integrações; falta apontar o servidor Render e o bot. |
+| CRM: tarefas, responsável, histórico de atividades | IMPLEMENTADA | |
+| Funil: etapa vinculada a página, produto/oferta, automação ou campanha | IMPLEMENTADA | Analytics por etapa depende do rastreamento. |
+| Crowley: agendar, lembrete, criar produto, guardar oferta (+ ações anteriores) | IMPLEMENTADA | Criar campanha/página/funil completos pelo chat: PARCIAL (entrega a estrutura). |
+| Menu reorganizado por áreas | IMPLEMENTADA | |
+| Rastreamento próprio (visitantes, sessões, atribuição, CAPI de vendas) | BLOQUEADA | Aguarda seu código (UTMify-like). |
+| Construtor visual de automações | BLOQUEADA | Aguarda seu código (Reportana-like). |
+| Editor visual de páginas, domínios, SSL | BLOQUEADA | Aguarda seu criador de páginas. |
+| Permissões por ação/agente e organizações | PARCIAL | Uso pessoal; agentes têm autonomia individual (avisar/aprovar/automático). |
+| E-mail | BLOQUEADA | Falta RESEND_API_KEY e EMAIL_FROM. |

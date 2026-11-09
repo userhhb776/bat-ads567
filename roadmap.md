@@ -36,3 +36,10 @@
 - [x] Personal login created and cron configured in earlier work.
 - [ ] Gateway provider setup and live order ingestion verification: require the user's gateway configuration and a real/test provider event.
 - [x] Installed-app push notifications: device subscribes in Inteligência; 24h watch pushes each decision. Live phone delivery untested.
+
+## Full platform delivery (09/11)
+- [x] Domain tables, 24h worker, jobs/schedules, kill switch, audit, health, notifications.
+- [x] Dashboard delivery metrics + profit estimate, reports with period comparison/export, Creative Center, BM center, pixel health/CAPI test, ad preview/review, delete.
+- [x] Inbound WhatsApp/Telegram receiver, CRM tasks/history, funnel resource links, Crowley scheduling/product/offer tools, grouped menu.
+- [ ] Tracking, automation visual builder and page builder: waiting for the user's code.
+- [ ] Point Render/Telegram to inbound links; add Resend keys for e-mail.
