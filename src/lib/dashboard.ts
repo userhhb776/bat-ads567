@@ -12,7 +12,7 @@ export function dateRange(period:string,since:string,until:string,now=new Date()
 export function filterPayments(events:GatewayEvent[],f:DashboardFilters,range:{start:Date;end:Date},productName?:string) {
  return summarizeSales(events).orders.filter(e=>{
   const at=new Date(e.occurred_at).getTime();
-  return at>=range.start.getTime()&&at<=range.end.getTime()&&(f.product==='all'||e.product_name===productName)&&(f.campaign==='all'||e.utm.campaign_id===f.campaign||e.utm.utm_campaign===f.campaign)&&(f.source==='all'||e.utm.utm_source===f.source);
+  return at>=range.start.getTime()&&at<=range.end.getTime()&&(f.product==='all'||e.product_name===productName)&&(f.campaign==='all'||e.utm['campaign_id']===f.campaign||e.utm['utm_campaign']===f.campaign)&&(f.source==='all'||e.utm['utm_source']===f.source);
  });
 }
 export function paymentTotals(events:GatewayEvent[],targetCurrency:string,rate:number) {
