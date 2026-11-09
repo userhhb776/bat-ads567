@@ -43,3 +43,16 @@ export function sourceOf(utm: Record<string, string>, referrer: string | null): 
   if (referrer) { try { const h = new URL(referrer).hostname; if (/google|bing|yahoo/.test(h)) return 'organic'; return h.replace(/^www\./, '').slice(0, 40); } catch { /* ignore */ } }
   return 'direct';
 }
+
+/** Unique visitors reaching each funnel step (URL contains pattern) in order; a visitor counts in step N only if they hit all previous steps. */
+export function funnelSteps(events: TrackEvent[], patterns: string[]) {
+  const byV = new Map<string, TrackEvent[]>();
+  for (const e of events) byV.set(e.visitor_id, [...(byV.get(e.visitor_id) ?? []), e]);
+  const counts = patterns.map(() => 0);
+  for (const evs of byV.values()) {
+    const sorted = [...evs].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    let step = 0;
+    for (const e of sorted) { const p = patterns[step]; if (p && (e.url ?? '').toLowerCase().includes(p.toLowerCase())) { counts[step]!++; step++; } }
+  }
+  return patterns.map((p, i) => ({ pattern: p, visitors: counts[i]!, dropOff: i === 0 || !counts[i - 1] ? 0 : Math.round((1 - counts[i]! / counts[i - 1]!) * 100) }));
+}
