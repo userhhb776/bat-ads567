@@ -44,3 +44,4 @@ use the editor.
 - Operational lists sync per-row into domain tables via `TABLE_KEYS` in `src/lib/cloud-sync.ts`; localStorage is only a cache, so pages keep `useStore` while the database stays the source of truth.
 - Background work runs in `src/lib/worker.server.ts`, invoked by the secret-protected `/api/public/cron/watch` pass: jobs are claimed with an atomic status switch, retried with backoff, and skipped for users with `bg.kill-switch`; automations share `runEngine` with the client so behavior never diverges.
 - Every Meta write and scheduled/agent action records an `audit_log` row and user-facing results go to `notifications`; menu entries live only in `src/lib/nav.ts`.
+- Gateway tokens live in service-role-only `gateway_credentials` via `src/lib/integrations.functions.ts`; webhooks reject events missing a saved verification secret — keeps credentials out of the browser.

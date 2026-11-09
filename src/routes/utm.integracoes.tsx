@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useSession, useWebhookToken, useGatewayEvents } from "@/lib/sales";
 import { CheckCircle2, Clock } from "lucide-react";
 import { useAdAccounts } from "@/components/account-bar";
+import { GatewayTokens } from "@/components/gateway-tokens";
 
 export const Route = createFileRoute("/utm/integracoes")({
   head: () => ({
@@ -54,6 +55,7 @@ function GatewayLinks() {
           </div>
         ); })}
       </div>
+      <GatewayTokens gateways={gateways} />
     </>
   );
 }

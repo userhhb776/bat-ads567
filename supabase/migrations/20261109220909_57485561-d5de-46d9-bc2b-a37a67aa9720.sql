@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS public.gateway_credentials (id uuid primary key default gen_random_uuid(), user_id uuid not null, platform text not null, token text not null default '', secret text not null default '', updated_at timestamptz not null default now(), unique(user_id, platform));
+GRANT ALL ON public.gateway_credentials TO service_role;
+ALTER TABLE public.gateway_credentials ENABLE ROW LEVEL SECURITY;

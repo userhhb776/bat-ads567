@@ -19,6 +19,13 @@ export const Route = createFileRoute("/api/public/webhooks/$platform")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: owner } = await supabaseAdmin.from("user_settings").select("user_id").eq("webhook_token", token).maybeSingle();
         if (!owner) return new Response("Unauthorized", { status: 401 });
+        const { data: cred } = await supabaseAdmin.from("gateway_credentials" as never).select("secret").eq("user_id", owner.user_id).eq("platform", params.platform).maybeSingle();
+        const secret = (cred as { secret?: string } | null)?.secret;
+        if (secret) {
+          const b = (body ?? {}) as Record<string, unknown>;
+          const given = [request.headers.get("x-hotmart-hottok"), request.headers.get("x-webhook-token"), request.headers.get("x-signature"), new URL(request.url).searchParams.get("signature"), b["hottok"], b["token"], b["secret"]].map((v) => String(v ?? ""));
+          if (!given.includes(secret)) return new Response("Invalid signature", { status: 401 });
+        }
         const ev = normalizeGateway(body);
         if (!ev) return Response.json({ ok: true, ignored: true });
         const { error } = await supabaseAdmin.from("gateway_events").upsert({

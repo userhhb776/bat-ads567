@@ -54,3 +54,6 @@
 - [x] Guide rewritten with screenshots of every page.
 - [x] Crowley sees every account's history and balance; low-balance alerts in the 24h pass.
 - [ ] E-mail (Resend): postponed by the user.
+
+- [x] Crowley: funil/página/aviso, anexos, tela atual, respostas curtas, app /crowley, avatar
+- [x] Tokens dos gateways + monitor do banco
