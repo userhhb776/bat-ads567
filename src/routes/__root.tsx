@@ -12,7 +12,6 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { startCloudSync, stopCloudSync } from "@/lib/cloud-sync";
-import { Cloud, CloudOff } from "lucide-react";
 import { LayoutGrid, PlusSquare, BarChart3, Plug, Workflow, Bot, Gauge, ChevronRight, FileText, Package, Zap, Users, MessagesSquare, Radar, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencyToggle } from "@/components/currency-toggle";
@@ -135,16 +134,6 @@ function Logo({ size = "text-3xl" }: { size?: string }) {
   );
 }
 
-function EntrarGate() {
-  return (
-    <div className="mx-auto max-w-sm p-8 text-center">
-      <h1 className="font-display text-3xl">Área protegida</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Entre para acessar suas contas, campanhas e dados. Assim ninguém mais mexe nos seus anúncios.</p>
-      <Link to="/entrar" className="mt-5 inline-flex rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground">Entrar</Link>
-    </div>
-  );
-}
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const path = useRouterState({ select: (s) => s.location.pathname }).replace(/\/$/, "") || "/";
@@ -163,10 +152,6 @@ function RootComponent() {
     });
     return () => data.subscription.unsubscribe();
   }, []);
-  const cloud = email !== null
-    ? <button onClick={() => supabase.auth.signOut()} title={`Nuvem ativa (${email}) — toque para sair`} className="text-primary"><Cloud className="h-5 w-5" /></button>
-    : <Link to="/entrar" title="Entrar para salvar na nuvem" className="text-destructive"><CloudOff className="h-5 w-5" /></Link>;
-
   if (!checked) return <QueryClientProvider client={queryClient}><div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Abrindo a central…</div><Toaster /></QueryClientProvider>;
   if (path === "/entrar" || email === null) return <QueryClientProvider client={queryClient}>{path === "/entrar" ? <Outlet /> : <PublicHome />}<Toaster /></QueryClientProvider>;
 

@@ -61,13 +61,15 @@ export const getStatus = createServerFn({ method: "GET" }).middleware([requireSu
 
 export const getAdAccounts = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
   const r = await graph("me/adaccounts", {
-    params: { fields: "id,name,account_status,currency,timezone_name,business{id,name}", limit: "200" },
+    params: { fields: "id,name,account_status,currency,timezone_id,timezone_name,business{id,name}", limit: "200" },
   });
   return (r.data as any[]).map((a) => ({
     id: a.id as string,
     name: String(a.name).trim(),
     account_status: a.account_status as number,
     currency: a.currency as string,
+    timezone_id: Number(a.timezone_id),
+    timezone_name: String(a.timezone_name ?? ""),
     business: (a.business?.name as string) ?? "Conta pessoal",
   }));
 });
