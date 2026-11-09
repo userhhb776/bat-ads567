@@ -45,3 +45,12 @@
 - [x] Real visitor/drop-off per funnel step (Visitantes page).
 - [ ] Offer/funnel filter in dashboard: sales don't carry a funnel identifier yet; product/campaign/origin filters cover it today.
 - [ ] Point Render/Telegram to inbound links; add Resend keys for e-mail.
+
+## 09/11 noite
+- [x] Telegram support agents with their own bot token per agent (auto-reply via product knowledge).
+- [x] Connect new profile/BM card + agency access requests (accounts/pages).
+- [x] Sci-fi UI sounds (toggle in Settings).
+- [x] Mobile proportion fixes.
+- [x] Guide rewritten with screenshots of every page.
+- [x] Crowley sees every account's history and balance; low-balance alerts in the 24h pass.
+- [ ] E-mail (Resend): postponed by the user.
