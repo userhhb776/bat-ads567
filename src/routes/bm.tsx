@@ -65,7 +65,7 @@ function BusinessCenter() {
 function PixelCard({ pixel, businessId }: { pixel: { id: string; name: string; last_fired_time?: string }; businessId: string }) {
   const [open, setOpen] = useState(false);
   const health = useQuery({ queryKey: ["pixel", pixel.id], enabled: open, queryFn: () => getPixelHealth({ data: { pixelId: pixel.id } }) });
-  const { accounts } = useAdAccounts();
+  const accounts = useAdAccounts().accounts.data ?? [];
   const [test, setTest] = useState({ code: "", event: "PageView" as const, url: "https://" });
   const [share, setShare] = useState("");
   const [busy, setBusy] = useState(false);
@@ -92,7 +92,7 @@ function PixelCard({ pixel, businessId }: { pixel: { id: string; name: string; l
             <Button className="self-end" disabled={busy || !test.code} onClick={async () => { setBusy(true); try { const r = await sendTestEvent({ data: { pixelId: pixel.id, testCode: test.code, event: test.event, url: test.url } }); toast.success(`Meta recebeu ${r.received} evento(s) via Conversions API. ID ${r.eventId}`); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); } }}><FlaskConical className="h-4 w-4" />Testar CAPI</Button>
           </div>
           <div className="flex flex-wrap items-end gap-2">
-            <Field label="Compartilhar com a conta"><NativeSelect value={share} onChange={(e) => setShare(e.target.value)}><option value="">Escolha</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</NativeSelect></Field>
+            <Field label="Compartilhar com a conta"><NativeSelect value={share} onChange={(e) => setShare(e.target.value)}><option value="">Escolha</option>{accounts.map((a: any) => <option key={a.id} value={a.id}>{a.name}</option>)}</NativeSelect></Field>
             <Button variant="outline" disabled={busy || !share} onClick={async () => { setBusy(true); try { await shareObjectToAccount({ data: { pixelId: pixel.id, businessId, accountId: share } }); toast.success("Pixel compartilhado com a conta."); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); } }}><Share2 className="h-4 w-4" />Compartilhar</Button>
           </div>
         </div>

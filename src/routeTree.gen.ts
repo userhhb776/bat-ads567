@@ -14,6 +14,7 @@ import { Route as AgendamentosRouteImport } from './routes/agendamentos'
 import { Route as AgentesRouteImport } from './routes/agentes'
 import { Route as AtivosRouteImport } from './routes/ativos'
 import { Route as AutomacoesRouteImport } from './routes/automacoes'
+import { Route as BmRouteImport } from './routes/bm'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CriativosRouteImport } from './routes/criativos'
 import { Route as CrmRouteImport } from './routes/crm'
@@ -62,6 +63,11 @@ const AtivosRoute = AtivosRouteImport.update({
 const AutomacoesRoute = AutomacoesRouteImport.update({
   id: '/automacoes',
   path: '/automacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BmRoute = BmRouteImport.update({
+  id: '/bm',
+  path: '/bm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/bm': typeof BmRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/bm': typeof BmRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
@@ -253,6 +261,7 @@ export interface FileRoutesById {
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/bm': typeof BmRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/agentes'
     | '/ativos'
     | '/automacoes'
+    | '/bm'
     | '/configuracoes'
     | '/criativos'
     | '/crm'
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/agentes'
     | '/ativos'
     | '/automacoes'
+    | '/bm'
     | '/configuracoes'
     | '/criativos'
     | '/crm'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/agentes'
     | '/ativos'
     | '/automacoes'
+    | '/bm'
     | '/configuracoes'
     | '/criativos'
     | '/crm'
@@ -378,6 +390,7 @@ export interface RootRouteChildren {
   AgentesRoute: typeof AgentesRoute
   AtivosRoute: typeof AtivosRoute
   AutomacoesRoute: typeof AutomacoesRoute
+  BmRoute: typeof BmRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CriativosRoute: typeof CriativosRoute
   CrmRoute: typeof CrmRoute
@@ -434,6 +447,13 @@ declare module '@tanstack/react-router' {
       path: '/automacoes'
       fullPath: '/automacoes'
       preLoaderRoute: typeof AutomacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bm': {
+      id: '/bm'
+      path: '/bm'
+      fullPath: '/bm'
+      preLoaderRoute: typeof BmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -639,6 +659,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentesRoute: AgentesRoute,
   AtivosRoute: AtivosRoute,
   AutomacoesRoute: AutomacoesRoute,
+  BmRoute: BmRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   CriativosRoute: CriativosRoute,
   CrmRoute: CrmRoute,
