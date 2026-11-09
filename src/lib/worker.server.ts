@@ -137,3 +137,44 @@ export async function heartbeat(admin: Admin, info: Record<string, unknown>) {
   const rows = [...new Set((data ?? []).map((r: any) => r.user_id as string))].map((user_id) => ({ user_id, key: "srv.heartbeat", value: { at: new Date().toISOString(), ...info } as never }));
   if (rows.length) await admin.from("app_state").upsert(rows, { onConflict: "user_id,key" });
 }
+
+/** Alerts (notification + push) when an account with active campaigns is about to run out of money; once per account every 12h. */
+export async function checkFunds(admin: Admin, userIds: string[], stopped: Set<string>) {
+  const users = userIds.filter((u) => !stopped.has(u));
+  if (!users.length) return { fundAlerts: 0 };
+  const a = process.env["LOVABLE_API_KEY"], b = process.env["META_ADS_API_KEY"];
+  if (!a || !b) return { fundAlerts: 0 };
+  const h = { Authorization: `Bearer ${a}`, "X-Connection-Api-Key": b };
+  const get = async (path: string, params: Record<string, string>) => {
+    const u = new URL(`${GATEWAY}/${path}`); for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+    const r = await fetch(u, { headers: h }); return r.ok ? r.json() : null;
+  };
+  const { accountFunds, isRunningOut } = await import("./funds");
+  const list = await get("me/adaccounts", { fields: "id,name,currency,account_status,amount_spent,spend_cap,balance,is_prepay_account,funding_source_details,insights.date_preset(last_7d){spend}", limit: "100" });
+  const alerts: { title: string; body: string }[] = [];
+  for (const acc of (list?.data ?? []) as any[]) {
+    if (acc.account_status !== 1) continue;
+    const f = accountFunds(acc);
+    if (f.available === null) continue;
+    const pace = Number(acc.insights?.data?.[0]?.spend ?? 0) / 7;
+    if (!isRunningOut(f.available, pace)) continue;
+    const active = await get(`${acc.id}/campaigns`, { effective_status: '["ACTIVE"]', fields: "id", limit: "1" });
+    if (!active?.data?.length) continue;
+    const money = `${acc.currency} ${f.available.toFixed(2)}`;
+    alerts.push({ title: `Dinheiro acabando: ${acc.name}`.slice(0, 80), body: `Restam ${money} (${f.label.toLowerCase()}) e a conta gasta cerca de ${acc.currency} ${pace.toFixed(2)} por dia. Recarregue para as campanhas não pararem.` });
+  }
+  if (!alerts.length) return { fundAlerts: 0 };
+  const since = new Date(Date.now() - 12 * 3600e3).toISOString();
+  const { sendPush } = await import("./push.server");
+  let sent = 0;
+  for (const uid of users) {
+    const { data: recent } = await admin.from("notifications").select("title").eq("user_id", uid).eq("kind", "saldo").gte("created_at", since);
+    const fresh = alerts.filter((x) => !recent?.some((r) => r.title === x.title));
+    if (!fresh.length) continue;
+    await admin.from("notifications").insert(fresh.map((x) => ({ user_id: uid, kind: "saldo", title: x.title, body: x.body, link: "/ativos" })));
+    const { data: subs } = await admin.from("app_state").select("value").eq("user_id", uid).like("key", "bg.push.%");
+    for (const s of subs ?? []) for (const x of fresh) await sendPush(s.value as never, x.title, x.body).catch(() => false);
+    sent += fresh.length;
+  }
+  return { fundAlerts: sent };
+}
