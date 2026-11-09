@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, type LinkProps } from "@tanstack/react-router";
 import { useState } from "react";
 import { BarChart3, Bot, Building2, FileText, Gauge, LayoutGrid, Link2, MessagesSquare, Package, Settings, ShieldCheck, Users, Workflow, Zap } from "lucide-react";
 import { PageHead, head } from "@/components/ui-kit";
@@ -8,7 +8,7 @@ export const Route = createFileRoute("/guia")({
   component: Guide,
 });
 
-type Topic = { id: string; icon: typeof Gauge; title: string; tagline: string; to: string; steps: string[]; tip: string };
+type Topic = { id: string; icon: typeof Gauge; title: string; tagline: string; to: NonNullable<LinkProps["to"]>; steps: string[]; tip: string };
 const TOPICS: Topic[] = [
   { id: "dash", icon: Gauge, title: "Visão geral", tagline: "Seu placar do dia.", to: "/", steps: ["Escolha a conta e o período no topo", "Leia gasto, receita, lucro e ROAS nos cartões", "Toque no briefing para o Crowley resumir o dia"], tip: "Receita de anúncio e vendas aprovadas aparecem separadas para não enganar." },
   { id: "camp", icon: LayoutGrid, title: "Campanhas", tagline: "Liga, pausa e ajusta verba.", to: "/met", steps: ["Abra a lista de campanhas", "Toque numa campanha para ver conjuntos e anúncios", "Pause, ative ou mude o orçamento — é real"], tip: "Toda alteração fica registrada em Atividades." },

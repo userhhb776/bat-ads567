@@ -21,6 +21,7 @@ import { Route as CrmRouteImport } from './routes/crm'
 import { Route as CrowleyRouteImport } from './routes/crowley'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as FunisRouteImport } from './routes/funis'
+import { Route as GuiaRouteImport } from './routes/guia'
 import { Route as InteligenciaRouteImport } from './routes/inteligencia'
 import { Route as MaisRouteImport } from './routes/mais'
 import { Route as MetRouteImport } from './routes/met'
@@ -101,6 +102,11 @@ const EntrarRoute = EntrarRouteImport.update({
 const FunisRoute = FunisRouteImport.update({
   id: '/funis',
   path: '/funis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuiaRoute = GuiaRouteImport.update({
+  id: '/guia',
+  path: '/guia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InteligenciaRoute = InteligenciaRouteImport.update({
@@ -223,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
+  '/guia': typeof GuiaRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
@@ -258,6 +265,7 @@ export interface FileRoutesByTo {
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
+  '/guia': typeof GuiaRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/notificacoes': typeof NotificacoesRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
+  '/guia': typeof GuiaRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/crowley'
     | '/entrar'
     | '/funis'
+    | '/guia'
     | '/inteligencia'
     | '/mais'
     | '/met'
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/crowley'
     | '/entrar'
     | '/funis'
+    | '/guia'
     | '/inteligencia'
     | '/mais'
     | '/notificacoes'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/crowley'
     | '/entrar'
     | '/funis'
+    | '/guia'
     | '/inteligencia'
     | '/mais'
     | '/met'
@@ -433,6 +445,7 @@ export interface RootRouteChildren {
   CrowleyRoute: typeof CrowleyRoute
   EntrarRoute: typeof EntrarRoute
   FunisRoute: typeof FunisRoute
+  GuiaRoute: typeof GuiaRoute
   InteligenciaRoute: typeof InteligenciaRoute
   MaisRoute: typeof MaisRoute
   MetRoute: typeof MetRouteWithChildren
@@ -534,6 +547,13 @@ declare module '@tanstack/react-router' {
       path: '/funis'
       fullPath: '/funis'
       preLoaderRoute: typeof FunisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/guia': {
+      id: '/guia'
+      path: '/guia'
+      fullPath: '/guia'
+      preLoaderRoute: typeof GuiaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inteligencia': {
@@ -727,6 +747,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrowleyRoute: CrowleyRoute,
   EntrarRoute: EntrarRoute,
   FunisRoute: FunisRoute,
+  GuiaRoute: GuiaRoute,
   InteligenciaRoute: InteligenciaRoute,
   MaisRoute: MaisRoute,
   MetRoute: MetRouteWithChildren,
