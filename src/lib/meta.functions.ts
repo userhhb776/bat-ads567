@@ -284,6 +284,28 @@ export const createPixel = createServerFn({ method: "POST" }).middleware([requir
     return { id: String(r.id) };
   });
 
+export const getBusinesses = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+  const r = await graph("me/businesses", { params: { fields: "id,name", limit: 50 } });
+  return (r.data ?? []) as { id: string; name: string }[];
+});
+
+export const getAccountSettings = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ accountId: z.string().startsWith("act_") }).parse(d))
+  .handler(async ({ data }) => {
+    const r = await graph(data.accountId, { params: { fields: "id,name,currency,timezone_id,timezone_name,account_status,user_tasks,business{id,name}" } });
+    return r as { id: string; name: string; currency: string; timezone_id: number; timezone_name: string; account_status: number; user_tasks?: string[]; business?: { id: string; name: string } };
+  });
+
+/** Official Business /adaccount create edge. Eligibility is decided by the provider. */
+export const createAdAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/), name: z.string().trim().min(1).max(100), currency: z.enum(["BRL", "USD"]), timezoneId: z.number().int().positive(), confirmed: z.literal(true) }).parse(d))
+  .handler(async ({ data }) => {
+    const result = await graph(`${data.businessId}/adaccount`, { method: "POST", params: { name: data.name, currency: data.currency, timezone_id: data.timezoneId, end_advertiser: data.businessId } });
+    const id = String(result.id ?? result.account_id ?? "");
+    if (!id) throw new Error("A criação não retornou um identificador. Atualize a lista antes de tentar novamente.");
+    return { id: id.startsWith("act_") ? id : `act_${id}` };
+  });
+
 export type PublishInput = z.infer<typeof createSchema>;
 
 export const publishCampaign = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
