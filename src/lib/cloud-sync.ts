@@ -17,7 +17,8 @@ const NO_AUDIT = new Set(["messages", "automation_runs", "monitor_history", "cro
 
 type Item = Record<string, unknown>;
 export const rowId = (item: unknown, i: number) => {
-  const id = item && typeof item === "object" ? (item as Item)["id"] : undefined;
+  const o = item && typeof item === "object" ? (item as Item) : undefined;
+  const id = o ? (o["id"] ?? o["contactId"]) : undefined;
   return typeof id === "string" || typeof id === "number" ? String(id) : `i${i}`;
 };
 
