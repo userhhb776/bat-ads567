@@ -344,6 +344,33 @@ export type Database = {
         }
         Relationships: []
       }
+      gateway_credentials: {
+        Row: {
+          id: string
+          platform: string
+          secret: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          platform: string
+          secret?: string
+          token?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          platform?: string
+          secret?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gateway_events: {
         Row: {
           amount: number
