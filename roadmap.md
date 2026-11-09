@@ -1,21 +1,23 @@
 # Bat Gotham
 
 ## Current delivery
-- [ ] Move session/integrations to Settings, compact currency, separate public presentation/login.
-- [ ] Crowley: automatic provider/fallback, Markdown, saved history, portrait and floating chat.
-- [ ] ADS agents: conversational reviewed strategies; no fixed sample strategy; explicitly flag unsupported scheduling/CBO operations.
-- [ ] Offer radar with persistent statuses and competitor references.
-- [ ] Global dashboard filters, period charts, gateway/product/account performance, operations and daily AI briefing.
-- [ ] Dedicated assets/pixels and verified ad-account creation path; preserve connector and permissions, never promise full access.
+- [x] Move session/integrations to Settings, compact currency, separate public presentation/login. Public desktop/mobile verified.
+- [x] Crowley: automatic provider/fallback, Markdown, saved history, portrait and floating chat. Live provider response remains unverified without authenticated session.
+- [x] ADS agents: conversational reviewed supported strategies; no fixed sample strategy; account-scoped execution.
+- [ ] ADS scheduled launches, CBO conversion and unrestricted cross-module tools: not implemented; explicit confirmation and provider compatibility required.
+- [x] Offer radar with persistent statuses and competitor references.
+- [x] Global dashboard filters, period charts, gateway/product figures, selected-account operation and on-demand saved daily AI briefing.
+- [ ] Net profit after taxes/costs, tracked best-funnel ranking and cross-account comparison: require verified cost/event mappings; UI does not invent figures.
+- [x] Dedicated assets/pixels and official Business /adaccount creation with review. Live creation untested to avoid creating an unwanted asset; provider eligibility is not guaranteed.
 - [x] Apply BatRadar-inspired visual design without importing its structure.
-- [ ] Create a distinctive logo and matching install icons. Image generation blocked; awaiting alternative direction.
+- [x] Existing distinctive logo and install icons retained; new Crowley portrait and public operations imagery added.
 - [x] Reuse supplied funnel editor: 297 elements, custom properties, appearance, templates, editing, simulation and local save. Real cross-module resource connections remain below.
 - [x] Inspect all four repositories for requested reusable capabilities.
 - [x] Create central dashboard with selected-account ad-attributed metrics; gateway figures and global product/origin filters remain pending.
 - [x] Reuse tracking UTM parser and add campaign link generator.
 
 ## Requested full scope
-- [x] Audit ads options: added pixel creation, ad scheduling, frequency cap, Advantage+ creative toggle. Not supported via API here: instant forms, catalogs, ad account creation.
+- [x] Audit ads options: added pixel creation, ad scheduling, frequency cap, Advantage+ creative toggle; official account creation added. Instant forms and catalogs remain unsupported here.
 - [ ] Analytics: UTM links, visitors/sessions/events, deduplication, first/last attribution, payment webhooks and real order reports.
 - [~] Pages (AI generate/edit, versions, duplicate, pixel+UTM, download, Vercel publish done; visual block editor, domains, cloud save pending): visual editor, templates, DeepSeek generation, versions, duplication, publication/domains, forms, pixels and tracking.
 - [x] (device storage; DB pending) Product/offer/order base integrated with pages, funnels and campaigns; never store card credentials.
@@ -24,7 +26,7 @@
 - [x] (inbound messages need Render/Telegram webhooks) Support: unified inbox, product knowledge, AI/human handoff and reports.
 - [x] (status, budget, rules, automations) Crowley: controlled tools across modules, operational memory and approvals.
 - [x] (runs while app open) Intelligence: persistent monitoring, test/scale/maintenance profiles, financial limits, schedules, decision history.
-- [ ] Real installed-app push notifications and 24h checks. Current browser checks are not background monitoring.
+- [ ] Confirm visible notification on user's phone. Push acceptance does not establish phone delivery; scheduled watch endpoint exists.
 
 ## External inputs
 - [x] Reconnect Meta ads in the new workspace.
