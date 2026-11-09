@@ -79,11 +79,12 @@ export const getAssets = createServerFn({ method: "GET" }).middleware([requireSu
   .handler(async ({ data }) => {
     const failures: string[] = [];
     const failed = (label: string) => (error: unknown) => { failures.push(`${label}: ${error instanceof Error ? error.message : "consulta falhou"}`); return { data: [] }; };
-    const [pages, pixels, ig, audiences] = await Promise.all([
+    const [pages, pixels, ig, audiences, saved] = await Promise.all([
       graph("me/accounts", { params: { fields: "id,name", limit: "100" } }).catch(failed("Páginas")),
       graph(`${data.accountId}/adspixels`, { params: { fields: "id,name" } }).catch(failed("Pixels")),
       graph(`${data.accountId}/instagram_accounts`, { params: { fields: "id,username" } }).catch(failed("Instagram")),
       graph(`${data.accountId}/customaudiences`, { params: { fields: "id,name,subtype", limit: "200" } }).catch(failed("Públicos")),
+      graph(`${data.accountId}/saved_audiences`, { params: { fields: "id,name,targeting", limit: "100" } }).catch(failed("Públicos salvos")),
     ]);
     return {
       errors: failures,
@@ -91,6 +92,7 @@ export const getAssets = createServerFn({ method: "GET" }).middleware([requireSu
       pixels: pixels.data as { id: string; name: string }[],
       instagram: (ig.data as any[]).map((i) => ({ id: i.id as string, name: (i.username as string) ?? i.id })),
       audiences: audiences.data as { id: string; name: string; subtype: string }[],
+      saved: (saved.data as any[]).map((x) => ({ id: String(x.id), name: String(x.name), targeting: JSON.stringify(x.targeting ?? {}) })),
     };
   });
 
@@ -278,6 +280,8 @@ const createSchema = z.object({
     targeting: z.record(z.string(), z.any()),
     schedule: z.array(z.object({ days: z.array(z.number().int().min(0).max(6)), start_minute: z.number().int(), end_minute: z.number().int() })).optional(),
     frequency_cap: z.object({ events: z.number().int().positive(), days: z.number().int().min(1).max(90) }).optional(),
+    dsa_beneficiary: z.string().max(200).optional(),
+    dsa_payor: z.string().max(200).optional(),
   }),
   ad: z.object({
     name: z.string().min(1),
@@ -294,6 +298,7 @@ const createSchema = z.object({
     url_tags: z.string().optional(),
     pixel_tracking: z.string().optional(),
     enhancements: z.boolean().optional(),
+    multi_advertiser: z.boolean().optional(),
   }),
 });
 
@@ -375,6 +380,8 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
         start_time: s.start_time,
         end_time: s.end_time,
         ...(s.schedule?.length ? { adset_schedule: s.schedule, pacing_type: ["day_parting"] } : {}),
+        dsa_beneficiary: s.dsa_beneficiary,
+        dsa_payor: s.dsa_payor || s.dsa_beneficiary,
         frequency_control_specs: s.frequency_cap && s.optimization_goal === "REACH" ? [{ event: "IMPRESSIONS", interval_days: s.frequency_cap.days, max_frequency: s.frequency_cap.events }] : undefined,
       },
     });
@@ -434,6 +441,7 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
         object_story_spec: story,
         instagram_user_id: a.instagram_user_id,
         url_tags: a.url_tags,
+        contextual_multi_ads: a.multi_advertiser === undefined ? undefined : { enroll_status: a.multi_advertiser ? "OPT_IN" : "OPT_OUT" },
         degrees_of_freedom_spec: a.enhancements === undefined ? undefined : { creative_features_spec: { standard_enhancements: { enroll_status: a.enhancements ? "OPT_IN" : "OPT_OUT" } } },
       },
     });

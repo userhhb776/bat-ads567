@@ -4,14 +4,10 @@ export type Channel = "whatsapp" | "telegram" | "email" | "webhook";
 export async function deliver(channel: Channel, to: string, text: string): Promise<{ ok: boolean; error: string }> {
   try {
     if (channel === "whatsapp") {
-      const url = process.env["RENDER_WHATSAPP_URL"];
-      const key = process.env["RENDER_WHATSAPP_KEY"];
-      if (!url) return { ok: false, error: "Servidor de WhatsApp (Render) ainda não cadastrado." };
-      const r = await fetch(url.replace(/\/$/, "") + "/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(key ? { Authorization: `Bearer ${key}` } : {}) },
-        body: JSON.stringify({ phone: to.replace(/\D/g, ""), message: text }),
-      });
+      const [inst, phone] = to.includes("|") ? to.split("|") as [string, string] : ["", to];
+      const instance = inst || (await firstOpenInstance());
+      if (!instance) return { ok: false, error: "Nenhum WhatsApp conectado no servidor." };
+      const r = await evo(`/message/sendText/${encodeURIComponent(instance)}`, { method: "POST", body: JSON.stringify({ number: phone.replace(/\D/g, ""), text }) });
       if (!r.ok) return { ok: false, error: `WhatsApp respondeu ${r.status}: ${(await r.text()).slice(0, 200)}` };
       return { ok: true, error: "" };
     }
@@ -40,4 +36,21 @@ export async function deliver(channel: Channel, to: string, text: string): Promi
   } catch {
     return { ok: false, error: "Falha de conexão com o canal." };
   }
+}
+
+/** Calls the user's Evolution API server on Render. */
+export async function evo(path: string, init: RequestInit = {}): Promise<Response> {
+  const url = process.env["RENDER_WHATSAPP_URL"];
+  const key = process.env["RENDER_WHATSAPP_KEY"] ?? "";
+  if (!url) throw new Error("Servidor de WhatsApp (Render) ainda não cadastrado.");
+  return fetch(url.replace(/\/$/, "") + path, { ...init, headers: { "Content-Type": "application/json", apikey: key, ...(init.headers ?? {}) }, signal: AbortSignal.timeout(60000) });
+}
+
+export async function firstOpenInstance(): Promise<string> {
+  const pref = process.env["RENDER_WHATSAPP_INSTANCE"];
+  if (pref) return pref;
+  const r = await evo("/instance/fetchInstances");
+  if (!r.ok) return "";
+  const list = (await r.json()) as { name: string; connectionStatus: string }[];
+  return list.find((i) => i.connectionStatus === "open")?.name ?? "";
 }

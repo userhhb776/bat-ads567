@@ -44,15 +44,18 @@ const specials: Opt[] = [
   ["ISSUES_ELECTIONS_POLITICS", "Questões sociais, eleições ou política"],
 ];
 const destinations: Record<string, Opt[]> = {
-  OUTCOME_SALES: [["WEBSITE", "Site"], ["WHATSAPP", "WhatsApp"], ["MESSENGER", "Messenger"], ["INSTAGRAM_DIRECT", "Instagram Direct"]],
-  OUTCOME_LEADS: [["WEBSITE", "Site"], ["WHATSAPP", "WhatsApp"], ["MESSENGER", "Messenger"], ["INSTAGRAM_DIRECT", "Instagram Direct"]],
-  OUTCOME_TRAFFIC: [["WEBSITE", "Site"], ["WHATSAPP", "WhatsApp"], ["MESSENGER", "Messenger"], ["INSTAGRAM_DIRECT", "Instagram Direct"]],
+  OUTCOME_SALES: [["WEBSITE", "Site"], ["APP", "App"], ["WHATSAPP", "WhatsApp"], ["MESSENGER", "Messenger"], ["INSTAGRAM_DIRECT", "Instagram Direct"], ["MESSAGING_MESSENGER_WHATSAPP", "Messenger + WhatsApp"], ["MESSAGING_INSTAGRAM_DIRECT_MESSENGER", "Instagram + Messenger"], ["MESSAGING_INSTAGRAM_DIRECT_WHATSAPP", "Instagram + WhatsApp"], ["MESSAGING_INSTAGRAM_DIRECT_MESSENGER_WHATSAPP", "Messenger + Instagram + WhatsApp"], ["PHONE_CALL", "Ligações"]],
+  OUTCOME_LEADS: [["WEBSITE", "Site"], ["ON_AD", "Formulário instantâneo"], ["WHATSAPP", "WhatsApp"], ["MESSENGER", "Messenger"], ["INSTAGRAM_DIRECT", "Instagram Direct"], ["MESSAGING_MESSENGER_WHATSAPP", "Messenger + WhatsApp"], ["MESSAGING_INSTAGRAM_DIRECT_MESSENGER", "Instagram + Messenger"], ["MESSAGING_INSTAGRAM_DIRECT_WHATSAPP", "Instagram + WhatsApp"], ["MESSAGING_INSTAGRAM_DIRECT_MESSENGER_WHATSAPP", "Messenger + Instagram + WhatsApp"], ["PHONE_CALL", "Ligações"]],
+  OUTCOME_TRAFFIC: [["WEBSITE", "Site"], ["APP", "App"], ["WHATSAPP", "WhatsApp"], ["MESSENGER", "Messenger"], ["INSTAGRAM_DIRECT", "Instagram Direct"], ["MESSAGING_MESSENGER_WHATSAPP", "Messenger + WhatsApp"], ["MESSAGING_INSTAGRAM_DIRECT_MESSENGER", "Instagram + Messenger"], ["MESSAGING_INSTAGRAM_DIRECT_WHATSAPP", "Instagram + WhatsApp"], ["MESSAGING_INSTAGRAM_DIRECT_MESSENGER_WHATSAPP", "Messenger + Instagram + WhatsApp"], ["PHONE_CALL", "Ligações"]],
   OUTCOME_ENGAGEMENT: [["ON_POST", "No seu anúncio"], ["WHATSAPP", "WhatsApp"], ["MESSENGER", "Messenger"], ["WEBSITE", "Site"]],
   OUTCOME_AWARENESS: [["", "—"]],
   OUTCOME_APP_PROMOTION: [["APP", "App"]],
 };
+const isMessaging = (d: string) => d === "WHATSAPP" || d === "MESSENGER" || d === "INSTAGRAM_DIRECT" || d.startsWith("MESSAGING_");
 function goalsFor(obj: string, dest: string): Opt[] {
-  const msg = dest === "WHATSAPP" || dest === "MESSENGER" || dest === "INSTAGRAM_DIRECT";
+  const msg = isMessaging(dest);
+  if (dest === "PHONE_CALL") return [["QUALITY_CALL", "Ligações de qualidade"]];
+  if (dest === "ON_AD" && obj === "OUTCOME_LEADS") return [["LEAD_GENERATION", "Maximizar leads"], ["QUALITY_LEAD", "Leads de qualidade"]];
   if (msg) return [["CONVERSATIONS", "Maximizar conversas"], ["LINK_CLICKS", "Cliques no link"]];
   switch (obj) {
     case "OUTCOME_SALES":
@@ -187,11 +190,11 @@ function Create() {
     locales: [] as TargetItem[], interests: [] as TargetItem[], audIn: [] as string[], audOut: [] as string[],
     advantage: true, autoPlacements: true, platforms: ["facebook", "instagram"] as string[], fb: ["feed", "story", "facebook_reels"] as string[],
     ig: ["stream", "story", "reels"] as string[], an: [] as string[], msg: [] as string[], devices: "all",
-    daypart: false, days: ["1", "2", "3", "4", "5"] as string[], hFrom: "8", hTo: "22", fcap: "", fdays: "7",
+    saved: "", dsaBen: "", dsaPay: "", dsaDiff: false, daypart: false, days: ["1", "2", "3", "4", "5"] as string[], hFrom: "8", hTo: "22", fcap: "", fdays: "7",
   });
   const [a, setA] = useState({
     name: "", page_id: "", ig_id: "", format: "single" as "single" | "carousel", message: "", headline: "", description: "",
-    link: "", display_link: "", cta: "SHOP_NOW", url_tags: DEFAULT_UTM, tracking: true, enhancements: false,
+    link: "", display_link: "", cta: "SHOP_NOW", url_tags: DEFAULT_UTM, tracking: true, enhancements: false, multi: true,
   });
   const [media, setMedia] = useState<Media[]>([]);
   const [publishActive, setPublishActive] = useState(false);
@@ -199,7 +202,7 @@ function Create() {
   const [step, setStep] = useState("");
 
   const isConv = s.optimization_goal === "OFFSITE_CONVERSIONS" || s.optimization_goal === "VALUE";
-  const isMsg = ["WHATSAPP", "MESSENGER", "INSTAGRAM_DIRECT"].includes(s.destination);
+  const isMsg = isMessaging(s.destination);
   const needsBid = c.bid_strategy === "COST_CAP" || c.bid_strategy === "LOWEST_COST_WITH_BID_CAP";
 
   function buildTargeting() {
@@ -238,7 +241,9 @@ function Create() {
       if (s.platforms.includes("messenger")) t["messenger_positions"] = s.msg;
     }
     if (s.devices !== "all") t["device_platforms"] = [s.devices];
-    return t;
+    const raw = assets.data?.saved?.find((x) => x.id === s.saved)?.targeting;
+    const base = raw ? (JSON.parse(raw) as Record<string, unknown>) : undefined;
+    return base ? { ...base, ...t, geo_locations: inc.length ? t["geo_locations"] : base["geo_locations"] } : t;
   }
 
   const pub = useMutation({
@@ -270,12 +275,14 @@ function Create() {
             destination_type: s.destination || undefined,
             pixel_id: isConv ? s.pixel_id || undefined : undefined,
             custom_event_type: isConv ? s.event : undefined,
-            page_id_promoted: isMsg || s.optimization_goal === "PAGE_LIKES" ? a.page_id : undefined,
+            page_id_promoted: isMsg || s.destination === "ON_AD" || s.destination === "PHONE_CALL" || s.optimization_goal === "PAGE_LIKES" ? a.page_id : undefined,
             attribution: isConv ? s.attribution : undefined,
             start_time: s.start ? new Date(s.start).toISOString() : undefined,
             end_time: s.end ? new Date(s.end).toISOString() : undefined,
             targeting: buildTargeting(),
             schedule: c.budget_type === "lifetime" && s.daypart && s.days.length ? [{ days: s.days.map(Number), start_minute: Number(s.hFrom) * 60, end_minute: Math.min(24, Number(s.hTo)) * 60 }] : undefined,
+            dsa_beneficiary: s.dsaBen || undefined,
+            dsa_payor: s.dsaDiff ? s.dsaPay || undefined : s.dsaBen || undefined,
             frequency_cap: s.optimization_goal === "REACH" && Number(s.fcap) > 0 ? { events: Number(s.fcap), days: Number(s.fdays) || 7 } : undefined,
           },
           ad: {
@@ -284,6 +291,7 @@ function Create() {
             display_link: a.display_link || undefined, cta: a.cta, url_tags: a.url_tags || undefined,
             pixel_tracking: a.tracking && s.pixel_id ? s.pixel_id : undefined,
             enhancements: a.enhancements,
+            multi_advertiser: a.multi,
           },
         },
       });
@@ -314,6 +322,23 @@ function Create() {
   };
 
   const ready = account && c.name && a.page_id && a.link && media.length && (!isConv || s.pixel_id) && s.locations.some((l) => !l.exclude);
+  const checklist: [string, boolean][] = [
+    ["Conta de anúncios escolhida", !!account],
+    ["Nome da campanha", !!c.name],
+    ["Objetivo e local da conversão", !!c.objective && !!s.destination],
+    ["Categoria especial revisada", true],
+    ["Orçamento definido", c.cbo ? !!money(c.budget) : !!money(s.budget)],
+    ["Pixel e evento (se conversão)", !isConv || !!s.pixel_id],
+    ["Meta de custo / lance (se exigido)", !needsBid || !!money(s.bid_amount)],
+    ["Data de término (orçamento total)", c.budget_type !== "lifetime" || !!s.end],
+    ["Localização incluída", s.locations.some((l) => !l.exclude)],
+    ["Página do Facebook", !!a.page_id],
+    ["Instagram vinculado", !!a.ig_id],
+    ["Criativo enviado", media.length > 0],
+    ["Texto principal e título", !!a.message && !!a.headline],
+    ["Link de destino", !!a.link],
+    ["UTMs no link", !!a.url_tags],
+  ];
   const pageName = assets.data?.pages.find((p) => p.id === a.page_id)?.name ?? "Sua página";
 
   const preview = (
@@ -426,6 +451,11 @@ function Create() {
             )}
           </Group>
           <Group title="Público">
+            {(assets.data?.saved?.length ?? 0) > 0 && (
+              <Field label="Usar um público salvo (opcional)" wide>
+                <Pick value={s.saved || "none"} onChange={(v) => setS({ ...s, saved: v === "none" ? "" : v })} options={[["none", "Nenhum"], ...(assets.data?.saved ?? []).map((x) => [x.id, x.name] as Opt)]} />
+              </Field>
+            )}
             <div className="md:col-span-2 rounded-md border border-border p-3">
               <Toggle checked={s.advantage && !c.specials.length} onChange={(v) => setS({ ...s, advantage: v })} label="Público Advantage+ (a Meta expande além das sugestões)" />
             </div>
@@ -452,6 +482,13 @@ function Create() {
                 <Checks options={(assets.data?.audiences ?? []).map((x) => [x.id, x.name])} value={s.audOut} onChange={(v) => setS({ ...s, audOut: v })} />
               </Field>
             )}
+          </Group>
+          <Group title="Transparência dos anúncios">
+            <Field label="Anunciante (opcional)" hint="Nome exibido na Biblioteca de Anúncios. Obrigatório só para público na União Europeia."><Input value={s.dsaBen} onChange={(e) => setS({ ...s, dsaBen: e.target.value })} placeholder="Nome da sua empresa" /></Field>
+            <div className="space-y-2">
+              <Toggle checked={s.dsaDiff} onChange={(v) => setS({ ...s, dsaDiff: v })} label="O anunciante e o pagador são diferentes" />
+              {s.dsaDiff && <Input value={s.dsaPay} onChange={(e) => setS({ ...s, dsaPay: e.target.value })} placeholder="Quem paga" />}
+            </div>
           </Group>
           <Group title="Posicionamentos">
             <div className="md:col-span-2 space-y-4">
@@ -517,10 +554,12 @@ function Create() {
           </Group>
           <Group title="Rastreamento">
             <div className="md:col-span-2"><Toggle checked={a.tracking} onChange={(v) => setA({ ...a, tracking: v })} label="Rastrear eventos do site com o pixel do conjunto" /></div>
+            <div className="md:col-span-2"><Toggle checked={a.multi} onChange={(v) => setA({ ...a, multi: v })} label="Anúncios com múltiplos anunciantes (pode aparecer junto de outros anúncios)" /></div>
             <div className="md:col-span-2"><Toggle checked={a.enhancements} onChange={(v) => setA({ ...a, enhancements: v })} label="Melhorias de criativo Advantage+ (a Meta ajusta brilho, texto e formato)" /></div>
           </Group>
         </Section>
 
+        <div className="xl:hidden"><Checklist items={checklist} /></div>
         <div className="hidden items-center justify-end gap-4 sm:flex">
           <Toggle checked={publishActive} onChange={setPublishActive} label="Publicar já ativo" />
           <Button size="lg" disabled={!ready || pub.isPending} onClick={() => pub.mutate()}>{pub.isPending ? step || "Publicando…" : "Publicar"}</Button>
@@ -530,6 +569,7 @@ function Create() {
       <aside className="hidden xl:sticky xl:top-6 xl:block xl:self-start">
         <div className="mb-2 text-xs uppercase text-muted-foreground">Pré-visualização</div>
         {preview}
+        <Checklist items={checklist} />
       </aside>
 
       {showPreview && (
@@ -549,6 +589,18 @@ function Create() {
       <div className="hidden sm:block xl:hidden">
         <Button variant="secondary" onClick={() => setShowPreview(true)}><Eye className="mr-2 h-4 w-4" /> Ver prévia</Button>
       </div>
+    </div>
+  );
+}
+
+function Checklist({ items }: { items: [string, boolean][] }) {
+  const done = items.filter((i) => i[1]).length;
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-card p-4">
+      <div className="mb-2 flex items-center justify-between text-sm font-semibold"><span>Não esqueça nada</span><span className="text-xs text-muted-foreground">{done}/{items.length}</span></div>
+      <ul className="space-y-1 text-xs">
+        {items.map(([l, ok]) => <li key={l} className={ok ? "text-muted-foreground line-through" : "text-foreground"}>{ok ? "✓" : "○"} {l}</li>)}
+      </ul>
     </div>
   );
 }

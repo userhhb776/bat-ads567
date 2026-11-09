@@ -10,6 +10,13 @@ export function parseInbound(channel: string, body: any): { from: string; name: 
     if (!m?.chat?.id || typeof m.text !== "string") return null;
     return { from: String(m.chat.id), name: [m.from?.first_name, m.from?.last_name].filter(Boolean).join(" "), text: m.text };
   }
+  if (body?.data?.key?.remoteJid) {
+    const d = body.data;
+    if (d.key.fromMe || String(d.key.remoteJid).endsWith("@g.us")) return null;
+    const t = d.message?.conversation ?? d.message?.extendedTextMessage?.text ?? d.message?.imageMessage?.caption;
+    if (typeof t !== "string" || !t.trim()) return null;
+    return { from: String(d.key.remoteJid).replace(/@.*$/, "").replace(/\D/g, ""), name: String(d.pushName ?? ""), text: t };
+  }
   const from = body?.phone ?? body?.from ?? body?.sender ?? body?.key?.remoteJid;
   const text = body?.message ?? body?.text ?? body?.body;
   if (!from || typeof text !== "string" || !text.trim()) return null;
