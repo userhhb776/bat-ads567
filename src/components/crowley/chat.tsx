@@ -76,7 +76,7 @@ export function CrowleyChat({ compact = false, agents = false }: { compact?: boo
   const [voice, setVoice] = useState<'off'|'ouvindo'|'pensando'|'falando'>('off');
   const voiceSig = useRef({ stop: true }); const audioRef = useRef<HTMLAudioElement | null>(null);
   // Push-to-talk: só grava enquanto o dedo está no botão; tocar enquanto ele fala/pensa interrompe.
-  const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; at: number } | null>(null);
+  const recRef = useRef<{ rec: MediaRecorder; stream: MediaStream; chunks: Blob[]; at: number; busy: boolean } | null>(null);
   async function holdStart() {
     voiceSig.current.stop = true; audioRef.current?.pause();
     if (recRef.current) return;
@@ -85,13 +85,13 @@ export function CrowleyChat({ compact = false, agents = false }: { compact?: boo
     catch { toast.error('Libere o microfone para falar com o Crowley.'); setVoice('off'); return; }
     const rec = new MediaRecorder(stream); const chunks: Blob[] = [];
     rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-    rec.start(200); recRef.current = { rec, stream, chunks, at: Date.now() }; setVoice('ouvindo');
+    rec.start(200); recRef.current = { rec, stream, chunks, at: Date.now(), busy: voice!=='off' }; setVoice('ouvindo');
   }
   async function holdEnd() {
     const r = recRef.current; if (!r) return; recRef.current = null;
     await new Promise<void>((res) => { r.rec.onstop = () => res(); r.rec.stop(); });
     r.stream.getTracks().forEach((t) => t.stop());
-    if (Date.now() - r.at < 500 || !r.chunks.length) { setVoice('off'); toast('Segure o microfone enquanto fala, chefe.'); return; }
+    if (Date.now() - r.at < 500 || !r.chunks.length) { setVoice('off'); if (!r.busy) toast('Segure o microfone enquanto fala, chefe.'); return; }
     const sig = { stop: false }; voiceSig.current = sig;
     try {
       const blob = new Blob(r.chunks, { type: r.rec.mimeType || 'audio/webm' });
