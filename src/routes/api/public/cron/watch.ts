@@ -38,10 +38,13 @@ export const Route = createFileRoute("/api/public/cron/watch")({
         for (const r of rows ?? []) {
           const u = users.get(r.user_id); if (u) u.account = String(r.value);
         }
+        const { stoppedUsers, processJobs, runAutomations, heartbeat } = await import("@/lib/worker.server");
+        const stopped = await stoppedUsers(supabaseAdmin);
         const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: "America/Sao_Paulo" }).format(new Date())) % 24;
         let actions = 0;
         const notes: { userId: string; title: string; body: string }[] = [];
         for (const [userId, { rules, account }] of users) {
+          if (stopped.has(userId)) continue;
           const active = (rules ?? []).filter((r) => r.active && (!r.accountId || r.accountId === account));
           if (!active.length || !account?.startsWith("act_")) continue;
           const url = new URL(`${GATEWAY}/${account}/campaigns`);
@@ -83,7 +86,10 @@ export const Route = createFileRoute("/api/public/cron/watch")({
             } catch (e) { console.error("push", e); }
           }
         }
-        return Response.json({ ok: true, users: users.size, actions });
+        const jobs = await processJobs(supabaseAdmin, stopped).catch((e) => { console.error("jobs", e); return { done: 0, failed: 0 }; });
+        const autos = await runAutomations(supabaseAdmin, stopped).catch((e) => { console.error("autos", e); return { runs: 0 }; });
+        await heartbeat(supabaseAdmin, { actions, ...jobs, ...autos }).catch(() => {});
+        return Response.json({ ok: true, users: users.size, actions, jobs, automations: autos });
       },
     },
   },
