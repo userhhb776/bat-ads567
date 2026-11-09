@@ -42,5 +42,6 @@
 - [x] Dashboard delivery metrics + profit estimate, reports with period comparison/export, Creative Center, BM center, pixel health/CAPI test, ad preview/review, delete.
 - [x] Inbound WhatsApp/Telegram receiver, CRM tasks/history, funnel resource links, Crowley scheduling/product/offer tools, grouped menu.
 - [x] Visitor tracking, visual automation flow (trigger→steps, insert between, branch labels) and block page builder (8 blocks, colors, versions).
-- [ ] Real visitor/drop-off numbers on funnel steps and offer/funnel filters in dashboard.
+- [x] Real visitor/drop-off per funnel step (Visitantes page).
+- [ ] Offer/funnel filter in dashboard: sales don't carry a funnel identifier yet; product/campaign/origin filters cover it today.
 - [ ] Point Render/Telegram to inbound links; add Resend keys for e-mail.
