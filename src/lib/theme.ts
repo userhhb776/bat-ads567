@@ -17,7 +17,7 @@ export function getTheme(): ThemeId {
 }
 export function setTheme(t: ThemeId) {
   localStorage.setItem(KEY, t);
-  document.documentElement.dataset.theme = t;
+  document.documentElement.dataset['theme'] = t;
   window.dispatchEvent(new Event(EVT));
 }
 export function useTheme() {
