@@ -250,3 +250,45 @@ html[data-theme^="glass"] :is(button, input, select, textarea, [role="combobox"]
 html[data-theme^="glass"] .rounded-md { border-radius: 0.9rem; }
 html[data-theme^="glass"] .kpi { background: var(--glass-bg), linear-gradient(135deg, color-mix(in oklab, var(--tone) 14%, transparent), transparent 70%); }
 html[data-theme^="glass"] .ops-header, html[data-theme^="glass"] .public-cover { background-image: none; }
+
+/* ===== Liquid glass (refração real sobre luz de fundo) ===== */
+html[data-theme="glass-light"] {
+  --card: oklch(1 0 0 / 0.22);
+  --sidebar: oklch(1 0 0 / 0.2);
+  --border: oklch(1 0 0 / 0.55);
+  --glass-bg: linear-gradient(155deg, oklch(1 0 0 / 0.42), oklch(1 0 0 / 0.08) 60%, oklch(1 0 0 / 0.18));
+  --glass-edge: inset 0 1.5px 1px oklch(1 0 0 / 0.95), inset 0 -1px 1px oklch(0.5 0.03 260 / 0.18), inset 1px 0 0 oklch(1 0 0 / 0.4), 0 18px 40px -18px oklch(0.35 0.04 260 / 0.28);
+}
+html[data-theme="glass-light"] body {
+  background:
+    radial-gradient(38rem 30rem at 92% 8%, oklch(0.8 0.14 50 / 0.55), transparent 65%),
+    radial-gradient(42rem 34rem at 4% 96%, oklch(0.62 0.17 255 / 0.5), transparent 65%),
+    radial-gradient(30rem 24rem at 55% 55%, oklch(0.85 0.07 310 / 0.4), transparent 70%),
+    linear-gradient(160deg, oklch(0.95 0.01 250), oklch(0.88 0.02 260));
+  background-attachment: fixed;
+}
+html[data-theme="glass-dark"] {
+  --card: oklch(1 0 0 / 0.05);
+  --sidebar: oklch(1 0 0 / 0.04);
+  --glass-bg: linear-gradient(155deg, oklch(1 0 0 / 0.12), oklch(1 0 0 / 0.015) 60%, oklch(1 0 0 / 0.05));
+  --glass-edge: inset 0 1.5px 1px oklch(1 0 0 / 0.22), inset 0 -1px 1px oklch(0 0 0 / 0.45), inset 1px 0 0 oklch(1 0 0 / 0.08), 0 20px 44px -18px oklch(0 0 0 / 0.75);
+}
+html[data-theme="glass-dark"] body {
+  background:
+    radial-gradient(36rem 28rem at 90% 6%, color-mix(in oklab, var(--primary) 32%, transparent), transparent 65%),
+    radial-gradient(42rem 34rem at 2% 98%, oklch(0.5 0.16 255 / 0.45), transparent 65%),
+    radial-gradient(28rem 22rem at 55% 50%, oklch(0.45 0.13 310 / 0.28), transparent 70%),
+    linear-gradient(160deg, oklch(0.16 0.012 260), oklch(0.08 0.006 260));
+  background-attachment: fixed;
+}
+html[data-theme^="glass"] :is(.bg-card, .bg-sidebar, .panel, .kpi, .metric-card, [data-slot="card"]) {
+  background-color: var(--card);
+  backdrop-filter: blur(30px) saturate(180%);
+  border-color: var(--border);
+}
+html[data-theme^="glass"] :is(.panel, .kpi, [data-slot="card"]) { border-radius: 1.6rem; }
+html[data-theme^="glass"] button:not([role="switch"]) { border-radius: 9999px; }
+
+#lovable-badge {
+  display: none !important;
+}
