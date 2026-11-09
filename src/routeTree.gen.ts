@@ -10,10 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AgendamentosRouteImport } from './routes/agendamentos'
 import { Route as AgentesRouteImport } from './routes/agentes'
 import { Route as AtivosRouteImport } from './routes/ativos'
 import { Route as AutomacoesRouteImport } from './routes/automacoes'
+import { Route as BmRouteImport } from './routes/bm'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as CriativosRouteImport } from './routes/criativos'
 import { Route as CrmRouteImport } from './routes/crm'
 import { Route as CrowleyRouteImport } from './routes/crowley'
 import { Route as EntrarRouteImport } from './routes/entrar'
@@ -21,9 +24,12 @@ import { Route as FunisRouteImport } from './routes/funis'
 import { Route as InteligenciaRouteImport } from './routes/inteligencia'
 import { Route as MaisRouteImport } from './routes/mais'
 import { Route as MetRouteImport } from './routes/met'
+import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as PaginasRouteImport } from './routes/paginas'
 import { Route as ProdutosRouteImport } from './routes/produtos'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
+import { Route as SistemaRouteImport } from './routes/sistema'
 import { Route as SuporteRouteImport } from './routes/suporte'
 import { Route as UtmRouteImport } from './routes/utm'
 import { Route as MetIndexRouteImport } from './routes/met.index'
@@ -37,6 +43,11 @@ import { Route as ApiPublicWebhooksPlatformRouteImport } from './routes/api/publ
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgendamentosRoute = AgendamentosRouteImport.update({
+  id: '/agendamentos',
+  path: '/agendamentos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentesRoute = AgentesRouteImport.update({
@@ -54,9 +65,19 @@ const AutomacoesRoute = AutomacoesRouteImport.update({
   path: '/automacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BmRoute = BmRouteImport.update({
+  id: '/bm',
+  path: '/bm',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriativosRoute = CriativosRouteImport.update({
+  id: '/criativos',
+  path: '/criativos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrmRoute = CrmRouteImport.update({
@@ -94,6 +115,11 @@ const MetRoute = MetRouteImport.update({
   path: '/met',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotificacoesRoute = NotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OfertasRoute = OfertasRouteImport.update({
   id: '/ofertas',
   path: '/ofertas',
@@ -107,6 +133,16 @@ const PaginasRoute = PaginasRouteImport.update({
 const ProdutosRoute = ProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SistemaRoute = SistemaRouteImport.update({
+  id: '/sistema',
+  path: '/sistema',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuporteRoute = SuporteRouteImport.update({
@@ -158,10 +194,13 @@ const ApiPublicWebhooksPlatformRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/bm': typeof BmRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
@@ -169,9 +208,12 @@ export interface FileRoutesByFullPath {
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
+  '/notificacoes': typeof NotificacoesRoute
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
+  '/relatorios': typeof RelatoriosRoute
+  '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
   '/met/criar': typeof MetCriarRoute
@@ -184,19 +226,25 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/bm': typeof BmRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
   '/funis': typeof FunisRoute
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
+  '/relatorios': typeof RelatoriosRoute
+  '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
@@ -209,10 +257,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agendamentos': typeof AgendamentosRoute
   '/agentes': typeof AgentesRoute
   '/ativos': typeof AtivosRoute
   '/automacoes': typeof AutomacoesRoute
+  '/bm': typeof BmRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criativos': typeof CriativosRoute
   '/crm': typeof CrmRoute
   '/crowley': typeof CrowleyRoute
   '/entrar': typeof EntrarRoute
@@ -220,9 +271,12 @@ export interface FileRoutesById {
   '/inteligencia': typeof InteligenciaRoute
   '/mais': typeof MaisRoute
   '/met': typeof MetRouteWithChildren
+  '/notificacoes': typeof NotificacoesRoute
   '/ofertas': typeof OfertasRoute
   '/paginas': typeof PaginasRoute
   '/produtos': typeof ProdutosRoute
+  '/relatorios': typeof RelatoriosRoute
+  '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
   '/met/criar': typeof MetCriarRoute
@@ -237,10 +291,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agendamentos'
     | '/agentes'
     | '/ativos'
     | '/automacoes'
+    | '/bm'
     | '/configuracoes'
+    | '/criativos'
     | '/crm'
     | '/crowley'
     | '/entrar'
@@ -248,9 +305,12 @@ export interface FileRouteTypes {
     | '/inteligencia'
     | '/mais'
     | '/met'
+    | '/notificacoes'
     | '/ofertas'
     | '/paginas'
     | '/produtos'
+    | '/relatorios'
+    | '/sistema'
     | '/suporte'
     | '/utm'
     | '/met/criar'
@@ -263,19 +323,25 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agendamentos'
     | '/agentes'
     | '/ativos'
     | '/automacoes'
+    | '/bm'
     | '/configuracoes'
+    | '/criativos'
     | '/crm'
     | '/crowley'
     | '/entrar'
     | '/funis'
     | '/inteligencia'
     | '/mais'
+    | '/notificacoes'
     | '/ofertas'
     | '/paginas'
     | '/produtos'
+    | '/relatorios'
+    | '/sistema'
     | '/suporte'
     | '/met/criar'
     | '/utm/integracoes'
@@ -287,10 +353,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/agendamentos'
     | '/agentes'
     | '/ativos'
     | '/automacoes'
+    | '/bm'
     | '/configuracoes'
+    | '/criativos'
     | '/crm'
     | '/crowley'
     | '/entrar'
@@ -298,9 +367,12 @@ export interface FileRouteTypes {
     | '/inteligencia'
     | '/mais'
     | '/met'
+    | '/notificacoes'
     | '/ofertas'
     | '/paginas'
     | '/produtos'
+    | '/relatorios'
+    | '/sistema'
     | '/suporte'
     | '/utm'
     | '/met/criar'
@@ -314,10 +386,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgendamentosRoute: typeof AgendamentosRoute
   AgentesRoute: typeof AgentesRoute
   AtivosRoute: typeof AtivosRoute
   AutomacoesRoute: typeof AutomacoesRoute
+  BmRoute: typeof BmRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  CriativosRoute: typeof CriativosRoute
   CrmRoute: typeof CrmRoute
   CrowleyRoute: typeof CrowleyRoute
   EntrarRoute: typeof EntrarRoute
@@ -325,9 +400,12 @@ export interface RootRouteChildren {
   InteligenciaRoute: typeof InteligenciaRoute
   MaisRoute: typeof MaisRoute
   MetRoute: typeof MetRouteWithChildren
+  NotificacoesRoute: typeof NotificacoesRoute
   OfertasRoute: typeof OfertasRoute
   PaginasRoute: typeof PaginasRoute
   ProdutosRoute: typeof ProdutosRoute
+  RelatoriosRoute: typeof RelatoriosRoute
+  SistemaRoute: typeof SistemaRoute
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
@@ -341,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agendamentos': {
+      id: '/agendamentos'
+      path: '/agendamentos'
+      fullPath: '/agendamentos'
+      preLoaderRoute: typeof AgendamentosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agentes': {
@@ -364,11 +449,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AutomacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bm': {
+      id: '/bm'
+      path: '/bm'
+      fullPath: '/bm'
+      preLoaderRoute: typeof BmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/configuracoes': {
       id: '/configuracoes'
       path: '/configuracoes'
       fullPath: '/configuracoes'
       preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criativos': {
+      id: '/criativos'
+      path: '/criativos'
+      fullPath: '/criativos'
+      preLoaderRoute: typeof CriativosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crm': {
@@ -420,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notificacoes': {
+      id: '/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof NotificacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ofertas': {
       id: '/ofertas'
       path: '/ofertas'
@@ -439,6 +545,20 @@ declare module '@tanstack/react-router' {
       path: '/produtos'
       fullPath: '/produtos'
       preLoaderRoute: typeof ProdutosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sistema': {
+      id: '/sistema'
+      path: '/sistema'
+      fullPath: '/sistema'
+      preLoaderRoute: typeof SistemaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/suporte': {
@@ -535,10 +655,13 @@ const UtmRouteWithChildren = UtmRoute._addFileChildren(UtmRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgendamentosRoute: AgendamentosRoute,
   AgentesRoute: AgentesRoute,
   AtivosRoute: AtivosRoute,
   AutomacoesRoute: AutomacoesRoute,
+  BmRoute: BmRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  CriativosRoute: CriativosRoute,
   CrmRoute: CrmRoute,
   CrowleyRoute: CrowleyRoute,
   EntrarRoute: EntrarRoute,
@@ -546,9 +669,12 @@ const rootRouteChildren: RootRouteChildren = {
   InteligenciaRoute: InteligenciaRoute,
   MaisRoute: MaisRoute,
   MetRoute: MetRouteWithChildren,
+  NotificacoesRoute: NotificacoesRoute,
   OfertasRoute: OfertasRoute,
   PaginasRoute: PaginasRoute,
   ProdutosRoute: ProdutosRoute,
+  RelatoriosRoute: RelatoriosRoute,
+  SistemaRoute: SistemaRoute,
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
