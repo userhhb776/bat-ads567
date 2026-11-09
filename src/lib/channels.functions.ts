@@ -11,7 +11,12 @@ export const sendMessage = createServerFn({ method: "POST" }).middleware([requir
       text: z.string().min(1).max(4000),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    if (data.to.startsWith("bot:")) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: own } = await supabaseAdmin.from("support_bots").select("id").eq("id", data.to.slice(4).split("|")[0]!).eq("user_id", context.userId).maybeSingle();
+      if (!own) return { ok: false, error: "Esse bot não é seu." };
+    }
     const { deliver } = await import("@/lib/channels.server");
     return deliver(data.channel, data.to, data.text);
   });
@@ -34,33 +39,9 @@ export const supportReply = createServerFn({ method: "POST" }).middleware([requi
     }).parse(d),
   )
   .handler(async ({ data }) => {
-    const system = `Você é o atendente do produto "${data.product}". Responda em português, curto, gentil e objetivo, usando SOMENTE a base abaixo. Se não souber, ou se o cliente pedir humano, reembolso ou estiver irritado, responda começando com [HUMANO] e diga que um atendente vai assumir. Classifique no fim com uma linha "CATEGORIA: duvida|acesso|pagamento|reembolso|reclamacao|venda".\n\nBase:\n${data.knowledge || "(vazia)"}`;
-    const messages = [{ role: "system", content: system }, ...data.history.map((m) => ({ role: m.from === "cliente" ? "user" : "assistant", content: m.text }))];
-    const key = process.env["OLLAMA_API_KEY"];
-    const dkey = process.env["DEEPSEEK_API_KEY"];
-    try {
-      if (key) {
-        const r = await fetch("https://ollama.com/api/chat", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: process.env["OLLAMA_MODEL"] || "gpt-oss:120b", messages, stream: false }) });
-        const j: any = await r.json().catch(() => ({}));
-        if (r.ok) return parse(String(j.message?.content ?? ""));
-      }
-      if (dkey) {
-        const r = await fetch("https://api.deepseek.com/chat/completions", { method: "POST", headers: { Authorization: `Bearer ${dkey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "deepseek-chat", messages }) });
-        const j: any = await r.json().catch(() => ({}));
-        if (r.ok) return parse(String(j.choices?.[0]?.message?.content ?? ""));
-        return { text: "", handoff: false, category: "", error: `DeepSeek ${r.status}` };
-      }
-      return { text: "", handoff: false, category: "", error: "Nenhuma chave de IA cadastrada." };
-    } catch {
-      return { text: "", handoff: false, category: "", error: "Falha ao chamar a IA." };
-    }
+    const { generateReply } = await import("@/lib/support-ai.server");
+    return generateReply(data.product, data.knowledge, data.history);
   });
-
-function parse(raw: string) {
-  const cat = raw.match(/CATEGORIA:\s*(\w+)/i)?.[1] ?? "";
-  const text = raw.replace(/CATEGORIA:.*$/im, "").trim();
-  return { text: text.replace(/^\[HUMANO\]\s*/, ""), handoff: text.startsWith("[HUMANO]"), category: cat, error: "" };
-}
 
 export type WaInstance = { name: string; status: string; profile: string; number: string; pic: string };
 

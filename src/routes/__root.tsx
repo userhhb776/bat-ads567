@@ -1,3 +1,4 @@
+import { installSfx } from "@/lib/sfx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -122,6 +123,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const path = useRouterState({ select: (s) => s.location.pathname }).replace(/\/$/, "") || "/";
   useEffect(() => { loadRate(); }, []);
+  useEffect(() => installSfx(), []);
   const [email, setEmail] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
   useEffect(() => {

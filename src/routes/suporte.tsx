@@ -9,6 +9,7 @@ import { Card, Empty, NativeSelect, PageHead, Stat, head } from "@/components/ui
 import { useStore, uid } from "@/lib/store";
 import type { Contact, Conversation, Message, Product } from "@/lib/biz";
 import { sendMessage, supportReply } from "@/lib/channels.functions";
+import { SupportBots } from "@/components/support-bots";
 
 export const Route = createFileRoute("/suporte")({
   head: () => head("Atendimento", "Caixa de entrada unificada com agentes de IA por produto e passagem para humano."),
@@ -31,14 +32,16 @@ function SupportRoute() {
   const thread = msgs.filter((m) => m.contactId === sel).sort((a, b) => a.at - b.at);
   const ensureConv = (): Conversation => conv ?? { contactId: sel, productId: products[0]?.id ?? "", mode: "ia", status: "aberta", category: "" };
   const upConv = (p: Partial<Conversation>) => { const c = { ...ensureConv(), ...p }; setConvs([c, ...convs.filter((x) => x.contactId !== sel)]); };
-  const channel: Message["channel"] = contact?.phone ? "whatsapp" : contact?.email ? "email" : "telegram";
+  const botId = (contact?.fields as Record<string, string> | undefined)?.["botId"];
+  const channel: Message["channel"] = contact?.source === "telegram" || botId ? "telegram" : contact?.phone ? "whatsapp" : contact?.email ? "email" : "telegram";
+  const dest = botId ? `bot:${botId}|${contact?.phone}` : contact?.phone || contact?.email || "-";
 
   async function post() {
     if (!text || !contact) return;
     const m: Message = { id: uid(), contactId: sel, channel, from: as, text, at: Date.now() };
     const next = [...msgs, m]; setMsgs(next); setText("");
     if (as === "humano") {
-      const r = await send({ data: { channel, to: contact.phone || contact.email || "-", text: m.text } });
+      const r = await send({ data: { channel, to: dest, text: m.text } });
       if (!r.ok) toast.error(r.error);
       return;
     }
@@ -52,7 +55,7 @@ function SupportRoute() {
     setMsgs([...next, { id: uid(), contactId: sel, channel, from: "ia", text: r.text, at: Date.now() }]);
     upConv({ category: r.category, mode: r.handoff ? "humano" : "ia" });
     if (r.handoff) toast.message("Crowley passou esta conversa para você.");
-    const s = await send({ data: { channel, to: contact.phone || contact.email || "-", text: r.text } });
+    const s = await send({ data: { channel, to: dest, text: r.text } });
     if (!s.ok) toast.error("Resposta gerada, mas não enviada: " + s.error);
   }
 
@@ -67,6 +70,7 @@ function SupportRoute() {
         <Stat label="Resolvidas" value={convs.filter((c) => c.status === "resolvida").length} />
         <Stat label="Principal assunto" value={Object.entries(cats).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—"} />
       </div>
+      <SupportBots />
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <Card className="max-h-[70vh] divide-y divide-border overflow-y-auto p-0">
           {contacts.length === 0 && <div className="p-4 text-sm text-muted-foreground">Adicione contatos no CRM para conversar.</div>}
@@ -97,7 +101,7 @@ function SupportRoute() {
               ))}
               {busy && <div className="text-xs text-muted-foreground">Agente respondendo…</div>}
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:flex">
               <NativeSelect value={as} onChange={(e) => setAs(e.target.value as any)}><option value="humano">Enviar como eu</option><option value="cliente">Registrar msg do cliente</option></NativeSelect>
               <Input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && post()} placeholder="Mensagem" />
               <Button onClick={post} disabled={busy}><Send className="h-4 w-4" /></Button>

@@ -11,6 +11,15 @@ export async function deliver(channel: Channel, to: string, text: string): Promi
       if (!r.ok) return { ok: false, error: `WhatsApp respondeu ${r.status}: ${(await r.text()).slice(0, 200)}` };
       return { ok: true, error: "" };
     }
+    if (channel === "telegram" && to.startsWith("bot:")) {
+      const [botId, chat] = to.slice(4).split("|") as [string, string];
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: bot } = await supabaseAdmin.from("support_bots").select("token").eq("id", botId).maybeSingle();
+      const token = bot?.token;
+      if (!token || !chat) return { ok: false, error: "Bot do agente não encontrado." };
+      const { telegramSend } = await import("./support-ai.server");
+      return telegramSend(token, chat, text);
+    }
     if (channel === "telegram") {
       const token = process.env["TELEGRAM_BOT_TOKEN"];
       if (!token) return { ok: false, error: "Bot do Telegram ainda não cadastrado." };

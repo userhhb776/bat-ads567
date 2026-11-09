@@ -14,7 +14,7 @@ import { createJob } from '@/lib/ops.functions';
 import { useAccount } from '@/lib/use-account';
 import { useCurrency } from '@/lib/currency';
 import { crowleyChat } from '@/lib/crowley.functions';
-import { getObjects, updateObject } from '@/lib/meta.functions';
+import { getAccountsOverview, getObjects, updateObject } from '@/lib/meta.functions';
 import type { IntelRule } from '@/lib/intel';
 import portrait from '@/assets/crowley-portrait.jpg';
 
@@ -44,13 +44,14 @@ export function CrowleyChat({ compact = false, agents = false }: { compact?: boo
   const end = useRef<HTMLDivElement>(null);
   const chat = useServerFn(crowleyChat);
   const update = useServerFn(updateObject);
+  const overview = useQuery({ queryKey: ['accounts-overview'], queryFn: () => getAccountsOverview(), staleTime: 600000 });
   const campaigns = useQuery({ queryKey: ['crowley-camps',account], enabled: !!account, queryFn: () => getObjects({data:{accountId:account,level:'campaigns',datePreset:'today'}}), staleTime: 900000 });
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [msgs,busy]);
   async function send() {
     const text = input.trim(); if (!text || busy) return;
     const next = [...msgs,{role:'user' as const,content:text}]; saveMsgs(next); setInput(''); setBusy(true);
     try {
-      const context = JSON.stringify({ account, currency: currency.source, campaigns: campaigns.data ?? [], products: readStore('products',[]), agents:readStore('intel-rules',[]), automations:readStore('automations',[]), offers:readStore('offers',[]), orders:readStore<any[]>('orders',[]).slice(0,50), contacts:readStore<any[]>('contacts',[]).length, now:new Date().toISOString() }).slice(0,19000);
+      const context = JSON.stringify({ adAccountsHistory: (overview.data ?? []).map((a) => ({ id:a.id, name:a.name, bm:a.business, moeda:a.currency, status:a.status, criada:a.created, campanhasTotal:a.campaigns, gastoTotal:a.lifetimeSpend, comprasTotal:a.lifetimePurchases, receitaTotal:a.lifetimeRevenue, dinheiro:{ tipo:a.funds.kind, disponivel:a.funds.available, emAberto:a.funds.owed, nota:a.funds.label } })), account, currency: currency.source, campaigns: campaigns.data ?? [], products: readStore('products',[]), agents:readStore('intel-rules',[]), automations:readStore('automations',[]), offers:readStore('offers',[]), orders:readStore<any[]>('orders',[]).slice(0,50), contacts:readStore<any[]>('contacts',[]).length, now:new Date().toISOString() }).slice(0,19000);
       const result = await chat({data:{provider:'auto',persona:(localStorage.getItem('batgotham.crowley-persona')==='jarvis'?'jarvis':'parceiro'),messages:next.slice(-20),context}});
       if ('error' in result) toast.error(result.error);
       else saveMsgs([...next,{role:'assistant',content:result.text}]);

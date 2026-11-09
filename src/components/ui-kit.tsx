@@ -3,8 +3,8 @@ import type { ReactNode, SelectHTMLAttributes } from "react";
 export function PageHead({ title, sub, children }: { title: string; sub?: string; children?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-2">
-      <div>
-        <h1 className="font-display text-3xl tracking-wide md:text-4xl">{title}</h1>
+      <div className="min-w-0">
+        <h1 className="break-words font-display text-2xl tracking-wide sm:text-3xl md:text-4xl">{title}</h1>
         {sub && <p className="text-sm text-muted-foreground">{sub}</p>}
       </div>
       <div className="flex flex-wrap gap-2">{children}</div>

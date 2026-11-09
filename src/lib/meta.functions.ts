@@ -514,3 +514,43 @@ export const sendTestEvent = createServerFn({ method: "POST" }).middleware([requ
 export const shareObjectToAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ pixelId: z.string().regex(/^\d+$/), businessId: z.string().regex(/^\d+$/), accountId: z.string().regex(/^act_\d+$/) }).parse(d))
   .handler(async ({ data }) => graph(`${data.pixelId}/shared_accounts`, { method: "POST", params: { account_id: data.accountId.replace("act_", ""), business: data.businessId } }));
+
+/** Every ad account with money left, lifetime history and campaign count, for Crowley and the balance cards. */
+export const getAccountsOverview = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+  const { accountFunds } = await import("@/lib/funds");
+  const r = await graph("me/adaccounts", {
+    params: { fields: "id,name,currency,account_status,created_time,amount_spent,spend_cap,balance,is_prepay_account,funding_source_details,business{name},campaigns.limit(0).summary(true),insights.date_preset(maximum){spend,actions,action_values}", limit: "100" },
+  });
+  const buy = ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"];
+  return (r.data as any[]).map((a) => {
+    const i = a.insights?.data?.[0];
+    const f = accountFunds(a);
+    return {
+      id: a.id as string, name: String(a.name).trim(), currency: a.currency as string, status: a.account_status as number,
+      business: a.business?.name ?? "Conta pessoal", created: a.created_time as string,
+      campaigns: Number(a.campaigns?.summary?.total_count ?? 0),
+      lifetimeSpend: Number(i?.spend ?? 0),
+      lifetimePurchases: Number(i?.actions?.find((x: any) => buy.includes(x.action_type))?.value ?? 0),
+      lifetimeRevenue: Number(i?.action_values?.find((x: any) => buy.includes(x.action_type))?.value ?? 0),
+      funds: f,
+    };
+  });
+});
+
+/** Asks for agency access to an ad account owned by another BM (the owner approves in their Business settings). */
+export const requestClientAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/), accountId: z.string().regex(/^(act_)?\d+$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const r = await graph(`${data.businessId}/client_ad_accounts`, { method: "POST", params: { adaccount_id: data.accountId.startsWith("act_") ? data.accountId : `act_${data.accountId}`, permitted_tasks: ["MANAGE", "ADVERTISE", "ANALYZE"] } });
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "bm", action: "pedir_acesso_conta", target: data.accountId, after: r as never, result: "ok" });
+    return r as { access_status?: string };
+  });
+
+/** Asks for agency access to a Facebook page owned by another BM. */
+export const requestClientPage = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/), pageId: z.string().regex(/^\d+$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const r = await graph(`${data.businessId}/client_pages`, { method: "POST", params: { page_id: data.pageId, permitted_tasks: ["MANAGE", "CREATE_CONTENT", "ADVERTISE", "ANALYZE"] } });
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "bm", action: "pedir_acesso_pagina", target: data.pageId, after: r as never, result: "ok" });
+    return r as { access_status?: string };
+  });
