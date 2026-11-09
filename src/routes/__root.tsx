@@ -141,6 +141,8 @@ function RootComponent() {
   if (!checked) return <QueryClientProvider client={queryClient}><div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Abrindo a central…</div><Toaster /></QueryClientProvider>;
   if (path === "/entrar" || email === null) return <QueryClientProvider client={queryClient}>{path === "/entrar" ? <Outlet /> : <PublicHome />}<Toaster /></QueryClientProvider>;
 
+  if (path === "/crowley") return <QueryClientProvider client={queryClient}><Outlet /><Toaster /></QueryClientProvider>;
+
   return (
     <QueryClientProvider client={queryClient}>
       <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-sidebar-border bg-sidebar px-4 py-2 md:hidden">
