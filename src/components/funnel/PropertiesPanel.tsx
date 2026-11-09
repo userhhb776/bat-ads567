@@ -20,7 +20,7 @@ function PropertyEditor({ field, value, onChange }: { field: PropertyField; valu
 function LinkedResource({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [kind = "", id = ""] = value.split(":");
   const options: Record<string, { id: string; name: string }[]> = {
-    pagina: readStore<{ id: string; name?: string; title?: string }[]>("pages", []).concat(JSON.parse((typeof localStorage !== "undefined" && localStorage.getItem("bat-gotham-pages")) || "[]")).map((p) => ({ id: p.id, name: p.name ?? p.title ?? p.id })),
+    pagina: (JSON.parse((typeof localStorage !== "undefined" && localStorage.getItem("bat-gotham-pages")) || "[]") as { id: string; name?: string; title?: string }[]).map((p) => ({ id: p.id, name: p.name ?? p.title ?? p.id })),
     produto: readStore<{ id: string; name: string; offers?: { id: string; name: string }[] }[]>("products", []).flatMap((p) => [{ id: p.id, name: p.name }, ...(p.offers ?? []).map((o) => ({ id: `${p.id}/${o.id}`, name: `${p.name} › ${o.name}` }))]),
     automacao: readStore<{ id: string; name: string }[]>("automations", []).map((a) => ({ id: a.id, name: a.name })),
   };
