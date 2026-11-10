@@ -104,7 +104,7 @@ function PagesRoute() {
     patchPage(id, { chat: msgs });
   };
 
-  const onEdit = (e: VisualEdit) => page && patchPage(page.id, { code: applyEdits(code, [e]) });
+  const onEdit = (e: VisualEdit) => page && patchPage(page.id, { code: applyEdits(code, [e]).code });
   const publish = async () => {
     if (!page || !filled) return;
     setBusy(true);

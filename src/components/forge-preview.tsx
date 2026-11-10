@@ -44,7 +44,7 @@ export function ForgePreview({ code, connection, onRepair, busy, editing = false
             <p className="text-sm">{error === "timeout" ? "A internet está lenta para abrir o preview. O código não tem culpa — toque em Recarregar." : "O site não abriu. Toque em Corrigir site para a IA consertar o erro exato."}</p>{error && error !== "timeout" && <p className="max-w-md break-words font-mono text-xs text-muted-foreground">{error.slice(0, 220)}</p>}
             <div className="flex flex-wrap justify-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setAttempt((value) => value + 1)}><RotateCw /> Recarregar</Button>
-              {error !== "timeout" && <Button size="sm" disabled={busy} onClick={() => onRepair(error)}><Wrench /> Corrigir site</Button>}
+              {error !== "timeout" && <Button size="sm" disabled={busy} onClick={() => onRepair(error)}><Wrench /> Corrigir com IA</Button>}
             </div>
           </>}
         </div>
