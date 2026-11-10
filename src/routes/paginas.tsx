@@ -12,6 +12,9 @@ import { loadPages, savePages, type SalesPage } from "@/lib/pages";
 import { applyEdits, downloadZip, parseDecisions, previewHtml, wantsBuild, type Msg, type VisualEdit } from "@/lib/forge";
 import { validateGeneration } from "@/lib/forge-validation";
 import { ForgePreview } from "@/components/forge-preview";
+import { BlockEditor, DEFAULT_STYLE } from "@/components/block-editor";
+import { blocksToHtml } from "@/lib/page-blocks";
+import { finalizeHtml } from "@/lib/pages";
 
 export const Route = createFileRoute("/paginas")({
   head: () => ({
@@ -40,7 +43,7 @@ function PagesRoute() {
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [live, setLive] = useState("");
-  const [tab, setTab] = useState<"preview" | "code">("preview");
+  const [tab, setTab] = useState<"preview" | "code" | "blocks">("preview");
   const [device, setDevice] = useState<"mobile" | "desktop">("desktop");
   const [editing, setEditing] = useState(false);
   const [reload, setReload] = useState(0);
@@ -186,6 +189,7 @@ function PagesRoute() {
               <div className="flex flex-wrap items-center gap-1 border-b border-border p-2">
                 <Button size="sm" variant={tab === "preview" ? "default" : "ghost"} onClick={() => setTab("preview")}><Eye className="h-4 w-4" /> Prévia interativa</Button>
                 <Button size="sm" variant={tab === "code" ? "default" : "ghost"} onClick={() => setTab("code")}><Code2 className="h-4 w-4" /> Código gerado</Button>
+                <Button size="sm" variant={tab === "blocks" ? "default" : "ghost"} onClick={() => setTab("blocks")}>Blocos</Button>
                 <div className="ml-auto flex flex-wrap gap-1">
                   <Button size="icon" variant={device === "mobile" ? "secondary" : "ghost"} onClick={() => setDevice("mobile")} aria-label="Celular"><Smartphone className="h-4 w-4" /></Button>
                   <Button size="icon" variant={device === "desktop" ? "secondary" : "ghost"} onClick={() => setDevice("desktop")} aria-label="Computador"><Monitor className="h-4 w-4" /></Button>
@@ -198,14 +202,20 @@ function PagesRoute() {
               {editing && <p className="border-b border-border bg-primary/10 px-3 py-1 text-xs">Edição visual: toque num texto para editar ou numa imagem para trocar.</p>}
               {page.publishedUrl && <a href={page.publishedUrl} target="_blank" rel="noreferrer" className="truncate border-b border-border px-3 py-1 text-xs text-primary underline">{page.publishedUrl}</a>}
               <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-2">
-                {tab === "code" ? (
+                {tab === "blocks" ? (
+                  <div className="grid gap-3 xl:grid-cols-2">
+                    <BlockEditor blocks={page.blocks ?? []} style={page.style ?? DEFAULT_STYLE} onChange={(b, st) => patchPage(page.id, { blocks: b, style: st })}
+                      onApply={() => { patchPage(page.id, { versions: [{ at: Date.now(), html: blocksToHtml(page.blocks ?? [], page.style ?? DEFAULT_STYLE, page.name), note: "Editor de blocos" }, ...page.versions].slice(0, 20) }); toast.success("Versão salva"); }} />
+                    <iframe title="Prévia dos blocos" srcDoc={finalizeHtml(page, blocksToHtml(page.blocks ?? [], page.style ?? DEFAULT_STYLE, page.name))} sandbox="allow-scripts" className="h-[70vh] w-full rounded-lg border border-border bg-card" />
+                  </div>
+                ) : tab === "code" ? (
                   <pre className="h-full overflow-auto rounded-lg bg-background p-3 text-xs"><code>{code || "Nenhum código ainda."}</code></pre>
                 ) : filled ? (
                   <div className={`mx-auto h-full overflow-hidden rounded-lg border border-border ${device === "mobile" ? "w-[375px] max-w-full" : "w-full"}`}>
                     <ForgePreview key={reload} code={filled} busy={busy} editing={editing} onEdit={onEdit} onRepair={(err) => send(`Corrija este erro da prévia: ${err}`)} />
                   </div>
                 ) : page.versions[0]?.html?.includes("<html") ? (
-                  <iframe title="prévia antiga" sandbox="allow-scripts" srcDoc={page.versions[0].html} className="h-full w-full rounded-lg bg-card" />
+                  <iframe title="prévia antiga" sandbox="allow-scripts" srcDoc={finalizeHtml(page, page.versions[0].html)} className="h-full w-full rounded-lg bg-card" />
                 ) : (
                   <div className="grid h-full place-items-center text-sm text-muted-foreground">{busy ? "Criando a página ao vivo…" : "A prévia aparece aqui."}</div>
                 )}
