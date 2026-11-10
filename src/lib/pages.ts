@@ -9,6 +9,9 @@ export type SalesPage = {
   publishedUrl?: string | undefined;
   blocks?: import("./page-blocks").Block[] | undefined;
   style?: import("./page-blocks").Style | undefined;
+  /** BatDev JSX source; newer pages are generated as React instead of raw HTML. */
+  code?: string | undefined;
+  chat?: { role: "user" | "model"; text: string }[] | undefined;
 };
 
 /** Injects checkout link, Meta pixel and UTM forwarding so every published page tracks the same way. */
