@@ -33,6 +33,7 @@ import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as SistemaRouteImport } from './routes/sistema'
 import { Route as SuporteRouteImport } from './routes/suporte'
 import { Route as UtmRouteImport } from './routes/utm'
+import { Route as ApiGenerateRouteImport } from './routes/api/generate'
 import { Route as MetIndexRouteImport } from './routes/met.index'
 import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
@@ -165,6 +166,11 @@ const UtmRoute = UtmRouteImport.update({
   path: '/utm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGenerateRoute = ApiGenerateRouteImport.update({
+  id: '/api/generate',
+  path: '/api/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MetIndexRoute = MetIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
+  '/api/generate': typeof ApiGenerateRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/relatorios': typeof RelatoriosRoute
   '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
+  '/api/generate': typeof ApiGenerateRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
+  '/api/generate': typeof ApiGenerateRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/sistema'
     | '/suporte'
     | '/utm'
+    | '/api/generate'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/sistema'
     | '/suporte'
+    | '/api/generate'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
@@ -431,6 +442,7 @@ export interface FileRouteTypes {
     | '/sistema'
     | '/suporte'
     | '/utm'
+    | '/api/generate'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
@@ -469,6 +481,7 @@ export interface RootRouteChildren {
   SistemaRoute: typeof SistemaRoute
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
+  ApiGenerateRoute: typeof ApiGenerateRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
   ApiPublicInboundChannelRoute: typeof ApiPublicInboundChannelRoute
@@ -646,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/generate': {
+      id: '/api/generate'
+      path: '/api/generate'
+      fullPath: '/api/generate'
+      preLoaderRoute: typeof ApiGenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/met/': {
       id: '/met/'
       path: '/'
@@ -779,6 +799,7 @@ const rootRouteChildren: RootRouteChildren = {
   SistemaRoute: SistemaRoute,
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
+  ApiGenerateRoute: ApiGenerateRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
   ApiPublicInboundChannelRoute: ApiPublicInboundChannelRoute,
