@@ -66,6 +66,9 @@ function PagesRoute() {
   const [showModel, setShowModel] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [demoTpl, setDemoTpl] = useState<TemplateId | null>(null);
+  const [demoMobile, setDemoMobile] = useState(false);
+  const demoCode = useMemo(() => (demoTpl ? fillPlaceholders(templateCode(demoTpl, page?.product), page ?? ({} as SalesPage)) : ""), [demoTpl, page]);
 
   useEffect(() => { const p = loadPages(); setPages(p); setSel(p[0]?.id ?? null); }, []);
   const page = pages.find((p) => p.id === sel);
@@ -223,10 +226,11 @@ function PagesRoute() {
                     <p className="text-muted-foreground">Comece por um modelo pronto ou descreva a oferta abaixo.</p>
                     <div className="grid grid-cols-2 gap-2">
                       {TEMPLATES.map((t) => (
-                        <button key={t.id} onClick={() => applyTemplate(t.id)} className="overflow-hidden rounded-lg border border-border text-left transition hover:border-primary">
-                          <img src={t.image} alt="" loading="lazy" className="aspect-video w-full object-cover" />
-                          <div className="p-2"><div className="text-xs font-semibold">{t.name}</div><div className="text-[11px] text-muted-foreground">{t.description}</div></div>
-                        </button>
+                        <div key={t.id} className="overflow-hidden rounded-lg border border-border text-left transition hover:border-primary">
+                          <button type="button" onClick={() => setDemoTpl(t.id)} className="block w-full text-left"><img src={t.image} alt="" loading="lazy" className="aspect-video w-full object-cover" />
+                          <div className="p-2"><div className="text-xs font-semibold">{t.name}</div><div className="text-[11px] text-muted-foreground">{t.description}</div></div></button>
+                          <div className="grid grid-cols-2 gap-1 p-2 pt-0"><Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => setDemoTpl(t.id)}><Eye className="h-3.5 w-3.5" /> Ver</Button><Button size="sm" className="h-8 text-xs" onClick={() => applyTemplate(t.id)}>Usar</Button></div>
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -327,6 +331,22 @@ function PagesRoute() {
             </label>
             <Textarea rows={2} value={pick.url} onChange={(e) => setPick({ ...pick, url: e.target.value })} placeholder="…ou cole o link de uma imagem, ou descreva a imagem para a IA criar" />
             <Button className="w-full" disabled={!pick.url.trim() || pick.busy} onClick={() => swapImage(pick.url)}>Trocar</Button>
+          </div>
+        </div>
+      )}
+      {demoTpl && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
+            <p className="font-display text-xl">Demonstração: {TEMPLATES.find((x) => x.id === demoTpl)?.name}</p>
+            <div className="ml-auto flex gap-1">
+              <Button size="sm" variant={demoMobile ? "outline" : "default"} onClick={() => setDemoMobile(false)} aria-label="Computador"><Monitor className="h-4 w-4" /></Button>
+              <Button size="sm" variant={demoMobile ? "default" : "outline"} onClick={() => setDemoMobile(true)} aria-label="Celular"><Smartphone className="h-4 w-4" /></Button>
+              <Button size="sm" onClick={() => { const t = demoTpl; setDemoTpl(null); applyTemplate(t); }}>Usar este modelo</Button>
+              <Button size="sm" variant="ghost" onClick={() => setDemoTpl(null)} aria-label="Fechar"><X className="h-4 w-4" /></Button>
+            </div>
+          </div>
+          <div className="flex min-h-0 flex-1 justify-center bg-muted/30 p-2 pb-20 md:pb-2">
+            <div className={`h-full w-full overflow-hidden rounded-lg border border-border ${demoMobile ? "max-w-[390px]" : ""}`}><ForgePreview code={demoCode} onRepair={() => {}} busy={false} /></div>
           </div>
         </div>
       )}
