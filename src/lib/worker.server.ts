@@ -72,7 +72,8 @@ export async function processJobs(admin: Admin, stopped: Set<string>) {
       await admin.from("jobs").update({ status: "done", result: result as never, last_error: null, locked_at: null }).eq("id", job.id);
       await admin.from("audit_log").insert({ user_id: job.user_id, actor: job.payload?.actor ?? "agendador", module: "tarefas", action: job.kind, target: job.payload?.id ?? job.payload?.to ?? null, after: job.payload, result: "ok" });
       const title = job.kind === "notify" ? String(job.payload?.title ?? "Lembrete") : `${LABEL[job.kind] ?? job.kind} concluída`;
-      await admin.from("notifications").insert({ user_id: job.user_id, kind: "tarefa", title, body: job.payload?.body ?? job.payload?.label ?? null, link: "/agendamentos" });
+      const { notifyUser } = await import("./notify.server");
+      await notifyUser(admin, job.user_id, { kind: "tarefa", title, body: job.payload?.body ?? job.payload?.label ?? null, link: "/agendamentos" });
       done++;
     } catch (e) {
       const msg = (e as Error).message.slice(0, 500);
@@ -80,7 +81,8 @@ export async function processJobs(admin: Admin, stopped: Set<string>) {
       await admin.from("jobs").update({ status: final ? "failed" : "queued", last_error: msg, locked_at: null, run_at: new Date(Date.now() + backoffMinutes(attempt) * 60000).toISOString() }).eq("id", job.id);
       if (final) {
         await admin.from("audit_log").insert({ user_id: job.user_id, actor: "agendador", module: "tarefas", action: job.kind, after: job.payload, result: "erro", error: msg });
-        await admin.from("notifications").insert({ user_id: job.user_id, kind: "falha", title: `Falhou: ${LABEL[job.kind] ?? job.kind}`, body: msg, link: "/agendamentos" });
+        const { notifyUser } = await import("./notify.server");
+        await notifyUser(admin, job.user_id, { kind: "falha", title: `Falhou: ${LABEL[job.kind] ?? job.kind}`, body: msg, link: "/agendamentos" });
       }
       failed++;
     }
@@ -116,7 +118,11 @@ export async function runAutomations(admin: Admin, stopped: Set<string>) {
         if (stale.length) await admin.from("automation_runs").delete().eq("user_id", userId).in("id", stale);
         await admin.from("automation_runs").insert(out.map((r, i) => ({ id: r.id, user_id: userId, data: { ...r, origem: "servidor" }, position: base + i })));
         const fails = out.filter((r) => r.status === "falhou");
-        if (fails.length) await admin.from("notifications").insert(fails.slice(0, 20).map((f) => ({ user_id: userId, kind: "falha", title: `Automação falhou: ${autos.find((a) => a.id === f.automationId)?.name ?? ""}`.slice(0, 100), body: f.detail, link: "/automacoes" })));
+        if (fails.length) {
+          await admin.from("notifications").insert(fails.slice(0, 20).map((f) => ({ user_id: userId, kind: "falha", title: `Automação falhou: ${autos.find((a) => a.id === f.automationId)?.name ?? ""}`.slice(0, 100), body: f.detail, link: "/automacoes" })));
+          const { pushUser } = await import("./notify.server");
+          await pushUser(admin, userId, fails.length === 1 ? `Automação falhou: ${autos.find((a) => a.id === fails[0]!.automationId)?.name ?? ""}` : `${fails.length} automações falharam`, String(fails[0]!.detail ?? "").slice(0, 200));
+        }
         runs += out.length;
       }
       for (const c of contacts) {

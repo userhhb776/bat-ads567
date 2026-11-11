@@ -10,6 +10,7 @@ import { useStore, uid } from "@/lib/store";
 import type { Contact, Conversation, Message, Product } from "@/lib/biz";
 import { sendMessage, supportReply } from "@/lib/channels.functions";
 import { SupportBots } from "@/components/support-bots";
+import { WhatsappAutoReply } from "@/components/whatsapp-autoreply";
 
 export const Route = createFileRoute("/suporte")({
   head: () => head("Atendimento", "Caixa de entrada unificada com agentes de IA por produto e passagem para humano."),
@@ -70,7 +71,7 @@ function SupportRoute() {
         <Stat label="Resolvidas" value={convs.filter((c) => c.status === "resolvida").length} />
         <Stat label="Principal assunto" value={Object.entries(cats).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—"} />
       </div>
-      <SupportBots />
+      <div className="grid gap-4 lg:grid-cols-2"><WhatsappAutoReply /><SupportBots /></div>
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <Card className="max-h-[70vh] divide-y divide-border overflow-y-auto p-0">
           {contacts.length === 0 && <div className="p-4 text-sm text-muted-foreground">Adicione contatos no CRM para conversar.</div>}

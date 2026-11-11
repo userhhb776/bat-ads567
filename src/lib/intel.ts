@@ -15,12 +15,18 @@ export type IntelRule = {
   hours: [number, number]; // janela de atuação
   autonomy: Autonomy;
   active: boolean;
+  /** Free-form strategy written by the chefe; when set, the 24h watch decides with AI inside the limits below. */
+  strategy?: string;
+  /** Largest budget change per decision, in % (AI strategy agents). */
+  maxChangePercent?: number;
+  /** Minimum minutes between AI reviews. */
+  everyMinutes?: number;
 };
 export type CampaignStats = { id: string; name: string; spend: number; purchases: number; revenue: number; frequency: number; dailyBudget: number; status: string; accountId?: string };
 export type Decision = { kind: "pausar" | "escalar" | "alerta"; reason: string; newBudget?: number };
 
 export function evaluate(rule: IntelRule, c: CampaignStats, hour: number): Decision | null {
-  if (!rule.active || c.status !== "ACTIVE") return null;
+  if (!rule.active || rule.strategy || c.status !== "ACTIVE") return null;
   if (rule.accountId && rule.accountId !== c.accountId) return null;
   if (rule.campaignId !== "*" && rule.campaignId !== c.id) return null;
   const [from, to] = rule.hours;

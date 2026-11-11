@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, QrCode, RefreshCw, Smartphone, Trash2, Unplug } from "lucide-react";
+import { Inbox, Plus, QrCode, RefreshCw, Smartphone, Trash2, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { whatsappConnect, whatsappList, whatsappRemove } from "@/lib/channels.functions";
+import { whatsappConnect, whatsappHook, whatsappList, whatsappRemove } from "@/lib/channels.functions";
 
 /** Manages the WhatsApp numbers on the user's Render (Evolution API) server: list, connect by QR, disconnect, remove. */
 export function WhatsappCard() {
   const list = useServerFn(whatsappList);
   const connect = useServerFn(whatsappConnect);
   const remove = useServerFn(whatsappRemove);
+  const hook = useServerFn(whatsappHook);
   const q = useQuery({ queryKey: ["wa-list"], queryFn: () => list(), staleTime: 30000, retry: false });
   const [qr, setQr] = useState<{ name: string; img: string; code: string } | null>(null);
   const [name, setName] = useState("");
@@ -28,6 +29,11 @@ export function WhatsappCard() {
       setName("");
       void q.refetch();
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(""); }
+  }
+  async function doHook(n: string) {
+    setBusy(n);
+    try { await hook({ data: { name: n } }); toast.success("Pronto: as mensagens desse número chegam no Atendimento."); void q.refetch(); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(""); }
   }
   async function doRemove(n: string, mode: "logout" | "delete") {
     if (!window.confirm(mode === "delete" ? `Remover ${n} do servidor?` : `Desconectar ${n}?`)) return;
@@ -53,9 +59,10 @@ export function WhatsappCard() {
             {i.pic ? <img src={i.pic} alt="" className="h-9 w-9 rounded-full object-cover" /> : <div className="h-9 w-9 rounded-full bg-muted" />}
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium">{i.profile || i.name}</div>
-              <div className="truncate text-[11px] text-muted-foreground">{i.number ? `+${i.number}` : i.name} · {i.status === "open" ? "Conectado" : i.status === "connecting" ? "Aguardando QR" : "Desconectado"}</div>
+              <div className="truncate text-[11px] text-muted-foreground">{i.number ? `+${i.number}` : i.name} · {i.status === "open" ? "Conectado" : i.status === "connecting" ? "Aguardando QR" : "Desconectado"}{i.status === "open" && (i.receiving ? " · recebendo no Atendimento" : " · não recebe mensagens ainda")}</div>
             </div>
             {i.status !== "open" && <Button size="icon" variant="ghost" aria-label="Conectar com QR" disabled={busy === i.name} onClick={() => void doConnect(i.name, false)}><QrCode className="h-4 w-4" /></Button>}
+            {i.status === "open" && !i.receiving && <Button size="sm" variant="outline" disabled={busy === i.name} onClick={() => void doHook(i.name)}><Inbox className="mr-1 h-4 w-4" /> Receber</Button>}
             {i.status === "open" && <Button size="icon" variant="ghost" aria-label="Desconectar" disabled={busy === i.name} onClick={() => void doRemove(i.name, "logout")}><Unplug className="h-4 w-4" /></Button>}
             <Button size="icon" variant="ghost" aria-label="Remover" disabled={busy === i.name} onClick={() => void doRemove(i.name, "delete")}><Trash2 className="h-4 w-4" /></Button>
           </li>

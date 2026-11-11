@@ -47,7 +47,8 @@ export const Route = createFileRoute("/api/public/telegram/$botId")({
           }
         }
         await supabaseAdmin.from("conversations").upsert({ id: contactId, user_id: uid, position: -pos, data: { contactId, productId, mode, status: "aberta", category, updatedAt: Date.now() } }, { onConflict: "user_id,id" });
-        await supabaseAdmin.from("notifications").insert({ user_id: uid, kind: "atendimento", title: `${bot.name}: ${msg.name || msg.from}`.slice(0, 80), body: msg.text.slice(0, 200), link: "/suporte" });
+        const { notifyUser } = await import("@/lib/notify.server");
+        await notifyUser(supabaseAdmin, uid, { kind: "atendimento", title: `${bot.name}: ${msg.name || msg.from}`.slice(0, 80), body: msg.text.slice(0, 200), link: "/suporte" }, mode === "humano");
         return Response.json({ ok: true });
       },
     },

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { evaluate, type CampaignStats, type IntelRule } from "@/lib/intel";
+import { aiDue, aiPrompt, validateAiDecisions } from "@/lib/ai-agent";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/meta_ads/v26.0";
 const PURCHASE = ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"];
@@ -49,22 +50,25 @@ export const Route = createFileRoute("/api/public/cron/watch")({
           if (!active.length || !account?.startsWith("act_")) continue;
           const url = new URL(`${GATEWAY}/${account}/campaigns`);
           url.searchParams.set("fields", FIELDS); url.searchParams.set("limit", "200");
-          const res = await fetch(url, { headers: metaHeaders() });
-          if (!res.ok) { console.error("watch meta", res.status, await res.text()); continue; }
+          const res = await fetch(url, { headers: metaHeaders() }).catch(() => null);
+          if (!res?.ok) {
+            const detail = res ? await res.text() : "sem resposta";
+            console.error("watch meta", res?.status, detail);
+            const { healthAlert } = await import("@/lib/notify.server");
+            await healthAlert(supabaseAdmin, userId, "Meta parou de responder", `Não consegui ler as campanhas (${res?.status ?? "conexão"}). Os agentes ficam parados até a conexão voltar.`, "/configuracoes").catch(() => {});
+            continue;
+          }
           const body = (await res.json()) as { data: any[] };
           const stats: CampaignStats[] = body.data.map((c) => {
             const i = c.insights?.data?.[0];
             return { id: c.id, accountId: account, name: c.name, status: c.effective_status ?? c.status, dailyBudget: Number(c.daily_budget ?? 0), spend: Number(i?.spend ?? 0), frequency: Number(i?.frequency ?? 0), purchases: pick(i?.actions), revenue: pick(i?.action_values) };
           });
           const since = new Date(Date.now() - 6 * 3600e3).toISOString();
-          const { data: recent } = await supabaseAdmin.from("watch_log").select("rule_id,target_id,action,state").eq("user_id", userId).gte("created_at", since);
-          for (const rule of active) for (const c of stats) {
-            const d = evaluate(rule, c, hour);
-            if (!d) continue;
-            if (recent?.some((h) => h.rule_id === rule.id && h.target_id === c.id && h.action === d.kind && h.state !== "erro")) continue;
+          const { data: recent } = await supabaseAdmin.from("watch_log").select("rule_id,target_id,action,state,created_at").eq("user_id", userId).gte("created_at", since);
+          const act = async (rule: IntelRule, c: CampaignStats, d: { kind: string; reason: string; newBudget?: number | undefined }) => {
             let state = d.kind === "alerta" || rule.autonomy === "avisar" ? "aviso" : rule.autonomy === "aprovar" ? "pendente" : "executado";
             if (state === "executado") {
-              const params = d.kind === "pausar" ? { status: "PAUSED" } : { daily_budget: d.newBudget };
+              const params = d.kind === "pausar" ? { status: "PAUSED" } : d.kind === "ativar" ? { status: "ACTIVE" } : { daily_budget: d.newBudget };
               const r = await fetch(`${GATEWAY}/${c.id}`, { method: "POST", headers: { ...metaHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(params) });
               if (!r.ok) { state = "erro"; console.error("watch act", r.status, await r.text()); }
             }
@@ -73,6 +77,33 @@ export const Route = createFileRoute("/api/public/cron/watch")({
             await supabaseAdmin.from("audit_log").insert({ user_id: userId, actor: `agente:${rule.name ?? rule.id}`, module: "campanhas", action: d.kind, target: c.id, after: { reason: d.reason, newBudget: d.newBudget ?? null } as never, result: state });
             const verb = { executado: "Feito", pendente: "Aguardando sua aprovação", aviso: "Atenção", erro: "Falhou" }[state] ?? state;
             notes.push({ userId, title: `${verb}: ${c.name}`.slice(0, 80), body: d.reason });
+          };
+          for (const rule of active) for (const c of stats) {
+            const d = evaluate(rule, c, hour);
+            if (!d) continue;
+            if (recent?.some((h) => h.rule_id === rule.id && h.target_id === c.id && h.action === d.kind && h.state !== "erro")) continue;
+            await act(rule, c, d);
+          }
+          // Custom strategy agents: the AI decides inside the agent's limits, at most once per review interval.
+          for (const rule of active.filter((r) => r.strategy?.trim())) {
+            const key = `srv.ai-agent.${rule.id}`;
+            const { data: last } = await supabaseAdmin.from("app_state").select("value").eq("user_id", userId).eq("key", key).maybeSingle();
+            if (!aiDue(rule, hour, Date.parse(String(last?.value ?? "")) || 0)) continue;
+            await supabaseAdmin.from("app_state").upsert({ user_id: userId, key, value: new Date().toISOString() as never }, { onConflict: "user_id,key" });
+            const { askAgentAi } = await import("@/lib/ai-agent.server");
+            const p = aiPrompt(rule, stats, hour);
+            const ai = await askAgentAi(p.system, p.user);
+            if (ai.error) {
+              const { healthAlert } = await import("@/lib/notify.server");
+              await healthAlert(supabaseAdmin, userId, "IA dos agentes parou", `${rule.name}: ${ai.error}. A estratégia personalizada fica parada até voltar.`, "/configuracoes").catch(() => {});
+              continue;
+            }
+            const twoHours = new Date(Date.now() - 2 * 3600e3).toISOString();
+            for (const d of validateAiDecisions(ai.text, rule, stats)) {
+              const c = stats.find((x) => x.id === d.campaignId)!;
+              if (recent?.some((h) => h.rule_id === rule.id && h.target_id === c.id && h.action === d.kind && h.state !== "erro" && (h as { created_at?: string }).created_at! >= twoHours)) continue;
+              await act(rule, c, d);
+            }
           }
         }
         if (notes.length) {

@@ -38,7 +38,8 @@ function CloudWatch() {
     try {
       if (!r.target_id) return;
       if (r.action === "pausar") await update({ data: { id: r.target_id, status: "PAUSED" } });
-      if (r.action === "escalar" && r.new_budget) await update({ data: { id: r.target_id, daily_budget: Number(r.new_budget) } });
+      if (r.action === "ativar") await update({ data: { id: r.target_id, status: "ACTIVE" } });
+      if ((r.action === "escalar" || r.action === "reduzir") && r.new_budget) await update({ data: { id: r.target_id, daily_budget: Number(r.new_budget) } });
       await setState(r.id, "executado"); toast.success("Feito, chefe.");
     } catch (e) { toast.error(String(e)); await setState(r.id, "erro"); }
   }
