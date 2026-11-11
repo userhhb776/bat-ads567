@@ -26,9 +26,9 @@ export function ReserveKeys() {
     </div>)}</div>
     <div><h2 className="font-display text-2xl">Servidor reserva do WhatsApp</h2><p className="text-xs text-muted-foreground">Se o servidor principal cair ou expirar, as mensagens passam por este.</p></div>
     {has("render-2") ? <div className="flex items-center justify-between rounded-md border border-border bg-card p-3 text-sm"><span className="min-w-0 truncate">Reserva salva: {has("render-2")!.token}</span><Button size="icon" variant="ghost" aria-label="Remover servidor reserva" onClick={() => void rm("render-2")}><Trash2 className="h-4 w-4" /></Button></div> :
-      <form className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]" onSubmit={(e) => { e.preventDefault(); const u = (d.url ?? "").trim(), k = (d.key ?? "").trim(); if (!/^https:\/\//.test(u) || !k) { toast.error("Preencha o endereço https:// e a chave"); return; } void put("render-2", u, k); }}>
-        <Input placeholder="https://seu-servidor.onrender.com" value={d.url ?? ""} onChange={(e) => setD({ ...d, url: e.target.value })} inputMode="url" />
-        <Input type="password" placeholder="Chave (AUTHENTICATION_API_KEY)" value={d.key ?? ""} onChange={(e) => setD({ ...d, key: e.target.value })} />
+      <form className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]" onSubmit={(e) => { e.preventDefault(); const u = (d["url"] ?? "").trim(), k = (d["key"] ?? "").trim(); if (!/^https:\/\//.test(u) || !k) { toast.error("Preencha o endereço https:// e a chave"); return; } void put("render-2", u, k); }}>
+        <Input placeholder="https://seu-servidor.onrender.com" value={d["url"] ?? ""} onChange={(e) => setD({ ...d, url: e.target.value })} inputMode="url" />
+        <Input type="password" placeholder="Chave (AUTHENTICATION_API_KEY)" value={d["key"] ?? ""} onChange={(e) => setD({ ...d, key: e.target.value })} />
         <Button>Salvar</Button></form>}
     <details className="rounded-md border border-border bg-card p-3 text-sm">
       <summary className="cursor-pointer font-semibold">Manual: como criar um novo servidor de WhatsApp no Render</summary>
