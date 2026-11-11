@@ -12,7 +12,32 @@ export type SalesPage = {
   /** BatDev JSX source; newer pages are generated as React instead of raw HTML. */
   code?: string | undefined;
   chat?: { role: "user" | "model"; text: string }[] | undefined;
+  /** WhatsApp number (digits) for the page's chat button; empty hides the button. */
+  whatsapp?: string | undefined;
+  /** VSL video link (YouTube, Vimeo or uploaded file). */
+  videoUrl?: string | undefined;
+  /** Address name used when publishing (slug.vercel.app). */
+  slug?: string | undefined;
 };
+
+/** Turns any typed phone into a wa.me link; empty when there are not enough digits. */
+export function whatsappLink(raw: string | undefined): string {
+  const d = (raw ?? "").replace(/\D/g, "");
+  return d.length >= 10 ? `https://wa.me/${d.length <= 11 ? "55" + d : d}` : "";
+}
+
+/** Normalizes a page address: lowercase letters, numbers and hyphens, up to 50 chars. */
+export function slugify(raw: string): string {
+  return raw.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50);
+}
+
+/** Replaces panel placeholders so preview, ZIP and publish carry the real checkout, pixel, WhatsApp and video. */
+export function fillPlaceholders(code: string, p: Pick<SalesPage, "checkoutUrl" | "pixelId" | "whatsapp" | "videoUrl">): string {
+  return code.split("{{CHECKOUT_URL}}").join(p.checkoutUrl || "#")
+    .split("{{PIXEL_ID}}").join(/^\d{5,20}$/.test(p.pixelId) ? p.pixelId : "")
+    .split("{{WHATSAPP_URL}}").join(whatsappLink(p.whatsapp))
+    .split("{{VIDEO_URL}}").join(/^https?:\/\//.test(p.videoUrl ?? "") ? p.videoUrl! : "");
+}
 
 /** Injects checkout link, Meta pixel and UTM forwarding so every published page tracks the same way. */
 export function finalizeHtml(page: Pick<SalesPage, "checkoutUrl" | "pixelId">, html: string): string {

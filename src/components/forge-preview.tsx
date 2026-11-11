@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { previewHtml, type VisualEdit } from "@/lib/forge";
 import type { SiteConnection } from "@/lib/site-connection";
 
-export function ForgePreview({ code, connection, onRepair, busy, editing = false, onEdit }: { code: string; connection?: SiteConnection | undefined; onRepair: (error: string) => void; busy: boolean; editing?: boolean; onEdit?: (edit: VisualEdit) => void }) {
+export function ForgePreview({ code, connection, onRepair, busy, editing = false, onEdit, onPickImage }: { code: string; connection?: SiteConnection | undefined; onRepair: (error: string) => void; busy: boolean; editing?: boolean; onEdit?: (edit: VisualEdit) => void; onPickImage?: (src: string) => void }) {
   const editRef = useRef(onEdit); editRef.current = onEdit;
+  const pickRef = useRef(onPickImage); pickRef.current = onPickImage;
   const frame = useRef<HTMLIFrameElement>(null);
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
@@ -18,6 +19,11 @@ export function ForgePreview({ code, connection, onRepair, busy, editing = false
     const receive = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow || event.data?.source !== "forge-preview") return;
       if (event.data.type === "ready") setState((previous) => previous === "error" ? previous : "ready");
+      if (event.data.type === "pick-img") {
+        const from = String(event.data.message ?? "");
+        if (pickRef.current) pickRef.current(from);
+        else { const to = window.prompt("Cole a URL da nova imagem:", from)?.trim(); if (to && to !== from && /^https?:/.test(to)) editRef.current?.({ kind: "img", from, to }); }
+      }
       if (event.data.type === "change") { try { editRef.current?.(JSON.parse(event.data.message)); } catch { /* ignore malformed */ } }
       if (event.data.type === "error") {
         setState("error");

@@ -63,6 +63,9 @@ Você cria PÁGINAS DE VENDAS. Ao construir uma página nova, estruture SEMPRE n
 8. CTA final.
 - Todos os botões de compra: const CHECKOUT_URL = "{{CHECKOUT_URL}}"; <a href={batTracking.attributedUrl(CHECKOUT_URL)} onClick={() => batTracking.track("InitiateCheckout")}>. Isso repassa UTMs e dispara o Pixel.
 - Pixel: sempre inclua useEffect(() => { batTracking.configure({pixelId: "{{PIXEL_ID}}"}); batTracking.setConsent(true); batTracking.track("PageView"); }, []). O painel substitui os marcadores pelos valores reais.
+- Vídeo da VSL: const VIDEO_URL = "{{VIDEO_URL}}"; se começar com http, use <video> para arquivos .mp4/.webm e iframe para YouTube/Vimeo; senão mostre o placeholder.
+- WhatsApp: const WHATSAPP_URL = "{{WHATSAPP_URL}}"; só mostre botão de WhatsApp se WHATSAPP_URL começar com http. Nunca escreva número de telefone, link wa.me próprio nem mensagem pronta.
+- FIDELIDADE À OFERTA (obrigatório): fale SOMENTE do produto/oferta informados pelo usuário. Nunca invente outro tema, nicho, nome de produto, marca, bônus ou assunto que ele não citou. O que faltar vira marcador entre colchetes ("[PREÇO]", "[X] dias", "[nome do bônus]").
 - React 18 + Tailwind + ícones Lucide, mobile-first impecável.`;
 
 export type Msg = { role: "user" | "model"; text: string };
@@ -149,7 +152,7 @@ ${connection ? '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@
   function leaf(el){if(!el||el===document.body||el.id==='root')return null;if(el.tagName==='IMG')return el;var t=(el.textContent||'').trim();if(!t||t.length>600)return null;for(var i=0;i<el.children.length;i++){var c=el.children[i];if(!/^(B|I|EM|STRONG|SPAN|BR|SVG)$/.test(c.tagName))return null;}return el;}
   document.addEventListener('mouseover',function(e){if(!editing)return;var el=leaf(e.target);document.querySelectorAll('[data-bd-hover]').forEach(function(n){n.removeAttribute('data-bd-hover');});if(el)el.setAttribute('data-bd-hover','');},true);
   document.addEventListener('click',function(e){if(!editing)return;var el=leaf(e.target);e.preventDefault();e.stopPropagation();if(!el)return;
-    if(el.tagName==='IMG'){var from=el.getAttribute('src')||'';var to=prompt('Cole a URL da nova imagem OU descreva a imagem que a IA deve gerar:',from);if(to&&!/^(https?:|data:)/.test(to.trim()))to='https://image.pollinations.ai/prompt/'+encodeURIComponent(to.trim())+'?width=1200&height=800&nologo=true';if(to&&to!==from){el.src=to;notify('change',JSON.stringify({kind:'img',from:from,to:to}));}return;}
+    if(el.tagName==='IMG'){notify('pick-img',el.getAttribute('src')||'');return;}
     if(current===el)return;current=el;var before=el.innerText;el.contentEditable='true';el.focus();
     el.addEventListener('blur',function done(){el.removeEventListener('blur',done);el.contentEditable='false';current=null;var after=el.innerText;if(after.trim()!==before.trim())notify('change',JSON.stringify({kind:'text',from:before,to:after}));});
   },true);
