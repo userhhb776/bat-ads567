@@ -123,8 +123,15 @@ function App() {
     const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=" + DATA.fonts.url + "&display=swap"; document.head.appendChild(l);
     batTracking.configure({ pixelId: "{{PIXEL_ID}}" }); batTracking.setConsent(true); batTracking.track("PageView");
   }, []);
-  const href = batTracking.attributedUrl(CHECKOUT_URL);
-  const buy = () => batTracking.track("InitiateCheckout");
+  const [bag, setBag] = useState(false);
+  const [notice, setNotice] = useState("");
+  const ready = CHECKOUT_URL.indexOf("http") === 0;
+  const href = ready ? batTracking.attributedUrl(CHECKOUT_URL) : "#";
+  const say = (t) => { setNotice(t); setTimeout(() => setNotice(""), 2600); };
+  const buy = (e) => { if (!ready) { if (e) e.preventDefault(); say("Link de compra ainda não configurado"); return; } batTracking.track("InitiateCheckout"); };
+  const add = (name) => { setCart(cart.concat(name)); batTracking.track("AddToCart"); say(name + " adicionado à sacola"); };
+  const grouped = cart.reduce((m, n) => { m[n] = (m[n] || 0) + 1; return m; }, {});
+  const removeOne = (n) => { const i = cart.lastIndexOf(n); if (i > -1) setCart(cart.slice(0, i).concat(cart.slice(i + 1))); };
   const hasWa = WHATSAPP_URL.indexOf("http") === 0;
   const video = VIDEO_URL.indexOf("http") === 0 ? VIDEO_URL : "";
   const isFile = /\\.(mp4|webm|mov)(\\?|$)/i.test(video) || video.indexOf("/storage/v1/object/") > -1;
@@ -144,9 +151,10 @@ function App() {
           <span className="inline-block rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest" style={{ background: c.accent + "22", color: c.accent }}>{DATA.hero.kicker}</span>
           <h1 className="mt-5 break-words text-4xl leading-tight sm:text-6xl" style={title}>{DATA.hero.title}</h1>
           <p className="mt-5 text-lg" style={{ color: c.muted }}>{DATA.hero.subtitle}</p>
-          <div className="mt-8"><Btn>{DATA.hero.cta}</Btn></div>
+          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row md:justify-start"><Btn>{DATA.hero.cta}</Btn><span className="flex items-center gap-2 text-sm font-semibold" style={{ color: c.muted }}><span className="flex" style={{ color: c.accent }}>{[0,1,2,3,4].map((k) => <Star key={k} className="h-4 w-4" />)}</span>[Nota real dos clientes]</span></div>
+          <div className="mt-10 grid grid-cols-3 gap-3 border-t pt-6 text-left" style={{ borderColor: c.fg + "14" }}>{[["ShieldCheck","Pagamento seguro"],["Check","Garantia"],["MessageCircle","Suporte rápido"]].map(([ic, t], i) => <div key={i} className="flex flex-col gap-1 text-xs font-semibold sm:flex-row sm:items-center sm:gap-2">{i === 0 ? <ShieldCheck className="h-5 w-5" style={{ color: c.accent }} /> : i === 1 ? <Check className="h-5 w-5" style={{ color: c.accent }} /> : <MessageCircle className="h-5 w-5" style={{ color: c.accent }} />}{t}</div>)}</div>
         </div>
-        {DATA.hero.image && <img src={DATA.hero.image} alt={DATA.hero.title} className="up aspect-[4/3] w-full rounded-3xl object-cover shadow-2xl" />}
+        {DATA.hero.image && <div className="up relative"><div className="absolute -inset-4 -z-0 rounded-[2.5rem] opacity-60 blur-3xl" style={{ background: "radial-gradient(circle at 30% 30%, " + c.accent + "55, transparent 70%)" }} /><img src={DATA.hero.image} alt={DATA.hero.title} className="relative aspect-[4/3] w-full rounded-[2rem] object-cover shadow-2xl ring-1" style={{ "--tw-ring-color": c.fg + "14" }} /></div>}
       </section>
     );
     if (s === "video") return (
@@ -168,7 +176,7 @@ function App() {
             <div key={i} className="group overflow-hidden rounded-2xl border transition hover:-translate-y-1 hover:shadow-xl" style={card}>
               <div className="relative"><img src={p.image} alt={p.name} loading="lazy" className="aspect-square w-full object-cover" /><span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold" style={{ background: c.accent, color: c.onAccent }}>{p.tag}</span></div>
               <div className="space-y-2 p-4"><h3 className="text-lg font-bold">{p.name}</h3><p style={{ color: c.muted }}>{p.price}</p>
-                <button onClick={() => setCart(cart.concat(p.name))} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border font-semibold" style={{ borderColor: c.accent, color: c.accent }}><ShoppingCart className="h-4 w-4" /> Adicionar</button></div>
+                <button onClick={() => add(p.name)} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border font-semibold" style={{ borderColor: c.accent, color: c.accent }}><ShoppingCart className="h-4 w-4" /> Adicionar</button></div>
             </div>
           ))}
         </div>
@@ -248,12 +256,14 @@ function App() {
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: c.bg, color: c.fg, fontFamily: DATA.fonts.body }}>
       <style>{"@keyframes up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}.up{animation:up .7s ease both}"}</style>
+      <div className="px-4 py-2 text-center text-xs font-semibold tracking-wide" style={{ background: c.fg, color: c.bg }}>{DATA.announce || "Compra 100% segura · Atendimento humano · Envio para todo o Brasil"}</div>
       <header className="sticky top-0 z-30 border-b backdrop-blur" style={{ background: c.bg + "e6", borderColor: c.fg + "14" }}>
         <div className={wrap + " flex h-16 items-center justify-between"}>
           <span className="text-xl" style={title}>{DATA.brand}</span>
           <nav className="hidden gap-8 md:flex">{DATA.nav.map((n) => <a key={n} href={"#" + n.toLowerCase()} className="text-sm font-semibold opacity-80 hover:opacity-100">{n}</a>)}</nav>
           <div className="flex items-center gap-2">
-            {cart.length > 0 && <a href={href} onClick={buy} className="flex items-center gap-1 rounded-full px-3 py-2 text-sm font-bold" style={{ background: c.accent, color: c.onAccent }}><ShoppingCart className="h-4 w-4" />{cart.length}</a>}
+            {DATA.products && <button onClick={() => setBag(true)} aria-label="Abrir sacola" className="relative flex h-11 w-11 items-center justify-center rounded-full border" style={{ borderColor: c.fg + "1f" }}><ShoppingCart className="h-5 w-5" />{cart.length > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[11px] font-bold" style={{ background: c.accent, color: c.onAccent }}>{cart.length}</span>}</button>}
+            {!DATA.products && <a href={href} onClick={buy} className="hidden rounded-full px-5 py-2 text-sm font-bold sm:inline-flex" style={{ background: c.accent, color: c.onAccent }}>{DATA.hero.cta}</a>}
             <button className="flex h-11 w-11 items-center justify-center md:hidden" onClick={() => setMenu(!menu)} aria-label="Menu">{menu ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}</button>
           </div>
         </div>
@@ -261,6 +271,12 @@ function App() {
       </header>
       <main>{DATA.sections.map(section)}</main>
       <footer className="border-t py-10 text-center text-sm" style={{ borderColor: c.fg + "14", color: c.muted }}><div className={wrap}><p className="font-bold" style={{ color: c.fg }}>{DATA.brand}</p><p className="mt-2">{DATA.footer}</p></div></footer>
+      {bag && <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setBag(false)}><div className="absolute inset-0" style={{ background: "#0008" }} /><aside onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full max-w-sm flex-col shadow-2xl" style={{ background: c.bg, color: c.fg }}>
+        <div className="flex items-center justify-between border-b p-5" style={{ borderColor: c.fg + "14" }}><h3 className="text-2xl" style={title}>Sua sacola</h3><button onClick={() => setBag(false)} aria-label="Fechar" className="flex h-10 w-10 items-center justify-center"><X className="h-5 w-5" /></button></div>
+        <div className="flex-1 space-y-3 overflow-y-auto p-5">{cart.length === 0 ? <p style={{ color: c.muted }}>Sua sacola está vazia.</p> : Object.keys(grouped).map((n) => { const item = (DATA.products ? DATA.products.items : []).find((x) => x.name === n) || {}; return <div key={n} className="flex items-center gap-3 rounded-2xl border p-3" style={card}>{item.image && <img src={item.image} alt={n} className="h-16 w-16 rounded-xl object-cover" />}<div className="flex-1"><p className="font-bold">{n}</p><p className="text-sm" style={{ color: c.muted }}>{item.price}</p></div><div className="flex items-center gap-2"><button onClick={() => removeOne(n)} className="h-8 w-8 rounded-full border" style={{ borderColor: c.fg + "1f" }}>−</button><span className="w-5 text-center font-bold">{grouped[n]}</span><button onClick={() => add(n)} className="h-8 w-8 rounded-full border" style={{ borderColor: c.fg + "1f" }}>+</button></div></div>; })}</div>
+        <div className="border-t p-5" style={{ borderColor: c.fg + "14" }}><Btn full>Finalizar compra</Btn><p className="mt-3 text-center text-xs" style={{ color: c.muted }}>Pagamento seguro no próximo passo</p></div>
+      </aside></div>}
+      {notice && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-3 text-sm font-semibold shadow-2xl" style={{ background: c.fg, color: c.bg }}>{notice}</div>}
       {hasWa && <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" aria-label="Falar no WhatsApp" className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-2xl" style={{ background: "#25d366", color: "#fff" }}><MessageCircle className="h-7 w-7" /></a>}
     </div>
   );
