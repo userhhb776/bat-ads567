@@ -338,3 +338,26 @@ html[data-theme="glass-light"] :is(.bg-background) { background-color: oklch(1 0
   [data-slot=card], .panel, .kpi, .metric-card { border-radius: 0.9rem; }
   h2.font-display { font-size: 1.35rem; }
 }
+
+/* Public presentation effects */
+.landing-grid { background-image: linear-gradient(color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse at top, black 30%, transparent 75%); }
+.landing-card { background: color-mix(in oklab, var(--card) 70%, transparent); border: 1px solid color-mix(in oklab, var(--primary) 18%, var(--border)); backdrop-filter: blur(14px); box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 4%, transparent), 0 20px 50px -25px color-mix(in oklab, var(--primary) 35%, transparent); }
+.landing-glow { box-shadow: 0 0 24px -4px color-mix(in oklab, var(--primary) 70%, transparent); }
+.landing-text { background: linear-gradient(100deg, var(--primary), color-mix(in oklab, var(--primary) 50%, var(--foreground)), var(--primary)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: landing-shine 5s linear infinite; }
+.landing-orb { background: radial-gradient(circle, color-mix(in oklab, var(--primary) 45%, transparent), transparent 70%); filter: blur(30px); animation: landing-float 9s ease-in-out infinite; }
+.landing-scan { background: linear-gradient(transparent, color-mix(in oklab, var(--primary) 12%, transparent), transparent); animation: landing-scan 6s linear infinite; }
+.landing-cta::before { content: ""; position: absolute; inset: -40%; z-index: -1; background: conic-gradient(from 0deg, transparent, color-mix(in oklab, var(--primary) 25%, transparent), transparent 40%); animation: landing-spin 10s linear infinite; }
+@keyframes landing-shine { to { background-position: 200% center; } }
+@keyframes landing-float { 50% { transform: translate(-30px, 30px) scale(1.1); } }
+@keyframes landing-scan { from { transform: translateY(-100%); } to { transform: translateY(700%); } }
+@keyframes landing-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .landing-text, .landing-orb, .landing-scan, .landing-cta::before { animation: none; } }
+
+/* Mobile safety: nothing overflows sideways (desktop untouched) */
+@media (max-width: 767px) {
+  html, body { overflow-x: hidden; }
+  main img, main video, main iframe { max-width: 100%; }
+  main table { display: block; overflow-x: auto; }
+  main pre, main code { white-space: pre-wrap; word-break: break-word; }
+  main h1 { overflow-wrap: anywhere; }
+}
