@@ -29,7 +29,7 @@ export const apifyStatus = createServerFn({ method: "POST" }).middleware([requir
   }));
 });
 
-const filters = z.object({ q: z.string().max(200), country: z.string().max(4), media: z.enum(["all", "video", "image"]), status: z.enum(["active", "all"]), minActive: z.number().int().min(0).max(500), since: z.string().max(10), pageUrl: z.string().max(1000), limit: z.number().int().min(10).max(300), lang: z.string().max(5) });
+const filters = z.object({ q: z.string().max(200), country: z.string().max(4), media: z.enum(["all", "video", "image"]), status: z.enum(["active", "all"]), minActive: z.number().int().min(0).max(500), since: z.string().max(10), pageUrl: z.string().max(1000), limit: z.number().int().min(10).max(300), lang: z.string().max(5), minDays: z.number().int().min(0).max(365).optional() });
 
 /** Runs the Ad Library actor, rotating to the next saved key when one is out of credit. */
 export const spySearch = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])

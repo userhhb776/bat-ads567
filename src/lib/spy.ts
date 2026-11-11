@@ -1,6 +1,6 @@
 /** Bat Spy: Meta Ad Library filters → library URL, and Apify item normalization. Shared by client and server. */
-export type SpyFilters = { q: string; country: string; media: "all" | "video" | "image"; status: "active" | "all"; minActive: number; since: string; pageUrl: string; limit: number; lang: string };
-export const DEFAULT_FILTERS: SpyFilters = { q: "", country: "BR", media: "all", status: "active", minActive: 0, since: "", pageUrl: "", limit: 50, lang: "" };
+export type SpyFilters = { q: string; country: string; media: "all" | "video" | "image"; status: "active" | "all"; minActive: number; since: string; pageUrl: string; limit: number; lang: string; minDays?: number };
+export const DEFAULT_FILTERS: SpyFilters = { q: "", country: "BR", media: "all", status: "active", minActive: 0, since: "", pageUrl: "", limit: 50, lang: "", minDays: 0 };
 export const COUNTRIES: [string, string][] = [["BR", "Brasil"], ["US", "EUA"], ["PT", "Portugal"], ["MX", "México"], ["ES", "Espanha"], ["AR", "Argentina"], ["CO", "Colômbia"], ["CL", "Chile"], ["GB", "Reino Unido"], ["CA", "Canadá"], ["DE", "Alemanha"], ["FR", "França"], ["IT", "Itália"], ["ALL", "Todos os países"]];
 export const NICHES = ["emagrecimento", "renda extra", "relacionamento", "saúde masculina", "beleza", "skincare", "pets", "fitness", "espiritualidade", "finanças", "concurso", "idiomas", "dropshipping", "suplemento", "diabetes", "dor nas articulações", "infoproduto", "curso online"];
 
@@ -15,6 +15,7 @@ export function libraryUrl(f: SpyFilters): string {
   u.searchParams.set("media_type", f.media);
   if (f.q.trim()) { u.searchParams.set("q", f.q.trim()); u.searchParams.set("search_type", "keyword_unordered"); }
   if (f.since) u.searchParams.set("start_date[min]", f.since);
+  if (f.minDays && f.minDays > 0) u.searchParams.set("start_date[max]", new Date(Date.now() - f.minDays * 86400000).toISOString().slice(0, 10));
   if (f.lang) u.searchParams.set("content_languages[0]", f.lang);
   return u.toString();
 }
@@ -73,3 +74,8 @@ export function applyMinActive(ads: SpyAd[], min: number): SpyAd[] {
 
 /** "Quente" when the same creative runs many times or for a long period. */
 export const heat = (a: SpyAd) => (a.sameCreative >= 10 || a.days >= 30 ? "quente" : a.sameCreative >= 3 || a.days >= 7 ? "validando" : "novo");
+
+export const MIN_DAYS = [0, 3, 7, 10, 15, 30, 60, 90];
+export const applyMinDays = (ads: SpyAd[], min = 0) => (min > 0 ? ads.filter((a) => a.days >= min) : ads);
+/** Proxied download link so the creative saves straight to the device. */
+export const mediaDownload = (url: string, name: string) => `/api/public/spy-media?u=${encodeURIComponent(url)}&n=${encodeURIComponent(name)}`;
