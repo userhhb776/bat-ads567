@@ -51,8 +51,18 @@ export async function deliver(channel: Channel, to: string, text: string): Promi
 export async function evo(path: string, init: RequestInit = {}): Promise<Response> {
   const url = process.env["RENDER_WHATSAPP_URL"];
   const key = process.env["RENDER_WHATSAPP_KEY"] ?? "";
-  if (!url) throw new Error("Servidor de WhatsApp (Render) ainda não cadastrado.");
-  return fetch(url.replace(/\/$/, "") + path, { ...init, headers: { "Content-Type": "application/json", apikey: key, ...(init.headers ?? {}) }, signal: AbortSignal.timeout(60000) });
+  const call = (u: string, k: string) => fetch(u.replace(/\/$/, "") + path, { ...init, headers: { "Content-Type": "application/json", apikey: k, ...(init.headers ?? {}) }, signal: AbortSignal.timeout(60000) });
+  const reserve = async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.from("gateway_credentials" as never).select("token, secret").eq("platform", "render-2").limit(1).maybeSingle();
+    return data as { token: string; secret: string } | null;
+  };
+  if (!url) { const r = await reserve(); if (r?.token) return call(r.token, r.secret); throw new Error("Servidor de WhatsApp ainda não cadastrado."); }
+  try {
+    const res = await call(url, key);
+    if (res.status < 500 && res.status !== 401) return res;
+    const r = await reserve(); return r?.token ? call(r.token, r.secret) : res;
+  } catch (e) { const r = await reserve(); if (r?.token) return call(r.token, r.secret); throw e; }
 }
 
 export async function firstOpenInstance(): Promise<string> {

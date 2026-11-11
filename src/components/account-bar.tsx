@@ -64,7 +64,7 @@ export function AccountBar({ account, setAccount, children }: { account: string;
         </PopoverTrigger>
         <PopoverContent className="w-72 text-sm">
           <div className="font-semibold">Contas e portfólios</div>
-          <p className="mt-2 text-muted-foreground">A lista mostra as contas compartilhadas com a conexão atual. Para autorizar outra conta ou BM, abra os conectores do Lovable, reconecte o Facebook e revise os ativos compartilhados.</p>
+          <p className="mt-2 text-muted-foreground">A lista mostra as contas compartilhadas com a conexão atual. Para autorizar outra conta ou BM, reconecte o Facebook na conexão nativa da Meta e revise os ativos compartilhados.</p>
           <Button asChild size="sm" variant="outline" className="mt-3 w-full"><Link to="/ativos">Contas, páginas e pixels</Link></Button>
           <Button size="sm" className="mt-3 w-full" onClick={() => { accounts.refetch(); }}>Atualizar lista de contas</Button>
         </PopoverContent>

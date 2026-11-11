@@ -177,9 +177,9 @@ function PagesRoute() {
   const decisions = useMemo(() => [...chat.filter((m) => m.role === "model").flatMap((m) => parseDecisions(m.text)), ...parseDecisions(live)].slice(-14), [chat, live]);
 
   return (
-    <div className="flex h-[calc(100dvh-4rem)] flex-col gap-3 p-3 pb-20 md:h-dvh md:p-4 md:pb-4">
+    <div className="flex min-h-[calc(100dvh-8rem)] flex-col gap-3 p-3 pb-24 md:h-dvh md:min-h-0 md:p-4 md:pb-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="font-display text-2xl tracking-wide">Estúdio de páginas</h1>
+        <h1 className="w-full font-display text-2xl tracking-wide sm:w-auto">Estúdio de páginas</h1>
         <select value={sel ?? ""} onChange={(e) => setSel(e.target.value)} className="h-9 min-w-0 flex-1 rounded-md border border-border bg-card px-2 text-sm md:max-w-xs">
           {pages.length === 0 && <option value="">Nenhuma página</option>}
           {pages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -298,7 +298,7 @@ function PagesRoute() {
               )}
               {editing && <p className="border-b border-border bg-primary/10 px-3 py-1 text-xs">Edição visual: toque num texto para editar ou numa imagem para trocar (link, foto do celular ou descrição para a IA criar).</p>}
               {page.publishedUrl && <a href={page.publishedUrl} target="_blank" rel="noreferrer" className="truncate border-b border-border px-3 py-1 text-xs text-primary underline">{page.publishedUrl}</a>}
-              <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-2">
+              <div className="min-h-[75dvh] flex-1 overflow-auto bg-muted/30 p-2 md:min-h-0">
                 {tab === "blocks" ? (
                   <div className="grid gap-3 xl:grid-cols-2">
                     <BlockEditor blocks={page.blocks ?? []} style={page.style ?? DEFAULT_STYLE} onChange={(b, st) => patchPage(page.id, { blocks: b, style: st })}
