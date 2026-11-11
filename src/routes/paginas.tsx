@@ -181,7 +181,7 @@ function PagesRoute() {
           {pages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
         </select>
         <Button size="sm" onClick={create}><Plus className="h-4 w-4" /> Nova</Button>
-        {page && <Button size="sm" variant="outline" onClick={() => setShowTemplates((v) => !v)}><LayoutTemplate className="h-4 w-4" /> Modelos</Button>}
+        {page && <Button size="sm" variant="outline" onClick={() => { setShowTemplates((v) => !v); setSide("chat"); }}><LayoutTemplate className="h-4 w-4" /> Modelos</Button>}
         {page && <Button size="sm" variant="ghost" onClick={remove} aria-label="Apagar"><Trash2 className="h-4 w-4" /></Button>}
       </div>
 
