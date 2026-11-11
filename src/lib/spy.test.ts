@@ -9,3 +9,9 @@ describe("bat spy", () => {
   it("ranks advertiser with more active ads first", () => { const ads = [raw("1", "a", 2, 3), raw("2", "b", 20, 3)].map((r) => normalizeAd(r, now)!); expect(advertisers(ads)[0]?.pageId).toBe("b"); });
   it("marks 30+ days as quente", () => expect(heat(normalizeAd(raw("1", "a", 1, 30), now)!)).toBe("quente"));
 });
+
+import { normalizeAd as nz } from "./spy";
+test("reads camelCase actor output (video, text, link)", () => {
+  const a = nz({ adArchiveId: "9", pageName: "P", isActive: true, startDate: 1700000000, snapshot: { body: { text: "oi" }, linkUrl: "https://x.com", videos: [{ videoHdUrl: "https://v.mp4", videoPreviewImageUrl: "https://c.jpg" }] } });
+  expect(a?.id).toBe("9"); expect(a?.video).toBe("https://v.mp4"); expect(a?.image).toBe("https://c.jpg"); expect(a?.text).toBe("oi"); expect(a?.link).toBe("https://x.com");
+});

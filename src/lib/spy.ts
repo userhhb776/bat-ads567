@@ -24,28 +24,34 @@ const str = (v: unknown) => (typeof v === "string" ? v : typeof v === "number" ?
 type Obj = Record<string, unknown>;
 const o = (v: unknown): Obj => (v && typeof v === "object" ? (v as Obj) : {});
 
+const camel = (k: string) => k.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+/** Reads a field in snake_case or camelCase — the actor returns either depending on version. */
+const g = (x: Obj, k: string): unknown => x[k] ?? x[camel(k)];
+
 export function normalizeAd(raw: unknown, now = Date.now()): SpyAd | null {
-  const r = o(raw), s = o(r["snapshot"]);
-  const id = str(r["ad_archive_id"] ?? r["adArchiveID"] ?? r["id"]);
+  const r = o(raw), s = o(g(r, "snapshot"));
+  const id = str(g(r, "ad_archive_id") ?? r["adArchiveID"] ?? r["id"]);
   if (!id) return null;
-  const card = o((s["cards"] as unknown[] | undefined)?.[0]);
-  const img = o((s["images"] as unknown[] | undefined)?.[0]), vid = o((s["videos"] as unknown[] | undefined)?.[0]);
-  const startRaw = r["start_date"] ?? r["startDate"];
+  const first = (k: string) => o((g(s, k) as unknown[] | undefined)?.[0]);
+  const card = first("cards"), img = first("images"), vid = first("videos");
+  const startRaw = g(r, "start_date");
   const start = typeof startRaw === "number" ? new Date(startRaw * 1000).toISOString() : str(startRaw);
   const t = Date.parse(start);
-  const pageId = str(r["page_id"] ?? s["page_id"]);
+  const pageId = str(g(r, "page_id") ?? g(s, "page_id"));
+  const pick = (...vals: unknown[]) => vals.map(str).find(Boolean) ?? "";
+  const plat = g(r, "publisher_platform");
   return {
-    id, pageId, pageName: str(r["page_name"] ?? s["page_name"]) || "Anunciante",
-    pageUrl: str(s["page_profile_uri"]) || (pageId ? `https://www.facebook.com/${pageId}` : ""),
-    avatar: str(s["page_profile_picture_url"]),
-    text: str(o(s["body"])["text"]) || str(card["body"]),
-    title: str(s["title"]) || str(card["title"]), cta: str(s["cta_text"]) || str(card["cta_text"]),
-    link: str(s["link_url"]) || str(card["link_url"]),
-    image: str(img["original_image_url"] ?? img["resized_image_url"]) || str(card["original_image_url"] ?? card["resized_image_url"]) || str(vid["video_preview_image_url"] ?? card["video_preview_image_url"]),
-    video: str(vid["video_hd_url"] ?? vid["video_sd_url"]) || str(card["video_hd_url"] ?? card["video_sd_url"]),
+    id, pageId, pageName: pick(g(r, "page_name"), g(s, "page_name")) || "Anunciante",
+    pageUrl: str(g(s, "page_profile_uri")) || (pageId ? `https://www.facebook.com/${pageId}` : ""),
+    avatar: str(g(s, "page_profile_picture_url")),
+    text: pick(o(g(s, "body"))["text"], g(card, "body")),
+    title: pick(g(s, "title"), g(card, "title")), cta: pick(g(s, "cta_text"), g(card, "cta_text")),
+    link: pick(g(s, "link_url"), g(card, "link_url")),
+    image: pick(g(img, "original_image_url"), g(img, "resized_image_url"), g(card, "original_image_url"), g(card, "resized_image_url"), g(vid, "video_preview_image_url"), g(card, "video_preview_image_url")),
+    video: pick(g(vid, "video_hd_url"), g(vid, "video_sd_url"), g(card, "video_hd_url"), g(card, "video_sd_url")),
     start, days: Number.isFinite(t) ? Math.max(0, Math.floor((now - t) / 86400000)) : 0,
-    active: r["is_active"] !== false, platforms: Array.isArray(r["publisher_platform"]) ? (r["publisher_platform"] as unknown[]).map(str) : [],
-    sameCreative: Number(r["collation_count"] ?? 1) || 1,
+    active: g(r, "is_active") !== false, platforms: Array.isArray(plat) ? (plat as unknown[]).map(str) : [],
+    sameCreative: Number(g(r, "collation_count") ?? 1) || 1,
     libraryUrl: `https://www.facebook.com/ads/library/?id=${id}`,
   };
 }
