@@ -25,7 +25,7 @@ export function SpyAdCard({ ad, niche = "", compact = false }: { ad: SpyAd; nich
       <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{ad.pageName}</p><p className="truncate text-xs text-muted-foreground">{ad.days}d no ar · {ad.active ? "ativo" : "parado"}</p></div>
       <span className={`${compact ? "hidden sm:inline-flex" : "inline-flex"} shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${h === "quente" ? "bg-destructive/15 text-destructive" : h === "validando" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}><Flame className="h-3 w-3" />{h}</span>
     </div>
-    {ad.video ? <video src={ad.video} poster={ad.image} controls preload="none" className="aspect-square w-full bg-muted object-cover" /> : ad.image ? <img src={ad.image} alt={ad.title || ad.pageName} loading="lazy" className="aspect-square w-full bg-muted object-cover" /> : <div className="aspect-square w-full bg-muted" />}
+    {ad.video ? <video src={ad.video} poster={ad.image} controls preload="none" className="aspect-square w-full bg-muted object-contain" /> : ad.image ? <img src={ad.image} alt={ad.title || ad.pageName} loading="lazy" className="aspect-square w-full bg-muted object-contain" /> : <div className="aspect-square w-full bg-muted" />}
     <div className="flex flex-1 flex-col gap-2 p-3">
       <p className="text-xs text-muted-foreground">{ad.sameCreative > 1 ? `${ad.sameCreative} anúncios com este criativo` : "1 anúncio"}{ad.platforms.length ? ` · ${ad.platforms.join(", ").toLowerCase()}` : ""}</p>
       {ad.title && <p className="text-sm font-semibold">{ad.title}</p>}

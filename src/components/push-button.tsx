@@ -16,7 +16,7 @@ export function PushButton() {
         toast.error("Este navegador não aceita notificações. No iPhone, instale o app na tela inicial primeiro."); return;
       }
       if (window.top !== window.self) {
-        toast.error("Abra o app publicado (bat-ads567.lovable.app) instalado na tela inicial — a prévia não pode pedir permissão."); return;
+        toast.error("Abra o app oficial instalado na tela inicial — a prévia não pode pedir permissão."); return;
       }
       if ((await Notification.requestPermission()) !== "granted") { toast.error("Notificações bloqueadas nas configurações do celular."); return; }
       await navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" });

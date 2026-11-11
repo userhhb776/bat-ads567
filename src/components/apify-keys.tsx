@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { apifyStatus } from "@/lib/spy.functions";
 import { saveGatewayCred, deleteGatewayCred } from "@/lib/integrations.functions";
 
-const SLOTS = [["apify", "Principal"], ["apify-2", "Reserva 1"], ["apify-3", "Reserva 2"], ["apify-4", "Reserva 3"]] as const;
+const SLOTS = [["apify", "Principal"], ...[2, 3, 4, 5, 6, 7, 8].map((n) => [`apify-${n}`, `Reserva ${n - 1}`] as const)] as const;
 
 /** Bat Spy keys: balance per key; when one runs out the search moves to the next. */
 export function ApifyKeys() {

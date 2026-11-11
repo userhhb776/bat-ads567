@@ -50,7 +50,7 @@ export function ConnectBm() {
         <li>Na BM nova, abra <a className="underline" target="_blank" rel="noreferrer" href="https://business.facebook.com/settings/system-users">Usuários do sistema</a> e crie um usuário <b>Administrador</b>.</li>
         <li>Em <b>Atribuir ativos</b>, marque as contas de anúncio, páginas e pixels com controle total.</li>
         <li>Em <a className="underline" target="_blank" rel="noreferrer" href="https://developers.facebook.com/apps">Meta for Developers</a>, adicione o seu app a essa BM e gere o token do usuário com <b>ads_management, business_management, pages_show_list, pages_manage_ads</b>.</li>
-        <li>Troque o token na conexão da Meta do Lovable (Conectores → Meta Ads) e toque em atualizar aqui.</li>
+        <li>Troque o token na conexão nativa da Meta e toque em atualizar aqui.</li>
       </ol>
       <div className="flex flex-wrap gap-2"><Button size="sm" variant="outline" asChild><a href="https://business.facebook.com/settings/system-users" target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" />Usuários do sistema</a></Button><Button size="sm" variant="outline" onClick={() => bms.refetch()}><RefreshCw className="h-4 w-4" />Atualizar BMs ({bms.data?.length ?? 0})</Button></div>
       <div className="border-t border-border pt-3 text-xs text-muted-foreground">Ou peça acesso direto a uma conta/página de outra BM (de um cliente ou parceiro). Ela entra na sua BM depois que o dono aprovar.</div>

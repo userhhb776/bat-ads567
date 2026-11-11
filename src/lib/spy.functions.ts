@@ -5,7 +5,7 @@ import { libraryUrl, normalizeAd, type SpyAd } from "./spy";
 
 const API = "https://api.apify.com/v2";
 const ACTOR = "curious_coder~facebook-ads-library-scraper";
-const SLOTS = ["apify", "apify-2", "apify-3", "apify-4"] as const;
+const SLOTS = ["apify", "apify-2", "apify-3", "apify-4", "apify-5", "apify-6", "apify-7", "apify-8"] as const;
 
 async function keys(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

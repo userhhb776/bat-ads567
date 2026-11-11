@@ -15,6 +15,8 @@ LINGUAGEM SIMPLES (regra mais importante): fale como uma pessoa comum explicando
 Responda sempre em português do Brasil.`;
 const SYSTEM = `Você recebe adAccountsHistory: todas as contas de anúncio com campanhas já rodadas, gasto/compras/receita da vida toda e dinheiro (pré-pago = saldo disponível; limite = quanto falta do limite de gastos; cartão = cobra conforme gasta, sem saldo fixo). Use isso para dizer qual é a melhor conta para subir uma oferta (histórico, ROAS de vida, status ativa=1) e para informar saldos com o valor exato e a moeda. Você não mexe em cartões nem pagamentos.
 
+Você também enxerga o Bat Spy (minerador da biblioteca de anúncios): batSpyUltimaBusca, batSpySalvos (swipe file) e batSpyVigiados. Use para dizer quais ofertas estão escalando (mais anúncios e mais dias no ar), sugerir o que modelar e propor ACAO "oferta" para mandar ao Radar.
+
 Você recebe um resumo do painel: tela em que o chefe está agora (telaAtual), campanhas da conta atual, produtos, vendas, automações, regras de vigia, funis, páginas e criativos (anexos que o chefe envia no chat vão para Criativos).
 Você pode propor UMA ação por resposta, no FIM, em uma linha exatamente assim (o usuário confirma antes):
 ACAO: {"tipo":"status","id":"<id campanha>","status":"PAUSED"}   (ou "ACTIVE")
@@ -43,6 +45,18 @@ ACAO: {"tipo":"estrategia","nome":"...","id":"*","instrucoes":"<a estratégia co
 - A vigia na nuvem revisa no intervalo, mesmo com o painel fechado, e só mexe dentro desses limites.
 Para regras simples de número fixo, a ACAO "regra" continua valendo.`;
 
+/** DeepSeek keys in order: main secret, then reserves saved in Configurações (deepseek-2..4). */
+async function deepseekKeys(userId: string): Promise<string[]> {
+  const main = process.env["DEEPSEEK_API_KEY"];
+  let extra: string[] = [];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.from("gateway_credentials" as never).select("platform, token").eq("user_id", userId).in("platform", ["deepseek-2", "deepseek-3", "deepseek-4"] as never);
+    extra = ((data ?? []) as { platform: string; token: string }[]).sort((a, b) => a.platform.localeCompare(b.platform)).map((r) => r.token).filter(Boolean);
+  } catch { /* reserves optional */ }
+  return [main ?? "", ...extra].filter(Boolean);
+}
+
 const msgSchema = z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(8000) });
 
 export const crowleyChat = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
@@ -57,7 +71,7 @@ export const crowleyChat = createServerFn({ method: "POST" }).middleware([requir
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const messages = [
       { role: "system", content: PERSONAS[data.persona] + "\n" + BASE + SYSTEM + (data.ads ? ADS_MODE : "") + (data.context ? `\n\nResumo atual:\n${data.context}` : "") },
       ...data.messages,
@@ -67,15 +81,15 @@ export const crowleyChat = createServerFn({ method: "POST" }).middleware([requir
     const providers: AiProvider[] = [first, first === "deepseek" ? "ollama" : "deepseek"];
     const failures: string[] = [];
     for (const provider of providers) {
-      const key = process.env[provider === "deepseek" ? "DEEPSEEK_API_KEY" : "OLLAMA_API_KEY"];
-      if (!key) { failures.push(`${provider}: chave não cadastrada`); continue; }
-      try {
+      const pool = provider === "deepseek" ? await deepseekKeys(context.userId) : [process.env["OLLAMA_API_KEY"] ?? ""].filter(Boolean);
+      if (!pool.length) { failures.push(`${provider}: chave não cadastrada`); continue; }
+      for (const key of pool) try {
         const r = await fetch(provider === "deepseek" ? "https://api.deepseek.com/chat/completions" : "https://ollama.com/api/chat", {
           method: "POST", signal: AbortSignal.timeout(45_000),
           headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
           body: JSON.stringify({ model: provider === "deepseek" ? "deepseek-chat" : process.env["OLLAMA_MODEL"] || "gpt-oss:120b", messages, stream: false }),
         });
-        if (!r.ok) { const detail = await r.text(); console.error(`${provider} [${r.status}]: ${detail}`); failures.push(`${provider}: serviço indisponível (${r.status})`); continue; }
+        if (!r.ok) { const detail = await r.text(); console.error(`${provider} [${r.status}]: ${detail}`); failures.push(`${provider}: serviço indisponível (${r.status})`); if ([401, 402, 403, 429].includes(r.status)) continue; break; }
         const j = await r.json() as any;
         const text = String(provider === "deepseek" ? j.choices?.[0]?.message?.content ?? "" : j.message?.content ?? "");
         if (!text.trim()) { failures.push(`${provider}: resposta vazia`); continue; }
