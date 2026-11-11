@@ -25,6 +25,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { setDemo, useDemo } from "@/lib/demo";
 
 function NotFoundComponent() {
   return (
@@ -183,11 +184,25 @@ function RootComponent() {
           </div>
         </aside>
         <main className="min-w-0 flex-1">
+          <DemoBanner />
           <Outlet />
         </main>
       </div>
       <Toaster />
       {path !== "/crowley" && path !== "/agentes" && <FloatingCrowley />}
     </QueryClientProvider>
+  );
+}
+
+/** Always-visible warning while demo numbers are on, so fake figures are never mistaken for the real operation. */
+function DemoBanner() {
+  const on = useDemo();
+  if (!on) return null;
+  return (
+    <div role="status" className="sticky top-0 z-30 flex items-center gap-2 border-b border-primary/40 bg-primary/15 px-4 py-2 text-xs">
+      <span className="font-semibold text-primary">MODO DEMONSTRAÇÃO</span>
+      <span className="min-w-0 flex-1 truncate text-muted-foreground">Números fictícios. Suas contas e dados reais não são afetados.</span>
+      <Button size="sm" variant="outline" className="h-7" onClick={() => setDemo(false)}>Desligar</Button>
+    </div>
   );
 }
