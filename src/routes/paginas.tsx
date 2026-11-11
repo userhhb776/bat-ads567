@@ -68,12 +68,12 @@ function PagesRoute() {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [demoTpl, setDemoTpl] = useState<TemplateId | null>(null);
   const [demoMobile, setDemoMobile] = useState(false);
-  const demoCode = useMemo(() => (demoTpl ? fillPlaceholders(templateCode(demoTpl, page?.product), page ?? ({} as SalesPage)) : ""), [demoTpl, page]);
 
   useEffect(() => { const p = loadPages(); setPages(p); setSel(p[0]?.id ?? null); }, []);
   const page = pages.find((p) => p.id === sel);
   const chat = page?.chat ?? [];
   const code = page?.code ?? "";
+  const demoCode = useMemo(() => (demoTpl ? fillPlaceholders(templateCode(demoTpl, page?.product), page ?? ({} as SalesPage)) : ""), [demoTpl, page]);
   const filled = useMemo(() => (page && code ? fillPlaceholders(code, page) : ""), [page, code]);
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [live, chat.length]);
 
