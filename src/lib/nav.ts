@@ -28,7 +28,10 @@ export const NAV_GROUPS = [
     { to: "/automacoes", label: "Fluxos", icon: Zap },
     { to: "/agendamentos", label: "Agendamentos", icon: CalendarClock },
   ] },
-  { title: "Comercial", items: [
+  { title: "Bat Spy", items: [
+    { to: "/bat-spy", label: "Minerador de anúncios", icon: Radar },
+    { to: "/bat-spy/anunciantes", label: "Anunciantes", icon: Users },
+    { to: "/bat-spy/salvos", label: "Swipe file", icon: BookOpen },
     { to: "/produtos", label: "Produtos e vendas", icon: Package },
     { to: "/ofertas", label: "Radar de ofertas", icon: Eye },
   ] },
