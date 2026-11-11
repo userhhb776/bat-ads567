@@ -2,7 +2,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 /** Keys owned by the app; everything saved under these prefixes mirrors to the user's database. */
 export const SYNC_PREFIXES = ["bg.", "batgotham.", "bat-gotham-"] as const;
-export const isSynced = (key: string) => SYNC_PREFIXES.some((p) => key.startsWith(p)) && key !== "batgotham.currency";
+/** Per-device switches never travel through the database (a cloud copy would re-enable demo after login). */
+export const DEVICE_ONLY_KEYS = new Set(["batgotham.currency", "batgotham.demo-mode"]);
+export const isSynced = (key: string) => SYNC_PREFIXES.some((p) => key.startsWith(p)) && !DEVICE_ONLY_KEYS.has(key);
 
 /** Operational lists live in their own tables (source of truth); the device copy is only a cache. */
 export const TABLE_KEYS: Record<string, string> = {
@@ -117,7 +119,9 @@ export async function startCloudSync(uid: string): Promise<boolean> {
   }
   const { data, error } = await supabase.from("app_state").select("key,value").eq("user_id", uid);
   if (error) { console.error(error); return false; }
-  const cloud = new Map((data ?? []).filter((r) => !TABLE_KEYS[r.key]).map((r) => [r.key, JSON.stringify(r.value)]));
+  const stale = (data ?? []).filter((r) => DEVICE_ONLY_KEYS.has(r.key)).map((r) => r.key);
+  if (stale.length) void supabase.from("app_state").delete().eq("user_id", uid).in("key", stale).then(({ error: e }) => { if (e) console.error(e); });
+  const cloud = new Map((data ?? []).filter((r) => !TABLE_KEYS[r.key] && isSynced(r.key)).map((r) => [r.key, JSON.stringify(r.value)]));
   for (const [key, raw] of cloud) changed = set(key, raw) || changed;
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)!;
