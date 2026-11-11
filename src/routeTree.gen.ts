@@ -43,6 +43,7 @@ import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
 import { Route as UtmLinksRouteImport } from './routes/utm.links'
 import { Route as UtmVisitantesRouteImport } from './routes/utm.visitantes'
+import { Route as ApiPublicSpyMediaRouteImport } from './routes/api/public/spy-media'
 import { Route as ApiPublicTrackRouteImport } from './routes/api/public/track'
 import { Route as ApiPublicCronWatchRouteImport } from './routes/api/public/cron/watch'
 import { Route as ApiPublicInboundChannelRouteImport } from './routes/api/public/inbound/$channel'
@@ -219,6 +220,11 @@ const UtmVisitantesRoute = UtmVisitantesRouteImport.update({
   path: '/visitantes',
   getParentRoute: () => UtmRoute,
 } as any)
+const ApiPublicSpyMediaRoute = ApiPublicSpyMediaRouteImport.update({
+  id: '/api/public/spy-media',
+  path: '/api/public/spy-media',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicTrackRoute = ApiPublicTrackRouteImport.update({
   id: '/api/public/track',
   path: '/api/public/track',
@@ -281,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/bat-spy/': typeof BatSpyIndexRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/spy-media': typeof ApiPublicSpyMediaRoute
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/bat-spy': typeof BatSpyIndexRoute
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
+  '/api/public/spy-media': typeof ApiPublicSpyMediaRoute
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/bat-spy/': typeof BatSpyIndexRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
+  '/api/public/spy-media': typeof ApiPublicSpyMediaRoute
   '/api/public/track': typeof ApiPublicTrackRoute
   '/api/public/cron/watch': typeof ApiPublicCronWatchRoute
   '/api/public/inbound/$channel': typeof ApiPublicInboundChannelRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/bat-spy/'
     | '/met/'
     | '/utm/'
+    | '/api/public/spy-media'
     | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/bat-spy'
     | '/met'
     | '/utm'
+    | '/api/public/spy-media'
     | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/bat-spy/'
     | '/met/'
     | '/utm/'
+    | '/api/public/spy-media'
     | '/api/public/track'
     | '/api/public/cron/watch'
     | '/api/public/inbound/$channel'
@@ -521,6 +533,7 @@ export interface RootRouteChildren {
   BatSpyAnunciantesRoute: typeof BatSpyAnunciantesRoute
   BatSpySalvosRoute: typeof BatSpySalvosRoute
   BatSpyIndexRoute: typeof BatSpyIndexRoute
+  ApiPublicSpyMediaRoute: typeof ApiPublicSpyMediaRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
   ApiPublicInboundChannelRoute: typeof ApiPublicInboundChannelRoute
@@ -768,6 +781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UtmVisitantesRouteImport
       parentRoute: typeof UtmRoute
     }
+    '/api/public/spy-media': {
+      id: '/api/public/spy-media'
+      path: '/api/public/spy-media'
+      fullPath: '/api/public/spy-media'
+      preLoaderRoute: typeof ApiPublicSpyMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/track': {
       id: '/api/public/track'
       path: '/api/public/track'
@@ -863,6 +883,7 @@ const rootRouteChildren: RootRouteChildren = {
   BatSpyAnunciantesRoute: BatSpyAnunciantesRoute,
   BatSpySalvosRoute: BatSpySalvosRoute,
   BatSpyIndexRoute: BatSpyIndexRoute,
+  ApiPublicSpyMediaRoute: ApiPublicSpyMediaRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
   ApiPublicInboundChannelRoute: ApiPublicInboundChannelRoute,
