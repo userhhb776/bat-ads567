@@ -34,6 +34,9 @@ import { Route as SistemaRouteImport } from './routes/sistema'
 import { Route as SuporteRouteImport } from './routes/suporte'
 import { Route as UtmRouteImport } from './routes/utm'
 import { Route as ApiGenerateRouteImport } from './routes/api/generate'
+import { Route as BatSpyIndexRouteImport } from './routes/bat-spy/index'
+import { Route as BatSpyAnunciantesRouteImport } from './routes/bat-spy/anunciantes'
+import { Route as BatSpySalvosRouteImport } from './routes/bat-spy/salvos'
 import { Route as MetIndexRouteImport } from './routes/met.index'
 import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
@@ -171,6 +174,21 @@ const ApiGenerateRoute = ApiGenerateRouteImport.update({
   path: '/api/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BatSpyIndexRoute = BatSpyIndexRouteImport.update({
+  id: '/bat-spy/',
+  path: '/bat-spy/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BatSpyAnunciantesRoute = BatSpyAnunciantesRouteImport.update({
+  id: '/bat-spy/anunciantes',
+  path: '/bat-spy/anunciantes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BatSpySalvosRoute = BatSpySalvosRouteImport.update({
+  id: '/bat-spy/salvos',
+  path: '/bat-spy/salvos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MetIndexRoute = MetIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -254,10 +272,13 @@ export interface FileRoutesByFullPath {
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
   '/api/generate': typeof ApiGenerateRoute
+  '/bat-spy/anunciantes': typeof BatSpyAnunciantesRoute
+  '/bat-spy/salvos': typeof BatSpySalvosRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
   '/utm/visitantes': typeof UtmVisitantesRoute
+  '/bat-spy/': typeof BatSpyIndexRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -290,10 +311,13 @@ export interface FileRoutesByTo {
   '/sistema': typeof SistemaRoute
   '/suporte': typeof SuporteRoute
   '/api/generate': typeof ApiGenerateRoute
+  '/bat-spy/anunciantes': typeof BatSpyAnunciantesRoute
+  '/bat-spy/salvos': typeof BatSpySalvosRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
   '/utm/visitantes': typeof UtmVisitantesRoute
+  '/bat-spy': typeof BatSpyIndexRoute
   '/met': typeof MetIndexRoute
   '/utm': typeof UtmIndexRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -329,10 +353,13 @@ export interface FileRoutesById {
   '/suporte': typeof SuporteRoute
   '/utm': typeof UtmRouteWithChildren
   '/api/generate': typeof ApiGenerateRoute
+  '/bat-spy/anunciantes': typeof BatSpyAnunciantesRoute
+  '/bat-spy/salvos': typeof BatSpySalvosRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
   '/utm/visitantes': typeof UtmVisitantesRoute
+  '/bat-spy/': typeof BatSpyIndexRoute
   '/met/': typeof MetIndexRoute
   '/utm/': typeof UtmIndexRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -369,10 +396,13 @@ export interface FileRouteTypes {
     | '/suporte'
     | '/utm'
     | '/api/generate'
+    | '/bat-spy/anunciantes'
+    | '/bat-spy/salvos'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
     | '/utm/visitantes'
+    | '/bat-spy/'
     | '/met/'
     | '/utm/'
     | '/api/public/track'
@@ -405,10 +435,13 @@ export interface FileRouteTypes {
     | '/sistema'
     | '/suporte'
     | '/api/generate'
+    | '/bat-spy/anunciantes'
+    | '/bat-spy/salvos'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
     | '/utm/visitantes'
+    | '/bat-spy'
     | '/met'
     | '/utm'
     | '/api/public/track'
@@ -443,10 +476,13 @@ export interface FileRouteTypes {
     | '/suporte'
     | '/utm'
     | '/api/generate'
+    | '/bat-spy/anunciantes'
+    | '/bat-spy/salvos'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
     | '/utm/visitantes'
+    | '/bat-spy/'
     | '/met/'
     | '/utm/'
     | '/api/public/track'
@@ -482,6 +518,9 @@ export interface RootRouteChildren {
   SuporteRoute: typeof SuporteRoute
   UtmRoute: typeof UtmRouteWithChildren
   ApiGenerateRoute: typeof ApiGenerateRoute
+  BatSpyAnunciantesRoute: typeof BatSpyAnunciantesRoute
+  BatSpySalvosRoute: typeof BatSpySalvosRoute
+  BatSpyIndexRoute: typeof BatSpyIndexRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
   ApiPublicInboundChannelRoute: typeof ApiPublicInboundChannelRoute
@@ -666,6 +705,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bat-spy/': {
+      id: '/bat-spy/'
+      path: '/bat-spy'
+      fullPath: '/bat-spy/'
+      preLoaderRoute: typeof BatSpyIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bat-spy/anunciantes': {
+      id: '/bat-spy/anunciantes'
+      path: '/bat-spy/anunciantes'
+      fullPath: '/bat-spy/anunciantes'
+      preLoaderRoute: typeof BatSpyAnunciantesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bat-spy/salvos': {
+      id: '/bat-spy/salvos'
+      path: '/bat-spy/salvos'
+      fullPath: '/bat-spy/salvos'
+      preLoaderRoute: typeof BatSpySalvosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/met/': {
       id: '/met/'
       path: '/'
@@ -800,6 +860,9 @@ const rootRouteChildren: RootRouteChildren = {
   SuporteRoute: SuporteRoute,
   UtmRoute: UtmRouteWithChildren,
   ApiGenerateRoute: ApiGenerateRoute,
+  BatSpyAnunciantesRoute: BatSpyAnunciantesRoute,
+  BatSpySalvosRoute: BatSpySalvosRoute,
+  BatSpyIndexRoute: BatSpyIndexRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,
   ApiPublicInboundChannelRoute: ApiPublicInboundChannelRoute,

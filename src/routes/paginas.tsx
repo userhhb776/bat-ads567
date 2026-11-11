@@ -64,6 +64,7 @@ function PagesRoute() {
   const [pick, setPick] = useState<{ from: string; url: string; busy: boolean } | null>(null);
   const [modelUrl, setModelUrl] = useState("");
   const [showModel, setShowModel] = useState(false);
+  useEffect(() => { const u = sessionStorage.getItem("batspy.model"); if (u) { sessionStorage.removeItem("batspy.model"); setModelUrl(u); setShowModel(true); } }, []);
   const [showTemplates, setShowTemplates] = useState(false);
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [demoTpl, setDemoTpl] = useState<TemplateId | null>(null);
