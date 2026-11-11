@@ -30,7 +30,7 @@ export function SpyAdCard({ ad, niche = "", compact = false }: { ad: SpyAd; nich
       <p className="text-xs text-muted-foreground">{ad.sameCreative > 1 ? `${ad.sameCreative} anúncios com este criativo` : "1 anúncio"}{ad.platforms.length ? ` · ${ad.platforms.join(", ").toLowerCase()}` : ""}</p>
       {ad.title && <p className="text-sm font-semibold">{ad.title}</p>}
       <p className={`whitespace-pre-wrap text-sm ${compact ? "line-clamp-3 sm:line-clamp-5" : "line-clamp-5"}`}>{ad.text}</p>
-      <div className="mt-auto grid grid-cols-2 gap-1.5 pt-2">
+      <div className={`mt-auto grid gap-1.5 pt-2 ${compact ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2"}`}>
         <Button size="sm" onClick={() => setOpen(true)}><Eye className="h-3.5 w-3.5" />Espionar</Button>
         {media ? <Button asChild size="sm" variant="outline"><a href={mediaDownload(media, `${ad.pageName}-${ad.id}`)} download><Download className="h-3.5 w-3.5" />Baixar</a></Button> : <span />}
       </div>
