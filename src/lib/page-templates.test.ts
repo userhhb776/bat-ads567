@@ -14,7 +14,7 @@ describe("page templates", () => {
     }
   });
   it("never presents invented testimonials as real", () => {
-    for (const t of TEMPLATES) for (const x of t.data.testimonials.items) expect(x.text).toContain("substitua");
+    for (const t of TEMPLATES) for (const x of t.data.testimonials.items) expect(x["text"]).toContain("substitua");
   });
   it("uses the product name as the brand", () => {
     expect(templateCode("vsl", "Cozinha de 15 Minutos")).toContain('"brand": "Cozinha de 15 Minutos"');
