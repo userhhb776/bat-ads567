@@ -43,7 +43,9 @@ export const supportReply = createServerFn({ method: "POST" }).middleware([requi
     return generateReply(data.product, data.knowledge, data.history);
   });
 
-export type WaInstance = { name: string; status: string; profile: string; number: string; pic: string };
+export type WaInstance = { name: string; status: string; profile: string; number: string; pic: string; receiving: boolean };
+/** Incoming messages must reach the published app (the preview is private), so webhooks always point there. */
+const APP_URL = () => (process.env["PUBLIC_APP_URL"] || "https://bat-ads567.lovable.app").replace(/\/$/, "");
 
 /** Lists the WhatsApp numbers on the user's Evolution API server. */
 export const whatsappList = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
@@ -54,7 +56,11 @@ export const whatsappList = createServerFn({ method: "GET" }).middleware([requir
     const r = await evo("/instance/fetchInstances");
     if (!r.ok) return { configured: true, ok: false, ms: Date.now() - t, instances: [] as WaInstance[], error: `Servidor respondeu ${r.status}.` };
     const list = (await r.json()) as any[];
-    const instances: WaInstance[] = list.map((i) => ({ name: String(i.name), status: String(i.connectionStatus ?? "close"), profile: String(i.profileName ?? ""), number: String(i.ownerJid ?? "").replace(/@.*$/, ""), pic: String(i.profilePicUrl ?? "") }));
+    const instances: WaInstance[] = await Promise.all(list.map(async (i) => {
+      const name = String(i.name);
+      const hook = await evo(`/webhook/find/${encodeURIComponent(name)}`).then((x) => (x.ok ? x.json() : null)).catch(() => null) as { enabled?: boolean; url?: string } | null;
+      return { name, status: String(i.connectionStatus ?? "close"), profile: String(i.profileName ?? ""), number: String(i.ownerJid ?? "").replace(/@.*$/, ""), pic: String(i.profilePicUrl ?? ""), receiving: !!hook?.enabled && String(hook?.url ?? "").includes("/api/public/inbound/whatsapp") };
+    }));
     return { configured: true, ok: true, ms: Date.now() - t, instances, error: "" };
   } catch { return { configured: true, ok: false, ms: Date.now() - t, instances: [] as WaInstance[], error: "Servidor não respondeu (pode estar acordando no Render; tente de novo em 1 minuto)." }; }
 });
@@ -64,10 +70,8 @@ export const whatsappConnect = createServerFn({ method: "POST" }).middleware([re
   .inputValidator((d) => z.object({ name: z.string().regex(/^[a-zA-Z0-9_-]{2,40}$/), isNew: z.boolean() }).parse(d))
   .handler(async ({ data, context }) => {
     const { evo } = await import("@/lib/channels.server");
-    const { getRequest } = await import("@tanstack/react-start/server");
     const { data: st } = await context.supabase.from("user_settings").select("webhook_token").eq("user_id", context.userId).maybeSingle();
-    const origin = new URL(getRequest().url).origin;
-    const hook = st?.webhook_token ? `${origin}/api/public/inbound/whatsapp?token=${st.webhook_token}` : "";
+    const hook = st?.webhook_token ? `${APP_URL()}/api/public/inbound/whatsapp?token=${st.webhook_token}` : "";
     let r: Response;
     if (data.isNew) {
       r = await evo("/instance/create", { method: "POST", body: JSON.stringify({ instanceName: data.name, qrcode: true, integration: "WHATSAPP-BAILEYS", ...(hook ? { webhook: { url: hook, byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] } } : {}) }) });
@@ -81,6 +85,20 @@ export const whatsappConnect = createServerFn({ method: "POST" }).middleware([re
     const code = j?.qrcode?.pairingCode ?? j?.pairingCode ?? "";
     await context.supabase.from("audit_log").insert({ user_id: context.userId, module: "whatsapp", action: data.isNew ? "criar" : "conectar", target: data.name });
     return { qr: String(qr), pairingCode: String(code ?? ""), webhook: !!hook };
+  });
+
+/** Points a connected number's incoming messages to the support inbox (and the auto-reply agent). */
+export const whatsappHook = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ name: z.string().regex(/^[a-zA-Z0-9_-]{2,60}$/) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { evo } = await import("@/lib/channels.server");
+    const { data: st } = await context.supabase.from("user_settings").select("webhook_token").eq("user_id", context.userId).maybeSingle();
+    if (!st?.webhook_token) throw new Error("Crie primeiro o seu link de webhook em Integrações.");
+    const url = `${APP_URL()}/api/public/inbound/whatsapp?token=${st.webhook_token}`;
+    const r = await evo(`/webhook/set/${encodeURIComponent(data.name)}`, { method: "POST", body: JSON.stringify({ webhook: { enabled: true, url, byEvents: false, base64: false, events: ["MESSAGES_UPSERT"] } }) });
+    if (!r.ok) throw new Error(`Servidor respondeu ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, module: "whatsapp", action: "receber-mensagens", target: data.name });
+    return { ok: true };
   });
 
 /** Disconnects (logout) or removes a number from the server. */
