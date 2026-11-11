@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Search, SlidersHorizontal } from "lucide-react";
+import { Loader2, Search, SlidersHorizontal, Rows3, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ function Spy() {
   const [sort, setSort] = useState("escala");
   const [hot, setHot] = useState("todos");
   const [text, setText] = useState("");
+  const [compact, setCompact] = useState(false);
   const set = <K extends keyof SpyFilters>(k: K, v: SpyFilters[K]) => setF({ ...f, [k]: v });
   const go = async () => {
     setBusy(true);
@@ -38,7 +39,7 @@ function Spy() {
     if (text.trim()) a = a.filter((x) => `${x.text} ${x.title} ${x.pageName} ${x.link}`.toLowerCase().includes(text.toLowerCase()));
     return [...a].sort((x, y) => sort === "dias" ? y.days - x.days : sort === "recentes" ? x.days - y.days : y.sameCreative - x.sameCreative);
   }, [res.ads, f.minActive, f.minDays, hot, text, sort]);
-  return <div className="space-y-5 p-4 pb-24 sm:p-7">
+  return <div className="space-y-5 p-4 pb-32 sm:p-7">
     <PageHead title="Bat Spy" sub="Minerador da biblioteca de anúncios — ache ofertas escalando e modele."><Button asChild variant="outline"><Link to="/bat-spy/anunciantes">Anunciantes</Link></Button></PageHead>
     <form className="grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-4" onSubmit={(e) => { e.preventDefault(); void go(); }}>
       <div className="md:col-span-2"><Field label="Termo, nicho ou promessa"><Input value={f.q} onChange={(e) => set("q", e.target.value)} placeholder="ex.: emagrecer, renda extra" list="spy-niches" /></Field><datalist id="spy-niches">{NICHES.map((n) => <option key={n} value={n} />)}</datalist></div>
@@ -52,9 +53,9 @@ function Spy() {
       <Field label="Quantidade"><NativeSelect value={String(f.limit)} onChange={(e) => set("limit", Number(e.target.value))}>{[20, 50, 100, 200, 300].map((n) => <option key={n} value={n}>{n} anúncios</option>)}</NativeSelect></Field>
       <div className="flex items-end gap-2 md:col-span-4"><Button disabled={busy} className="w-full md:w-auto">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}{busy ? "Minerando (até 4 min)…" : "Minerar"}</Button><p className="text-xs text-muted-foreground">Cada busca gasta crédito da Apify. Os filtros abaixo não gastam.</p></div>
     </form>
-    {res.ads.length > 0 && <div className="flex flex-wrap items-center gap-2"><SlidersHorizontal className="h-4 w-4 text-muted-foreground" /><Input aria-label="Filtrar resultados" className="sm:w-64" placeholder="Filtrar texto, página, domínio" value={text} onChange={(e) => setText(e.target.value)} /><NativeSelect aria-label="Ordenar" value={sort} onChange={(e) => setSort(e.target.value)}><option value="escala">Mais escalados</option><option value="dias">Mais tempo no ar</option><option value="recentes">Mais recentes</option></NativeSelect><NativeSelect aria-label="Temperatura" value={hot} onChange={(e) => setHot(e.target.value)}><option value="todos">Todos</option><option value="quente">Quentes</option><option value="validando">Validando</option><option value="novo">Novos</option></NativeSelect><span className="text-xs text-muted-foreground">{shown.length} de {res.ads.length} · busca “{res.q}”</span></div>}
+    {res.ads.length > 0 && <div className="flex flex-wrap items-center gap-2"><SlidersHorizontal className="h-4 w-4 text-muted-foreground" /><Input aria-label="Filtrar resultados" className="sm:w-64" placeholder="Filtrar texto, página, domínio" value={text} onChange={(e) => setText(e.target.value)} /><NativeSelect aria-label="Ordenar" value={sort} onChange={(e) => setSort(e.target.value)}><option value="escala">Mais escalados</option><option value="dias">Mais tempo no ar</option><option value="recentes">Mais recentes</option></NativeSelect><NativeSelect aria-label="Temperatura" value={hot} onChange={(e) => setHot(e.target.value)}><option value="todos">Todos</option><option value="quente">Quentes</option><option value="validando">Validando</option><option value="novo">Novos</option></NativeSelect><span className="text-xs text-muted-foreground">{shown.length} de {res.ads.length} · busca “{res.q}”</span><div className="ml-auto flex gap-1 sm:hidden"><Button type="button" size="icon" variant={compact ? "outline" : "default"} aria-label="1 coluna" onClick={() => setCompact(false)}><Rows3 className="h-4 w-4" /></Button><Button type="button" size="icon" variant={compact ? "default" : "outline"} aria-label="2 colunas" onClick={() => setCompact(true)}><LayoutGrid className="h-4 w-4" /></Button></div></div>}
     {res.ads.length > 0 && shown.length < res.ads.length && <p className="rounded-md border border-border bg-muted/40 p-3 text-sm">{res.ads.length - shown.length} anúncios escondidos pelos filtros (tempo ativo, mínimo de anúncios ou temperatura). <button className="font-semibold text-primary underline" onClick={() => { setF({ ...f, minActive: 0, minDays: 0 }); setHot("todos"); setText(""); }}>Mostrar todos</button></p>}
-    <div id="spy-feed" className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">{shown.map((a) => <SpyAdCard key={a.id} ad={a} niche={f.q} />)}</div>
+    <div id="spy-feed" className={`grid scroll-mt-20 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 ${compact ? "grid-cols-2" : "grid-cols-1"}`}>{shown.map((a) => <SpyAdCard key={a.id} ad={a} niche={f.q} compact={compact} />)}</div>
     {!res.ads.length && !busy && <p className="border-y border-border py-10 text-center text-sm text-muted-foreground">Escolha os filtros e toque em Minerar.</p>}
   </div>;
 }
