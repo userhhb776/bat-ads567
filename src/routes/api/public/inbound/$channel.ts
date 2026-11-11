@@ -41,6 +41,12 @@ export const Route = createFileRoute("/api/public/inbound/$channel")({
         if (!owner) return new Response("Unauthorized", { status: 401 });
         const uid = owner.user_id;
         const pos = Math.floor(Date.now() / 1000);
+        const b = body as any;
+        const waId = typeof b?.data?.key?.id === "string" ? String(b.data.key.id) : "";
+        if (waId) {
+          const { data: dup } = await supabaseAdmin.from("messages").select("id").eq("user_id", uid).eq("data->>waId", waId).limit(1);
+          if (dup?.length) return Response.json({ ok: true, duplicate: true });
+        }
         const { data: found } = await supabaseAdmin.from("contacts").select("id,data").eq("user_id", uid).eq("data->>phone", msg.from).limit(1);
         let contactId = found?.[0]?.id as string | undefined;
         if (!contactId) {
@@ -48,12 +54,42 @@ export const Route = createFileRoute("/api/public/inbound/$channel")({
           await supabaseAdmin.from("contacts").insert({ id: contactId, user_id: uid, position: -pos, data: { id: contactId, name: msg.name || msg.from, email: "", phone: msg.from, source: channel.data, tags: [], stage: "Novo", fields: {}, notes: [], createdAt: Date.now() } });
         }
         const id = crypto.randomUUID();
-        const { error } = await supabaseAdmin.from("messages").insert({ id, user_id: uid, position: pos, data: { id, contactId, channel: channel.data, from: "cliente", text: msg.text.slice(0, 4000), at: Date.now() } });
+        const { error } = await supabaseAdmin.from("messages").insert({ id, user_id: uid, position: pos, data: { id, contactId, channel: channel.data, from: "cliente", text: msg.text.slice(0, 4000), at: Date.now(), ...(waId ? { waId } : {}) } });
         if (error) { console.error("inbound store", error); return new Response("Store failed", { status: 500 }); }
         const { data: conv } = await supabaseAdmin.from("conversations").select("data").eq("user_id", uid).eq("id", contactId).maybeSingle();
         const prev = (conv?.data ?? {}) as Record<string, string>;
-        await supabaseAdmin.from("conversations").upsert({ id: contactId, user_id: uid, position: -pos, data: { contactId, productId: prev["productId"] ?? "", mode: prev["mode"] ?? "ia", status: "aberta", category: prev["category"] ?? "", updatedAt: Date.now() } }, { onConflict: "user_id,id" });
-        await supabaseAdmin.from("notifications").insert({ user_id: uid, kind: "atendimento", title: `Mensagem de ${msg.name || msg.from}`, body: msg.text.slice(0, 200), link: "/suporte" });
+        let mode = prev["mode"] ?? "ia", category = prev["category"] ?? "", replied = "";
+        let productId = prev["productId"] ?? "";
+        // WhatsApp auto-reply: the product's support agent answers unless the kill-switch is on or a human took over.
+        if (channel.data === "whatsapp") {
+          const { data: cfgRows } = await supabaseAdmin.from("app_state").select("key,value").eq("user_id", uid).in("key", ["bg.wa-autoreply", "bg.kill-switch"]);
+          const cfg = (cfgRows?.find((r) => r.key === "bg.wa-autoreply")?.value ?? {}) as { enabled?: boolean; productId?: string };
+          const stop = cfgRows?.find((r) => r.key === "bg.kill-switch")?.value === true;
+          productId ||= cfg.productId ?? "";
+          if (cfg.enabled && !stop && mode === "ia" && productId) {
+            const { data: prod } = await supabaseAdmin.from("products").select("data").eq("user_id", uid).eq("id", productId).maybeSingle();
+            const p = (prod?.data ?? {}) as { name?: string; knowledge?: string };
+            const { data: hist } = await supabaseAdmin.from("messages").select("data").eq("user_id", uid).eq("data->>contactId", contactId).order("position", { ascending: false }).limit(20);
+            const history = (hist ?? []).map((h) => h.data as { from: string; text: string }).reverse();
+            const { generateReply } = await import("@/lib/support-ai.server");
+            const r = await generateReply(p.name ?? "", p.knowledge ?? "", history);
+            if (!r.error && r.text) {
+              const { deliver } = await import("@/lib/channels.server");
+              const instance = typeof b?.instance === "string" ? b.instance : "";
+              const sent = await deliver("whatsapp", instance ? `${instance}|${msg.from}` : msg.from, r.text);
+              if (sent.ok) {
+                const rid = crypto.randomUUID();
+                await supabaseAdmin.from("messages").insert({ id: rid, user_id: uid, position: pos + 1, data: { id: rid, contactId, channel: "whatsapp", from: "ia", text: r.text.slice(0, 4000), at: Date.now() } });
+                replied = r.text;
+              } else console.error("wa autoreply send", sent.error);
+              category = r.category || category;
+              if (r.handoff) mode = "humano";
+            } else if (r.error) console.error("wa autoreply ai", r.error);
+          }
+        }
+        await supabaseAdmin.from("conversations").upsert({ id: contactId, user_id: uid, position: -pos, data: { contactId, productId, mode, status: "aberta", category, updatedAt: Date.now() } }, { onConflict: "user_id,id" });
+        const { notifyUser } = await import("@/lib/notify.server");
+        await notifyUser(supabaseAdmin, uid, { kind: "atendimento", title: `${mode === "humano" && !replied ? "Precisa de você: " : ""}Mensagem de ${msg.name || msg.from}`, body: msg.text.slice(0, 200), link: "/suporte" }, !replied || mode === "humano");
         return Response.json({ ok: true });
       },
     },
