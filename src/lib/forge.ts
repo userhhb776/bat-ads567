@@ -165,9 +165,10 @@ ${connection ? '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@
       if(iconCache[name]) return iconCache[name];
       return iconCache[name]=function(props){
         var nodes=window.lucide && window.lucide.icons && window.lucide.icons[name];
+        if(nodes && nodes[0]==='svg' && Array.isArray(nodes[2])) nodes=nodes[2];
         var fallback=[['circle',{cx:12,cy:12,r:9}],['path',{d:'M8 12h8M12 8v8'}]];
         return React.createElement('svg',Object.assign({xmlns:'http://www.w3.org/2000/svg',width:24,height:24,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round','aria-hidden':true},props),
-          (nodes||fallback).map(function(node,i){return React.createElement(node[0],Object.assign({key:i},node[1]));}));
+          (nodes||fallback).map(function(node,i){var at={key:i};for(var k in node[1]){at[k.replace(/-([a-z])/g,function(_,c){return c.toUpperCase();})]=node[1][k];}return React.createElement(node[0],at);}));
       };
     }
     var config=${connectionJson};
