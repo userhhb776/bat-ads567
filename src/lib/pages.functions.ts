@@ -43,17 +43,75 @@ export const generatePage = createServerFn({ method: "POST" }).middleware([requi
   });
 
 export const publishPage = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ name: z.string().min(1).max(60), html: z.string().min(1).max(500000) }).parse(d))
-  .handler(async ({ data }) => {
+  .inputValidator((d) => z.object({ name: z.string().min(1).max(60), slug: z.string().max(60).optional(), html: z.string().min(1).max(500000) }).parse(d))
+  .handler(async ({ data, context }) => {
     const token = process.env["VERCEL_TOKEN"];
     if (!token) return { url: "", error: "Para publicar, cadastre o token da Vercel." };
-    const name = data.name.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "pagina";
+    const { slugify } = await import("./pages");
+    const name = slugify(data.slug || data.name) || "pagina";
+    const auth = { Authorization: `Bearer ${token}` };
     const r = await fetch("https://api.vercel.com/v13/deployments", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { ...auth, "Content-Type": "application/json" },
       body: JSON.stringify({ name, target: "production", files: [{ file: "index.html", data: data.html }], projectSettings: { framework: null } }),
     });
     const j: any = await r.json().catch(() => ({}));
     if (!r.ok) return { url: "", error: `Vercel recusou (${r.status}): ${j?.error?.message ?? "erro"}` };
-    return { url: `https://${name}.vercel.app`, error: "" };
+    // The free name.vercel.app address may belong to someone else; read the alias Vercel actually assigned.
+    let aliases: string[] = Array.isArray(j.alias) ? j.alias : [];
+    for (let i = 0; i < 5 && !aliases.length && j.id; i++) {
+      await new Promise((res) => setTimeout(res, 2500));
+      const g = await fetch(`https://api.vercel.com/v13/deployments/${encodeURIComponent(j.id)}`, { headers: auth }).catch(() => null);
+      const gj: any = g?.ok ? await g.json().catch(() => ({})) : {};
+      aliases = Array.isArray(gj.alias) ? gj.alias : [];
+    }
+    const host = aliases.find((a) => a === `${name}.vercel.app`) ?? aliases.sort((a, b) => a.length - b.length)[0] ?? j.url;
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, module: "paginas", action: "publicar", target: name, after: { url: host } as never });
+    return { url: `https://${host}`, error: "" };
+  });
+
+/** Private/loopback hosts are refused so the panel can't be used to read internal addresses. */
+function publicHost(u: URL) {
+  const h = u.hostname.toLowerCase();
+  if (!/^https?:$/.test(u.protocol) || !h.includes(".") || h === "localhost" || h.endsWith(".local") || h.endsWith(".internal")) return false;
+  if (/^(10|127|0)\./.test(h) || /^192\.168\./.test(h) || /^169\.254\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h) || h.includes(":")) return false;
+  return true;
+}
+
+/** Turns raw HTML into a short structural outline (title, headings, buttons, key paragraphs) for modeling. */
+export function outlineFromHtml(html: string): string {
+  const clean = html.replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, " ");
+  const txt = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+  const out: string[] = [];
+  const title = clean.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1];
+  if (title) out.push(`TÍTULO: ${txt(title)}`);
+  const re = /<(h[1-4]|button|a|p|li)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(clean)) && out.join("\n").length < 7000) {
+    const tag = m[1]!.toLowerCase(), t = txt(m[2]!);
+    if (!t || t.length < 3) continue;
+    if (tag.startsWith("h")) out.push(`${tag.toUpperCase()}: ${t.slice(0, 200)}`);
+    else if ((tag === "a" || tag === "button") && t.length <= 60 && /compr|quero|garant|comec|acess|inscr|assin|agend|pedir|adquir|cta|sim/i.test(t)) out.push(`BOTÃO: ${t}`);
+    else if ((tag === "p" || tag === "li") && t.length >= 40) out.push(`${tag === "li" ? "ITEM" : "TEXTO"}: ${t.slice(0, 220)}`);
+  }
+  return [...new Set(out)].join("\n").slice(0, 7000);
+}
+
+/** Reads a reference page (e.g. a competitor) and returns only its structure, so the AI can model it without copying. */
+export const outlinePage = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ url: z.string().url().max(2000) }).parse(d))
+  .handler(async ({ data }) => {
+    let u: URL; try { u = new URL(data.url); } catch { return { outline: "", error: "Link inválido." }; }
+    if (!publicHost(u)) return { outline: "", error: "Use um link público (https://...)." };
+    try {
+      const r = await fetch(u, { redirect: "follow", signal: AbortSignal.timeout(15000), headers: { "User-Agent": "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36", Accept: "text/html" } });
+      if (!r.ok) return { outline: "", error: `A página respondeu ${r.status}.` };
+      if (!publicHost(new URL(r.url || u.href))) return { outline: "", error: "O link redirecionou para um endereço não permitido." };
+      const reader = r.body?.getReader(); if (!reader) return { outline: "", error: "Página vazia." };
+      const dec = new TextDecoder(); let html = "", size = 0;
+      for (;;) { const { done, value } = await reader.read(); if (done) break; size += value.byteLength; html += dec.decode(value, { stream: true }); if (size > 2_000_000) { await reader.cancel(); break; } }
+      const outline = outlineFromHtml(html);
+      if (outline.length < 40) return { outline: "", error: "Não consegui ler o conteúdo (a página pode ser montada só por script)." };
+      return { outline, error: "" };
+    } catch { return { outline: "", error: "Não consegui abrir esse link agora." }; }
   });
