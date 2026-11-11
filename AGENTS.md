@@ -45,3 +45,7 @@ use the editor.
 - Background work runs in `src/lib/worker.server.ts`, invoked by the secret-protected `/api/public/cron/watch` pass: jobs are claimed with an atomic status switch, retried with backoff, and skipped for users with `bg.kill-switch`; automations share `runEngine` with the client so behavior never diverges.
 - Every Meta write and scheduled/agent action records an `audit_log` row and user-facing results go to `notifications`; menu entries live only in `src/lib/nav.ts`.
 - Gateway tokens live in service-role-only `gateway_credentials` via `src/lib/integrations.functions.ts`; webhooks reject events missing a saved verification secret — keeps credentials out of the browser.
+- AI strategy agents (`IntelRule.strategy`) are decided server-side in the cron watch via `src/lib/ai-agent.ts`, which clamps every AI decision to known campaigns, allowed kinds and the agent's budget limits — the AI never acts outside those bounds.
+- Bell + phone alerts go through `src/lib/notify.server.ts` (`notifyUser`, `healthAlert` deduped 6h) so every server path pushes the same way.
+- Sales page templates are data-driven JSX in `src/lib/page-templates.ts` using the same `{{CHECKOUT_URL}}/{{PIXEL_ID}}/{{WHATSAPP_URL}}/{{VIDEO_URL}}` placeholders filled by `fillPlaceholders` — one fill path for preview, ZIP and publish.
+- Page media uploads use the private `creatives` bucket with 10-year signed links because the workspace blocks public buckets.

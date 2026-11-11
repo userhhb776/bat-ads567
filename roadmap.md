@@ -57,3 +57,11 @@
 
 - [x] Crowley: funil/página/aviso, anexos, tela atual, respostas curtas, app /crowley, avatar
 - [x] Tokens dos gateways + monitor do banco
+
+## 11/11
+- [x] Page studio: 4 ready templates (loja, VSL, serviços, suplemento), photo upload/swap in pencil mode, video upload, model-from-link, editable address, WhatsApp field, green tracking checks, no off-topic copy.
+- [x] Fixed preview icon bug (lucide format) that broke pages using icons.
+- [x] WhatsApp: "Receber" sets the inbox webhook per number; AI auto-reply by product with human handoff; duplicate protection.
+- [x] ADS agents: separate chat; custom strategy agents decided by AI in the 24h watch within limits (max % change, ceiling, interval).
+- [x] Phone push for failures, finished tasks, customers needing a human; "Meta/IA parou" health alerts; demo-mode banner.
+- [ ] Live checks pending chefe's session: WhatsApp auto-reply with a real customer message, AI agent decisions on real campaigns, Vercel publish with custom address.
