@@ -89,7 +89,7 @@ export function WhatsappCard() {
                 <div className="ml-auto flex items-center">
                   <Button size="icon" variant="ghost" aria-label={`Testar ${s.name}`} disabled={busy === s.slot} onClick={() => void doTest(s)}><Activity className="h-4 w-4" /></Button>
                   {s.source === "painel" && i !== 0 && <Button size="icon" variant="ghost" aria-label={`Tornar ${s.name} principal`} disabled={busy === s.slot} onClick={() => void makeMain(s)}><Star className="h-4 w-4" /></Button>}
-                  {s.source !== "sistema" && <Button size="icon" variant="ghost" aria-label={`Editar ${s.name}`} onClick={() => setForm({ slot: s.slot, name: s.name, url: s.url, key: "", primary: s.primary || s.source === "reserva" ? s.primary : false })}><Pencil className="h-4 w-4" /></Button>}
+                  {s.source !== "sistema" && <Button size="icon" variant="ghost" aria-label={`Editar ${s.name}`} onClick={() => setForm({ slot: s.slot, name: s.name, url: s.url, key: "", primary: s.primary })}><Pencil className="h-4 w-4" /></Button>}
                   {s.source !== "sistema" && <Button size="icon" variant="ghost" aria-label={`Remover ${s.name}`} disabled={busy === s.slot} onClick={() => doDelete(s)}><Trash2 className="h-4 w-4" /></Button>}
                 </div>
               </div>
