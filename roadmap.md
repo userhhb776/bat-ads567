@@ -65,3 +65,9 @@
 - [x] ADS agents: separate chat; custom strategy agents decided by AI in the 24h watch within limits (max % change, ceiling, interval).
 - [x] Phone push for failures, finished tasks, customers needing a human; "Meta/IA parou" health alerts; demo-mode banner.
 - [ ] Live checks pending chefe's session: WhatsApp auto-reply with a real customer message, AI agent decisions on real campaigns, Vercel publish with custom address.
+
+## 12/11 Bat Spy pro
+- [ ] "Minerar mais" with batch size, dedupe and end-of-list stop.
+- [ ] Free filters: checkout/tech platform, advertiser scale, no big brands, format (carrossel/dinâmico).
+- [ ] Crowley Raio-X of the search (5 oldest ads) and per ad.
+- [ ] Sentinela: saved terms/pages checked in the 24h watch, alert when an ad passes N days.
