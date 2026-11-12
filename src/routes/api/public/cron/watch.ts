@@ -122,7 +122,9 @@ export const Route = createFileRoute("/api/public/cron/watch")({
         const funds = await checkFunds(supabaseAdmin, [...new Set((rows ?? []).map((r) => r.user_id as string))], stopped).catch((e) => { console.error("funds", e); return { fundAlerts: 0 }; });
         const { runSentinels } = await import("@/lib/spy.server");
         const spy = await runSentinels(supabaseAdmin, stopped).catch((e) => { console.error("sentinela", e); return { sentinelsStarted: 0, sentinelAlerts: 0 }; });
-        await heartbeat(supabaseAdmin, { actions, ...jobs, ...autos, ...funds, ...spy }).catch(() => {});
+        const { pingMainWa } = await import("@/lib/channels.server");
+        const wa = await pingMainWa(supabaseAdmin as never).catch(() => ({ waPinged: 0 }));
+        await heartbeat(supabaseAdmin, { actions, ...jobs, ...autos, ...funds, ...spy, ...wa }).catch(() => {});
         return Response.json({ ok: true, users: users.size, actions, jobs, automations: autos, funds, spy });
       },
     },
