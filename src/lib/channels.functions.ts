@@ -56,10 +56,10 @@ async function probe(s: { url: string; key: string }) {
   const { waCall } = await import("@/lib/channels.server");
   const t = Date.now();
   try {
-    const home = await waCall(s, "/", {}, 45000);
+    const home = await waCall(s, "/", {}, 75000);
     const j = (await home.json().catch(() => ({}))) as { version?: string; message?: string };
     if (!home.ok) return { ok: false, ms: Date.now() - t, version: "", error: `Respondeu ${home.status}.`, list: [] as any[] };
-    const r = await waCall(s, "/instance/fetchInstances", {}, 45000);
+    const r = await waCall(s, "/instance/fetchInstances", {}, 75000);
     if (r.status === 401 || r.status === 403) return { ok: false, ms: Date.now() - t, version: String(j.version ?? ""), error: "Está no ar, mas a chave não confere.", list: [] as any[] };
     if (!r.ok) return { ok: false, ms: Date.now() - t, version: String(j.version ?? ""), error: `Respondeu ${r.status} ao listar números.`, list: [] as any[] };
     return { ok: true, ms: Date.now() - t, version: String(j.version ?? ""), error: "", list: (await r.json()) as any[] };
