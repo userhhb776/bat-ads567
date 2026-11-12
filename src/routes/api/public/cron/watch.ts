@@ -120,8 +120,10 @@ export const Route = createFileRoute("/api/public/cron/watch")({
         const jobs = await processJobs(supabaseAdmin, stopped).catch((e) => { console.error("jobs", e); return { done: 0, failed: 0 }; });
         const autos = await runAutomations(supabaseAdmin, stopped).catch((e) => { console.error("autos", e); return { runs: 0 }; });
         const funds = await checkFunds(supabaseAdmin, [...new Set((rows ?? []).map((r) => r.user_id as string))], stopped).catch((e) => { console.error("funds", e); return { fundAlerts: 0 }; });
-        await heartbeat(supabaseAdmin, { actions, ...jobs, ...autos, ...funds }).catch(() => {});
-        return Response.json({ ok: true, users: users.size, actions, jobs, automations: autos, funds });
+        const { runSentinels } = await import("@/lib/spy.server");
+        const spy = await runSentinels(supabaseAdmin, stopped).catch((e) => { console.error("sentinela", e); return { sentinelsStarted: 0, sentinelAlerts: 0 }; });
+        await heartbeat(supabaseAdmin, { actions, ...jobs, ...autos, ...funds, ...spy }).catch(() => {});
+        return Response.json({ ok: true, users: users.size, actions, jobs, automations: autos, funds, spy });
       },
     },
   },
