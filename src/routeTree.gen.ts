@@ -37,6 +37,7 @@ import { Route as ApiGenerateRouteImport } from './routes/api/generate'
 import { Route as BatSpyIndexRouteImport } from './routes/bat-spy/index'
 import { Route as BatSpyAnunciantesRouteImport } from './routes/bat-spy/anunciantes'
 import { Route as BatSpySalvosRouteImport } from './routes/bat-spy/salvos'
+import { Route as BatSpySentinelaRouteImport } from './routes/bat-spy/sentinela'
 import { Route as MetIndexRouteImport } from './routes/met.index'
 import { Route as MetCriarRouteImport } from './routes/met.criar'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
@@ -190,6 +191,11 @@ const BatSpySalvosRoute = BatSpySalvosRouteImport.update({
   path: '/bat-spy/salvos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BatSpySentinelaRoute = BatSpySentinelaRouteImport.update({
+  id: '/bat-spy/sentinela',
+  path: '/bat-spy/sentinela',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MetIndexRoute = MetIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -280,6 +286,7 @@ export interface FileRoutesByFullPath {
   '/api/generate': typeof ApiGenerateRoute
   '/bat-spy/anunciantes': typeof BatSpyAnunciantesRoute
   '/bat-spy/salvos': typeof BatSpySalvosRoute
+  '/bat-spy/sentinela': typeof BatSpySentinelaRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/api/generate': typeof ApiGenerateRoute
   '/bat-spy/anunciantes': typeof BatSpyAnunciantesRoute
   '/bat-spy/salvos': typeof BatSpySalvosRoute
+  '/bat-spy/sentinela': typeof BatSpySentinelaRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
@@ -363,6 +371,7 @@ export interface FileRoutesById {
   '/api/generate': typeof ApiGenerateRoute
   '/bat-spy/anunciantes': typeof BatSpyAnunciantesRoute
   '/bat-spy/salvos': typeof BatSpySalvosRoute
+  '/bat-spy/sentinela': typeof BatSpySentinelaRoute
   '/met/criar': typeof MetCriarRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
@@ -407,6 +416,7 @@ export interface FileRouteTypes {
     | '/api/generate'
     | '/bat-spy/anunciantes'
     | '/bat-spy/salvos'
+    | '/bat-spy/sentinela'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
@@ -447,6 +457,7 @@ export interface FileRouteTypes {
     | '/api/generate'
     | '/bat-spy/anunciantes'
     | '/bat-spy/salvos'
+    | '/bat-spy/sentinela'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/api/generate'
     | '/bat-spy/anunciantes'
     | '/bat-spy/salvos'
+    | '/bat-spy/sentinela'
     | '/met/criar'
     | '/utm/integracoes'
     | '/utm/links'
@@ -532,6 +544,7 @@ export interface RootRouteChildren {
   ApiGenerateRoute: typeof ApiGenerateRoute
   BatSpyAnunciantesRoute: typeof BatSpyAnunciantesRoute
   BatSpySalvosRoute: typeof BatSpySalvosRoute
+  BatSpySentinelaRoute: typeof BatSpySentinelaRoute
   BatSpyIndexRoute: typeof BatSpyIndexRoute
   ApiPublicSpyMediaRoute: typeof ApiPublicSpyMediaRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
@@ -739,6 +752,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BatSpySalvosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/bat-spy/sentinela': {
+      id: '/bat-spy/sentinela'
+      path: '/bat-spy/sentinela'
+      fullPath: '/bat-spy/sentinela'
+      preLoaderRoute: typeof BatSpySentinelaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/met/': {
       id: '/met/'
       path: '/'
@@ -882,6 +902,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGenerateRoute: ApiGenerateRoute,
   BatSpyAnunciantesRoute: BatSpyAnunciantesRoute,
   BatSpySalvosRoute: BatSpySalvosRoute,
+  BatSpySentinelaRoute: BatSpySentinelaRoute,
   BatSpyIndexRoute: BatSpyIndexRoute,
   ApiPublicSpyMediaRoute: ApiPublicSpyMediaRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
