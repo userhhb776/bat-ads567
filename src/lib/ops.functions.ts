@@ -100,7 +100,7 @@ export const getHealth = createServerFn({ method: "GET" }).middleware([requireSu
     heartbeat: (hb?.value ?? null) as null | { at: string; actions?: number; done?: number; failed?: number; runs?: number },
     queued: queued ?? 0, failedJobs: failed ?? 0, failures24h: autoFails ?? 0,
     channels: {
-      meta: !!process.env["META_ADS_API_KEY"], whatsapp: !!process.env["RENDER_WHATSAPP_URL"], telegram: !!process.env["TELEGRAM_BOT_TOKEN"],
+      meta: !!process.env["META_ADS_API_KEY"], whatsapp: await (await import("@/lib/channels.server")).waConfigured().catch(() => !!process.env["RENDER_WHATSAPP_URL"]), telegram: !!process.env["TELEGRAM_BOT_TOKEN"],
       email: !!process.env["RESEND_API_KEY"] && !!process.env["EMAIL_FROM"], deepseek: !!process.env["DEEPSEEK_API_KEY"], ollama: !!process.env["OLLAMA_API_KEY"],
       vercel: !!process.env["VERCEL_TOKEN"], cron: !!process.env["WATCH_CRON_TOKEN"],
     },
