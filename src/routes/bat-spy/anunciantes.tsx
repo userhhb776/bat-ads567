@@ -3,8 +3,9 @@ import { useState } from "react";
 import { ExternalLink, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHead, head } from "@/components/ui-kit";
-import { useStore } from "@/lib/store";
-import { advertisers, DEFAULT_FILTERS, type SpyAd, type SpyFilters } from "@/lib/spy";
+import { useStore, uid } from "@/lib/store";
+import { toast } from "sonner";
+import { advertisers, DEFAULT_FILTERS, type SpyAd, type SpyFilters, type SpySentinel } from "@/lib/spy";
 
 export const Route = createFileRoute("/bat-spy/anunciantes")({ head: () => head("Bat Spy — Anunciantes", "Ranking de anunciantes por anúncios ativos e tempo no ar."), component: Ads });
 
@@ -12,6 +13,7 @@ function Ads() {
   const [res] = useStore<{ ads: SpyAd[]; at: string; q: string }>("spy-results", { ads: [], at: "", q: "" });
   const [f, setF] = useStore<SpyFilters>("spy-filters", DEFAULT_FILTERS);
   const [watch, setWatch] = useStore<{ pageId: string; pageName: string; pageUrl: string }[]>("spy-watch", []);
+  const [sentinels, setSentinels] = useStore<SpySentinel[]>("spy-sentinels", []);
   const [tab, setTab] = useState<"ranking" | "vigiados">("ranking");
   const list = advertisers(res.ads);
   return <div className="space-y-5 p-4 pb-24 sm:p-7">
@@ -26,6 +28,7 @@ function Ads() {
     </div>)}{!list.length && <p className="p-8 text-center text-sm text-muted-foreground">Minere primeiro para ver o ranking.</p>}</div>
     : <div className="divide-y divide-border rounded-lg border border-border bg-card">{watch.map((w) => <div key={w.pageId} className="flex items-center gap-3 p-3"><p className="flex-1 font-semibold">{w.pageName}</p>
       <Button size="sm" asChild onClick={() => setF({ ...f, q: "", pageUrl: `https://www.facebook.com/ads/library/?active_status=all&ad_type=all&country=ALL&view_all_page_id=${w.pageId}` })}><Link to="/bat-spy">Espionar de novo</Link></Button>
+      <Button size="sm" variant="outline" onClick={() => { setSentinels([...sentinels, { id: uid(), label: w.pageName, q: "", pageUrl: `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&view_all_page_id=${w.pageId}`, country: "ALL", minDays: 15, everyHours: 24, whatsapp: "", active: true }]); toast.success("Sentinela ligada para esta página"); }}>Sentinela</Button>
       <Button size="sm" variant="ghost" onClick={() => setWatch(watch.filter((x) => x.pageId !== w.pageId))}>Remover</Button></div>)}{!watch.length && <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma página vigiada.</p>}</div>}
   </div>;
 }
