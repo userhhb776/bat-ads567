@@ -13,7 +13,7 @@ vi.mock("@/integrations/supabase/client.server", () => {
 import { clearWaCache, evo, parseWaToken, waServers } from "./channels.server";
 
 describe("WhatsApp servers", () => {
-  beforeEach(() => { clearWaCache(); vi.unstubAllGlobals(); });
+  beforeEach(() => { clearWaCache(); vi.unstubAllGlobals(); vi.stubEnv("RENDER_WHATSAPP_URL", ""); });
 
   it("reads old plain-address reserves", () => {
     expect(parseWaToken("https://x.onrender.com")).toEqual({ url: "https://x.onrender.com", name: "", primary: false });
