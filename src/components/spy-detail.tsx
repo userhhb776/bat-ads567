@@ -1,12 +1,12 @@
 import { useNavigate } from "@tanstack/react-router";
-import { Download, ExternalLink, Flame, Radar, Wand2, Copy, CalendarDays, Layers, Globe } from "lucide-react";
-import { toast } from "sonner";
+import { Download, ExternalLink, Flame, Radar, Wand2, CalendarDays, Layers, Globe, ShoppingCart, Images } from "lucide-react";
+import { SpyXrayButton } from "@/components/spy-xray";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { heat, mediaDownload, type SpyAd } from "@/lib/spy";
+import { checkoutLabel, formatOf, heat, mediaDownload, type SpyAd } from "@/lib/spy";
 
 /** Full "Espionar" view of a mined ad: big creative, download, timing, scale, copy and destination. */
-export function SpyDetail({ ad, onClose, onRadar }: { ad: SpyAd | null; onClose: () => void; onRadar: (a: SpyAd) => void }) {
+export function SpyDetail({ ad, onClose, onRadar, niche = "", platform = "" }: { ad: SpyAd | null; onClose: () => void; onRadar: (a: SpyAd) => void; niche?: string; platform?: string }) {
   const nav = useNavigate();
   if (!ad) return null;
   const media = ad.video || ad.image;
@@ -28,6 +28,8 @@ export function SpyDetail({ ad, onClose, onRadar }: { ad: SpyAd | null; onClose:
             <Info icon={CalendarDays} label="Começou em" value={start} />
             <Info icon={Layers} label="Anúncios com este criativo" value={String(ad.sameCreative)} />
             <Info icon={Flame} label="Temperatura" value={heat(ad)} />
+            <Info icon={Images} label="Formato" value={({ video: "Vídeo", imagem: "Imagem", carrossel: `Carrossel${ad.cards ? ` (${ad.cards})` : ""}`, dinamico: "Dinâmico" } as const)[formatOf(ad)]} />
+            <Info icon={ShoppingCart} label="Plataforma" value={checkoutLabel(platform) || "Não identificada"} />
           </div>
           {ad.platforms.length > 0 && <p className="flex items-center gap-1 text-xs text-muted-foreground"><Globe className="h-3 w-3" />{ad.platforms.join(", ").toLowerCase()}</p>}
           {ad.title && <p className="font-semibold">{ad.title}</p>}
@@ -37,7 +39,7 @@ export function SpyDetail({ ad, onClose, onRadar }: { ad: SpyAd | null; onClose:
           <div className="flex flex-wrap gap-2 pt-1">
             {ad.link && <Button size="sm" onClick={() => { sessionStorage.setItem("batspy.model", ad.link); void nav({ to: "/paginas" }); }}><Wand2 className="h-3.5 w-3.5" />Modelar página</Button>}
             <Button size="sm" variant="outline" onClick={() => onRadar(ad)}><Radar className="h-3.5 w-3.5" />Radar</Button>
-            <Button size="sm" variant="outline" onClick={() => { void navigator.clipboard.writeText(`Crowley, faça um raio-x deste anúncio (gancho, promessa, mecanismo único, oferta e como eu modelo):\n\n${ad.title}\n${ad.text}\nLink: ${ad.link}`); toast.success("Copiado — cole no Crowley"); }}><Copy className="h-3.5 w-3.5" />Raio-X</Button>
+            <SpyXrayButton ads={[ad]} niche={niche} label="Raio-X com Crowley" />
             <Button asChild size="sm" variant="ghost"><a href={ad.libraryUrl} target="_blank" rel="noreferrer">Biblioteca<ExternalLink className="h-3 w-3" /></a></Button>
             {ad.pageUrl && <Button asChild size="sm" variant="ghost"><a href={ad.pageUrl} target="_blank" rel="noreferrer">Perfil<ExternalLink className="h-3 w-3" /></a></Button>}
           </div>
