@@ -341,17 +341,20 @@ html[data-theme="glass-light"] :is(.bg-background) { background-color: oklch(1 0
 
 /* Public presentation effects */
 .landing-grid { background-image: linear-gradient(color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in oklab, var(--primary) 8%, transparent) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(ellipse at top, black 30%, transparent 75%); }
-.landing-card { background: color-mix(in oklab, var(--card) 70%, transparent); border: 1px solid color-mix(in oklab, var(--primary) 18%, var(--border)); backdrop-filter: blur(14px); box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 4%, transparent), 0 20px 50px -25px color-mix(in oklab, var(--primary) 35%, transparent); }
+.landing-card { background: color-mix(in oklab, var(--card) 92%, var(--background)); border: 1px solid color-mix(in oklab, var(--primary) 18%, var(--border)); box-shadow: 0 18px 40px -28px color-mix(in oklab, var(--primary) 40%, transparent); }
 .landing-glow { box-shadow: 0 0 24px -4px color-mix(in oklab, var(--primary) 70%, transparent); }
 .landing-text { background: linear-gradient(100deg, var(--primary), color-mix(in oklab, var(--primary) 50%, var(--foreground)), var(--primary)); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent; animation: landing-shine 5s linear infinite; }
-.landing-orb { background: radial-gradient(circle, color-mix(in oklab, var(--primary) 45%, transparent), transparent 70%); filter: blur(30px); animation: landing-float 9s ease-in-out infinite; }
+.landing-orb { background: radial-gradient(circle, color-mix(in oklab, var(--primary) 32%, transparent), transparent 68%); will-change: transform; contain: strict; animation: landing-float 9s ease-in-out infinite; }
 .landing-scan { background: linear-gradient(transparent, color-mix(in oklab, var(--primary) 12%, transparent), transparent); animation: landing-scan 6s linear infinite; }
-.landing-cta::before { content: ""; position: absolute; inset: -40%; z-index: -1; background: conic-gradient(from 0deg, transparent, color-mix(in oklab, var(--primary) 25%, transparent), transparent 40%); animation: landing-spin 10s linear infinite; }
+.landing-cta { position: relative; overflow: hidden; isolation: isolate; background-image: radial-gradient(60% 80% at 50% 0%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 70%); }
+/* Scroll performance: no live blur or fixed backgrounds on the public page */
+.landing :is(*, *::before, *::after) { backdrop-filter: none !important; }
+body:has(.landing) { background-attachment: scroll !important; }
 @keyframes landing-shine { to { background-position: 200% center; } }
 @keyframes landing-float { 50% { transform: translate(-30px, 30px) scale(1.1); } }
 @keyframes landing-scan { from { transform: translateY(-100%); } to { transform: translateY(700%); } }
 @keyframes landing-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .landing-text, .landing-orb, .landing-scan, .landing-cta::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .landing-text, .landing-orb, .landing-scan { animation: none; } }
 
 /* Mobile safety: nothing overflows sideways (desktop untouched) */
 @media (max-width: 767px) {

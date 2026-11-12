@@ -27,7 +27,7 @@ const SAMPLE = [
 export function PublicHome() {
   return <div className="landing relative min-h-screen overflow-x-hidden">
     <div aria-hidden className="landing-grid pointer-events-none absolute inset-0 -z-10" />
-    <header className="sticky top-0 z-30 border-b border-border/50 bg-background/70 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-border/50 bg-background/95">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
         <div className="flex items-center gap-2"><img src="/favicon.svg" alt="" className="h-8 w-8" /><span className="font-display text-2xl">BAT <span className="text-primary">GOTHAM</span></span></div>
         <Button asChild size="sm" variant="outline"><Link to="/entrar">Entrar</Link></Button>
