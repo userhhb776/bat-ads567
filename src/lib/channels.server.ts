@@ -47,23 +47,61 @@ export async function deliver(channel: Channel, to: string, text: string): Promi
   }
 }
 
-/** Calls the user's Evolution API server on Render. */
-export async function evo(path: string, init: RequestInit = {}): Promise<Response> {
-  const url = process.env["RENDER_WHATSAPP_URL"];
-  const key = process.env["RENDER_WHATSAPP_KEY"] ?? "";
-  const call = (u: string, k: string) => fetch(u.replace(/\/$/, "") + path, { ...init, headers: { "Content-Type": "application/json", apikey: k, ...(init.headers ?? {}) }, signal: AbortSignal.timeout(60000) });
-  const reserve = async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin.from("gateway_credentials" as never).select("token, secret").eq("platform", "render-2").limit(1).maybeSingle();
-    return data as { token: string; secret: string } | null;
-  };
-  if (!url) { const r = await reserve(); if (r?.token) return call(r.token, r.secret); throw new Error("Servidor de WhatsApp ainda não cadastrado."); }
-  try {
-    const res = await call(url, key);
-    if (res.status < 500 && res.status !== 401) return res;
-    const r = await reserve(); return r?.token ? call(r.token, r.secret) : res;
-  } catch (e) { const r = await reserve(); if (r?.token) return call(r.token, r.secret); throw e; }
+export type WaServer = { slot: string; name: string; url: string; key: string; primary: boolean; source: "painel" | "reserva" | "sistema" };
+export const WA_SLOTS = ["wa-1", "wa-2", "wa-3", "wa-4", "wa-5", "wa-6"] as const;
+
+/** Panel servers store token = JSON {url,name,primary}; legacy reserve (render-2) and the system server stay as fallbacks. */
+export function parseWaToken(token: string): { url: string; name: string; primary: boolean } {
+  try { const j = JSON.parse(token) as { url?: string; name?: string; primary?: boolean }; return { url: String(j.url ?? ""), name: String(j.name ?? ""), primary: !!j.primary }; }
+  catch { return { url: token, name: "", primary: false }; }
 }
+
+let cache: { at: number; list: WaServer[] } | null = null;
+export function clearWaCache() { cache = null; }
+
+/** Every WhatsApp server in priority order: main panel server, other panel servers, old reserve, system server. */
+export async function waServers(userId?: string): Promise<WaServer[]> {
+  if (!userId && cache && Date.now() - cache.at < 30000) return cache.list;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  let q = supabaseAdmin.from("gateway_credentials" as never).select("platform, token, secret").in("platform", [...WA_SLOTS, "render-2"]);
+  if (userId) q = q.eq("user_id", userId);
+  const { data } = await q;
+  const rows = (data ?? []) as { platform: string; token: string; secret: string }[];
+  const panel = rows.filter((r) => r.platform.startsWith("wa-")).map((r) => { const t = parseWaToken(r.token); return { slot: r.platform, name: t.name || `Servidor ${r.platform.slice(3)}`, url: t.url, key: r.secret, primary: t.primary, source: "painel" as const }; })
+    .sort((a, b) => Number(b.primary) - Number(a.primary) || a.slot.localeCompare(b.slot));
+  const list: WaServer[] = [...panel];
+  const old = rows.find((r) => r.platform === "render-2");
+  if (old?.token) list.push({ slot: "render-2", name: "Reserva antiga", url: old.token, key: old.secret, primary: false, source: "reserva" });
+  const envUrl = process.env["RENDER_WHATSAPP_URL"];
+  if (envUrl) list.push({ slot: "sistema", name: "Servidor original", url: envUrl, key: process.env["RENDER_WHATSAPP_KEY"] ?? "", primary: false, source: "sistema" });
+  const seen = new Set<string>();
+  const out = list.filter((s) => { const k = s.url.replace(/\/$/, "").toLowerCase(); if (!s.url || seen.has(k)) return false; seen.add(k); return true; });
+  if (!userId) cache = { at: Date.now(), list: out };
+  return out;
+}
+
+export function waCall(server: Pick<WaServer, "url" | "key">, path: string, init: RequestInit = {}, ms = 60000): Promise<Response> {
+  return fetch(server.url.replace(/\/$/, "") + path, { ...init, headers: { "Content-Type": "application/json", apikey: server.key, ...(init.headers ?? {}) }, signal: AbortSignal.timeout(ms) });
+}
+
+/** Calls the Evolution API, trying the next server when one is down, rejects the key or doesn't have the number. Pass a slot to use only that server. */
+export async function evo(path: string, init: RequestInit = {}, slot?: string): Promise<Response> {
+  const all = await waServers();
+  const list = slot ? all.filter((s) => s.slot === slot) : all;
+  if (!list.length) throw new Error(slot ? "Esse servidor de WhatsApp não existe mais." : "Servidor de WhatsApp ainda não cadastrado.");
+  let last: Response | null = null; let err: unknown = null;
+  for (const s of list) {
+    try {
+      const res = await waCall(s, path, init);
+      if (res.status < 500 && ![401, 403, 404].includes(res.status)) return res;
+      last = res;
+    } catch (e) { err = e; }
+  }
+  if (last) return last;
+  throw err instanceof Error ? err : new Error("Servidor de WhatsApp não respondeu.");
+}
+
+export async function waConfigured(): Promise<boolean> { return (await waServers()).length > 0; }
 
 export async function firstOpenInstance(): Promise<string> {
   const pref = process.env["RENDER_WHATSAPP_INSTANCE"];

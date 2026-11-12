@@ -24,19 +24,14 @@ export function ReserveKeys() {
       {has(slot) ? <p className="text-xs text-muted-foreground">Salva: {has(slot)!.token}</p> :
         <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); const v = (d[slot] ?? "").trim(); if (!/^sk-/.test(v)) { toast.error("A chave começa com sk-"); return; } void put(slot, v); }}><Input type="password" placeholder="sk-…" value={d[slot] ?? ""} onChange={(e) => setD({ ...d, [slot]: e.target.value })} /><Button>Salvar</Button></form>}
     </div>)}</div>
-    <div><h2 className="font-display text-2xl">Servidor reserva do WhatsApp</h2><p className="text-xs text-muted-foreground">Se o servidor principal cair ou expirar, as mensagens passam por este.</p></div>
-    {has("render-2") ? <div className="flex items-center justify-between rounded-md border border-border bg-card p-3 text-sm"><span className="min-w-0 truncate">Reserva salva: {has("render-2")!.token}</span><Button size="icon" variant="ghost" aria-label="Remover servidor reserva" onClick={() => void rm("render-2")}><Trash2 className="h-4 w-4" /></Button></div> :
-      <form className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]" onSubmit={(e) => { e.preventDefault(); const u = (d["url"] ?? "").trim(), k = (d["key"] ?? "").trim(); if (!/^https:\/\//.test(u) || !k) { toast.error("Preencha o endereço https:// e a chave"); return; } void put("render-2", u, k); }}>
-        <Input placeholder="https://seu-servidor.onrender.com" value={d["url"] ?? ""} onChange={(e) => setD({ ...d, url: e.target.value })} inputMode="url" />
-        <Input type="password" placeholder="Chave (AUTHENTICATION_API_KEY)" value={d["key"] ?? ""} onChange={(e) => setD({ ...d, key: e.target.value })} />
-        <Button>Salvar</Button></form>}
+    <div><h2 className="font-display text-2xl">Servidores do WhatsApp</h2><p className="text-xs text-muted-foreground">Adicione, edite, dê apelido e teste seus servidores no card WhatsApp, logo abaixo. Se o principal cair, o próximo assume sozinho.</p></div>
     <details className="rounded-md border border-border bg-card p-3 text-sm">
       <summary className="cursor-pointer font-semibold">Manual: como criar um novo servidor de WhatsApp no Render</summary>
       <ol className="mt-3 list-decimal space-y-2 pl-5 text-muted-foreground">
         <li>Entre em <b>render.com</b> → <b>New +</b> → <b>Postgres</b>. Nome: <code>evolution-db</code>, plano Free. Depois de criado, copie a <b>Internal Database URL</b>. (O banco grátis do Render expira em 30 dias — anote para recriar.)</li>
         <li><b>New +</b> → <b>Web Service</b> → <b>Existing image</b> e cole: <code>evoapicloud/evolution-api:latest</code> (a imagem antiga <code>atendai/…</code> não recebe mais atualização).</li>
         <li>Região: a mesma do banco. Plano: Free funciona mas dorme após 15 min sem uso; Starter fica sempre ligado.</li>
-        <li>Em <b>Environment</b>, adicione:
+        <li>Em <b>Environment</b>, adicione (troque <code>SEU-NOME</code> pelo endereço que o Render mostra no topo do serviço, abaixo do nome):
           <pre className="mt-2 overflow-x-auto whitespace-pre rounded bg-muted p-2 text-[11px] text-foreground">{`SERVER_URL=https://SEU-NOME.onrender.com
 SERVER_PORT=8080
 AUTHENTICATION_API_KEY=crie-uma-senha-longa-aqui
@@ -56,7 +51,7 @@ LOG_LEVEL=ERROR,WARN
 DEL_INSTANCE=false`}</pre></li>
         <li>Em <b>Settings → Health Check Path</b> coloque <code>/</code>. Clique em <b>Deploy</b> e espere aparecer “Live”.</li>
         <li>Abra o endereço no navegador: deve mostrar uma mensagem de boas-vindas da Evolution. Pronto.</li>
-        <li>Aqui em cima, cole o endereço (<code>https://SEU-NOME.onrender.com</code>) e o valor de <code>AUTHENTICATION_API_KEY</code> e toque em Salvar.</li>
+        <li>No card WhatsApp → <b>Adicionar servidor</b>: dê um apelido, cole o endereço (<code>https://SEU-NOME.onrender.com</code>) e o valor de <code>AUTHENTICATION_API_KEY</code> e toque em <b>Testar e salvar</b>.</li>
         <li>No card WhatsApp, conecte o número pelo QR Code e toque em <b>Receber</b> para as mensagens chegarem no Atendimento.</li>
       </ol>
       <p className="mt-3 text-xs text-muted-foreground">Dica: para o servidor grátis não dormir, use um serviço de “ping” (ex.: cron-job.org) chamando o endereço a cada 10 minutos.</p>
