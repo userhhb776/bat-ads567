@@ -49,4 +49,4 @@ use the editor.
 - Bell + phone alerts go through `src/lib/notify.server.ts` (`notifyUser`, `healthAlert` deduped 6h) so every server path pushes the same way.
 - Sales page templates are data-driven JSX in `src/lib/page-templates.ts` using the same `{{CHECKOUT_URL}}/{{PIXEL_ID}}/{{WHATSAPP_URL}}/{{VIDEO_URL}}` placeholders filled by `fillPlaceholders` — one fill path for preview, ZIP and publish.
 - Page media uploads use the private `creatives` bucket with 10-year signed links because the workspace blocks public buckets.
-- Bat Spy (Ad Library mining) runs only via `src/lib/spy.functions.ts` with Apify keys in service-role `gateway_credentials` slots `apify`, `apify-2..4`, rotating on 402/403/429 — keys stay server-side and reserves take over automatically.
+- Bat Spy (Ad Library mining) runs through `src/lib/spy.functions.ts` and the shared `src/lib/spy.server.ts` runner, with Apify keys in service-role `gateway_credentials` slots `apify`, `apify-2..8`, rotating on 402/403/429; Sentinela starts async actor runs in the cron watch and collects them on the next pass (state in `srv.spy-sentinel.<id>`) so the watch never blocks on scraping.
