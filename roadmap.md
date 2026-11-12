@@ -71,3 +71,7 @@
 - [x] Free filters: checkout/tech platform, advertiser scale, no big brands, format (carrossel/dinâmico).
 - [x] Crowley Raio-X of the search (5 oldest ads) and per ad.
 - [x] Sentinela: saved terms/pages checked in the 24h watch, alert when an ad passes N days.
+
+## 12/11 WhatsApp servers + home
+- [x] Home page scroll freeze fixed (no live blur / giant rotating layer / fixed background).
+- [x] WhatsApp servers: add, nickname, edit, test, choose main, automatic backup order, numbers per server.

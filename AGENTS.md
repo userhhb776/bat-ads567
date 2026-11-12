@@ -50,3 +50,6 @@ use the editor.
 - Sales page templates are data-driven JSX in `src/lib/page-templates.ts` using the same `{{CHECKOUT_URL}}/{{PIXEL_ID}}/{{WHATSAPP_URL}}/{{VIDEO_URL}}` placeholders filled by `fillPlaceholders` — one fill path for preview, ZIP and publish.
 - Page media uploads use the private `creatives` bucket with 10-year signed links because the workspace blocks public buckets.
 - Bat Spy (Ad Library mining) runs through `src/lib/spy.functions.ts` and the shared `src/lib/spy.server.ts` runner, with Apify keys in service-role `gateway_credentials` slots `apify`, `apify-2..8`, rotating on 402/403/429; Sentinela starts async actor runs in the cron watch and collects them on the next pass (state in `srv.spy-sentinel.<id>`) so the watch never blocks on scraping.
+
+- WhatsApp servers (Evolution API) are panel-managed in service-role `gateway_credentials` slots `wa-1..wa-6` (token = JSON url/name/primary, secret = key), ordered main → other panel → legacy `render-2` → env server; `evo()` in `channels.server.ts` fails over on network/5xx/401/403/404 unless a slot is pinned — lets the user edit servers without touching secrets.
+- The public home avoids live backdrop blur, fixed backgrounds and large rotating layers — they froze scrolling on phones.
