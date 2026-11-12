@@ -1,4 +1,4 @@
-import { Bell, Bot, BarChart3, Building2, CalendarClock, Eye, FileBarChart, FileText, Gauge, Image, LayoutGrid, Link2, MessagesSquare, Package, Plug, PlusSquare, Radar, Settings, ShieldCheck, Users, Workflow, Zap, Activity, BookOpen } from "lucide-react";
+import { Bell, Bot, BarChart3, Building2, CalendarClock, Eye, FileBarChart, FileText, Gauge, Image, LayoutGrid, Link2, MessagesSquare, Package, Plug, PlusSquare, Radar, Settings, ShieldCheck, Users, Workflow, Zap, Activity, BookOpen, BellRing } from "lucide-react";
 
 /** Single menu definition shared by the sidebar and the mobile "Mais" page. */
 export const NAV_GROUPS = [
@@ -32,6 +32,7 @@ export const NAV_GROUPS = [
     { to: "/bat-spy", label: "Minerador de anúncios", icon: Radar },
     { to: "/bat-spy/anunciantes", label: "Anunciantes", icon: Users },
     { to: "/bat-spy/salvos", label: "Swipe file", icon: BookOpen },
+    { to: "/bat-spy/sentinela", label: "Sentinela", icon: BellRing },
     { to: "/produtos", label: "Produtos e vendas", icon: Package },
     { to: "/ofertas", label: "Radar de ofertas", icon: Eye },
   ] },

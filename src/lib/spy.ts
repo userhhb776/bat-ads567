@@ -1,10 +1,11 @@
 /** Bat Spy: Meta Ad Library filters → library URL, and Apify item normalization. Shared by client and server. */
-export type SpyFilters = { q: string; country: string; media: "all" | "video" | "image"; status: "active" | "all"; minActive: number; since: string; pageUrl: string; limit: number; lang: string; minDays?: number | undefined };
-export const DEFAULT_FILTERS: SpyFilters = { q: "", country: "BR", media: "all", status: "active", minActive: 0, since: "", pageUrl: "", limit: 50, lang: "", minDays: 0 };
+export type SpyFilters = { q: string; country: string; media: "all" | "video" | "image"; status: "active" | "all"; minActive: number; since: string; pageUrl: string; limit: number; lang: string; minDays?: number | undefined; checkout?: string | undefined; scale?: string | undefined; format?: string | undefined; noBrands?: boolean | undefined };
+export const DEFAULT_FILTERS: SpyFilters = { q: "", country: "BR", media: "all", status: "active", minActive: 0, since: "", pageUrl: "", limit: 50, lang: "", minDays: 0, checkout: "todos", scale: "todos", format: "todos", noBrands: false };
 export const COUNTRIES: [string, string][] = [["BR", "Brasil"], ["US", "EUA"], ["PT", "Portugal"], ["MX", "México"], ["ES", "Espanha"], ["AR", "Argentina"], ["CO", "Colômbia"], ["CL", "Chile"], ["GB", "Reino Unido"], ["CA", "Canadá"], ["DE", "Alemanha"], ["FR", "França"], ["IT", "Itália"], ["ALL", "Todos os países"]];
 export const NICHES = ["emagrecimento", "renda extra", "relacionamento", "saúde masculina", "beleza", "skincare", "pets", "fitness", "espiritualidade", "finanças", "concurso", "idiomas", "dropshipping", "suplemento", "diabetes", "dor nas articulações", "infoproduto", "curso online"];
 
-export type SpyAd = { id: string; pageId: string; pageName: string; pageUrl: string; avatar: string; text: string; title: string; cta: string; link: string; image: string; video: string; start: string; days: number; active: boolean; platforms: string[]; sameCreative: number; libraryUrl: string };
+export type SpyAd = { id: string; pageId: string; pageName: string; pageUrl: string; avatar: string; text: string; title: string; cta: string; link: string; image: string; video: string; start: string; days: number; active: boolean; platforms: string[]; sameCreative: number; libraryUrl: string; format?: SpyFormat; cards?: number };
+export type SpyFormat = "video" | "imagem" | "carrossel" | "dinamico";
 
 export function libraryUrl(f: SpyFilters): string {
   if (/facebook\.com\/ads\/library/.test(f.pageUrl)) return f.pageUrl.trim();
@@ -40,6 +41,10 @@ export function normalizeAd(raw: unknown, now = Date.now()): SpyAd | null {
   const pageId = str(g(r, "page_id") ?? g(s, "page_id"));
   const pick = (...vals: unknown[]) => vals.map(str).find(Boolean) ?? "";
   const plat = g(r, "publisher_platform");
+  const cards = Array.isArray(g(s, "cards")) ? (g(s, "cards") as unknown[]).length : 0;
+  const disp = str(g(s, "display_format")).toUpperCase();
+  const hasVideo = !!pick(g(vid, "video_hd_url"), g(vid, "video_sd_url"), g(card, "video_hd_url"), g(card, "video_sd_url"));
+  const format: SpyFormat = disp === "DCO" || disp === "DPA" ? "dinamico" : disp === "CAROUSEL" || cards > 1 ? "carrossel" : hasVideo || disp === "VIDEO" ? "video" : "imagem";
   return {
     id, pageId, pageName: pick(g(r, "page_name"), g(s, "page_name")) || "Anunciante",
     pageUrl: str(g(s, "page_profile_uri")) || (pageId ? `https://www.facebook.com/${pageId}` : ""),
@@ -52,7 +57,7 @@ export function normalizeAd(raw: unknown, now = Date.now()): SpyAd | null {
     start, days: Number.isFinite(t) ? Math.max(0, Math.floor((now - t) / 86400000)) : 0,
     active: g(r, "is_active") !== false, platforms: Array.isArray(plat) ? (plat as unknown[]).map(str) : [],
     sameCreative: Number(g(r, "collation_count") ?? 1) || 1,
-    libraryUrl: `https://www.facebook.com/ads/library/?id=${id}`,
+    libraryUrl: `https://www.facebook.com/ads/library/?id=${id}`, format, cards,
   };
 }
 
@@ -85,3 +90,71 @@ export const MIN_DAYS = [0, 3, 7, 10, 15, 30, 60, 90];
 export const applyMinDays = (ads: SpyAd[], min = 0) => (min > 0 ? ads.filter((a) => a.days >= min) : ads);
 /** Proxied download link so the creative saves straight to the device. */
 export const mediaDownload = (url: string, name: string) => `/api/public/spy-media?u=${encodeURIComponent(url)}&n=${encodeURIComponent(name)}`;
+
+
+/** Format for ads saved before the format field existed. */
+export const formatOf = (a: SpyAd): SpyFormat => a.format ?? (a.video ? "video" : "imagem");
+export const FORMATS: [string, string][] = [["todos", "Todos os formatos"], ["video", "Vídeo"], ["imagem", "Imagem"], ["carrossel", "Carrossel"], ["dinamico", "Dinâmico (vários criativos)"]];
+
+/** Checkout / store platforms, detected from the destination link or the landing page HTML. */
+export const CHECKOUTS: { id: string; label: string; url: RegExp; html: RegExp }[] = [
+  { id: "kiwify", label: "Kiwify", url: /kiwify\./i, html: /kiwify\.(com|app)/i },
+  { id: "hotmart", label: "Hotmart", url: /hotmart\.|hotm\.art/i, html: /pay\.hotmart\.com|go\.hotmart\.com|hotm\.art/i },
+  { id: "perfectpay", label: "PerfectPay", url: /perfectpay/i, html: /perfectpay\.com|checkout\.perfectpay/i },
+  { id: "eduzz", label: "Eduzz", url: /eduzz\./i, html: /sun\.eduzz\.com|eduzz\.com/i },
+  { id: "monetizze", label: "Monetizze", url: /monetizze/i, html: /monetizze\.com/i },
+  { id: "braip", label: "Braip", url: /braip/i, html: /braip\.com/i },
+  { id: "ticto", label: "Ticto", url: /ticto\./i, html: /ticto\.(com|app)/i },
+  { id: "kirvano", label: "Kirvano", url: /kirvano/i, html: /kirvano\.com/i },
+  { id: "cartpanda", label: "CartPanda", url: /cartpanda/i, html: /cartpanda/i },
+  { id: "yampi", label: "Yampi", url: /yampi\./i, html: /yampi\.(com|io)/i },
+  { id: "shopify", label: "Shopify", url: /myshopify\.com/i, html: /cdn\.shopify\.com|Shopify\.theme|myshopify\.com/i },
+  { id: "nuvemshop", label: "Nuvemshop", url: /lojavirtualnuvem|nuvemshop/i, html: /nuvemshop|tiendanube|lojavirtualnuvem/i },
+  { id: "woocommerce", label: "WooCommerce", url: /\/product\/|\?add-to-cart=/i, html: /woocommerce/i },
+];
+export const checkoutLabel = (id: string) => CHECKOUTS.find((c) => c.id === id)?.label ?? (id === "proprio" ? "Site próprio" : id === "whatsapp" ? "WhatsApp" : "");
+/** Platform from the link alone (free, no request). Returns "" when the link doesn't tell. */
+export function checkoutFromUrl(url: string): string {
+  if (!url) return "";
+  if (/wa\.me|api\.whatsapp|whatsapp\.com/i.test(url)) return "whatsapp";
+  return CHECKOUTS.find((c) => c.url.test(url))?.id ?? "";
+}
+/** Platform from the landing page HTML; falls back to "proprio" (own site). */
+export const checkoutFromHtml = (html: string): string => CHECKOUTS.find((c) => c.html.test(html))?.id ?? "proprio";
+
+/** Advertiser scale from active ads of the page in the mined set. */
+export const SCALES: [string, string][] = [["todos", "Qualquer escala"], ["super", "Super escala (20+ ativos)"], ["validando", "Validando (5 a 19)"], ["teste", "Iniciando / teste (1 a 4)"]];
+export const scaleOf = (active: number) => (active >= 20 ? "super" : active >= 5 ? "validando" : active >= 1 ? "teste" : "");
+export function applyScale(ads: SpyAd[], scale = "todos"): SpyAd[] {
+  if (!scale || scale === "todos") return ads;
+  const ok = new Set(advertisers(ads).filter((a) => scaleOf(a.active) === scale).map((a) => a.pageId || a.pageName));
+  return ads.filter((a) => ok.has(a.pageId || a.pageName));
+}
+
+/** Big marketplaces/brands that hide direct-response offers. */
+export const BIG_BRANDS = ["shopee", "mercado livre", "mercadolivre", "amazon", "magalu", "magazine luiza", "americanas", "casas bahia", "aliexpress", "temu", "shein", "netshoes", "centauro", "nike", "adidas", "samsung", "apple", "ifood", "uber", "99app", "nubank", "itaú", "itau", "bradesco", "santander", "caixa", "banco do brasil", "inter", "picpay", "mercado pago", "natura", "boticário", "o boticário", "avon", "renner", "riachuelo", "c&a", "kwai", "tiktok", "google", "meta", "facebook", "instagram", "netflix", "spotify", "coca-cola", "ambev", "claro", "vivo", "tim", "carrefour", "assaí", "pão de açúcar", "drogasil", "raia", "pague menos", "kabum", "dell", "lg", "motorola", "xiaomi"];
+const BRAND_HOSTS = /(^|\.)(shopee|mercadolivre|mercadolibre|amazon|magazineluiza|magalu|americanas|casasbahia|aliexpress|temu|shein|netshoes|nike|adidas|samsung|apple|ifood|nubank|kabum)\./i;
+export function isBigBrand(a: SpyAd): boolean {
+  const name = a.pageName.toLowerCase().trim();
+  if (BIG_BRANDS.some((b) => name === b || name.startsWith(b + " ") || name.endsWith(" " + b))) return true;
+  try { return !!a.link && BRAND_HOSTS.test(new URL(a.link).hostname); } catch { return false; }
+}
+
+/** Adds a new batch without duplicates; tells how many were new. */
+export function mergeAds(prev: SpyAd[], fresh: SpyAd[]): { ads: SpyAd[]; added: number } {
+  const seen = new Set(prev.map((a) => a.id));
+  const extra = fresh.filter((a) => !seen.has(a.id) && (seen.add(a.id), true));
+  return { ads: [...prev, ...extra], added: extra.length };
+}
+export const MAX_PER_SEARCH = 1000;
+/** End of the library: nothing new came back, or fewer than asked (the library ran out), or the per-search cap. */
+export const reachedEnd = (asked: number, returned: number, added: number) => added === 0 || returned < asked * 0.9 || asked >= MAX_PER_SEARCH;
+
+/** Sentinela: a saved term/page the 24h watch re-checks and alerts on. */
+export type SpySentinel = { id: string; label: string; q: string; pageUrl: string; country: string; minDays: number; everyHours: number; whatsapp: string; active: boolean };
+export const sentinelDue = (s: SpySentinel, lastIso: string, now = Date.now()) => s.active && (!lastIso || now - Date.parse(lastIso) >= s.everyHours * 3600e3);
+/** Ads that crossed the sentinel's minimum days and were never alerted before. */
+export const sentinelHits = (ads: SpyAd[], minDays: number, seen: string[]) => {
+  const old = new Set(seen);
+  return ads.filter((a) => a.active && a.days >= minDays && !old.has(a.id));
+};
