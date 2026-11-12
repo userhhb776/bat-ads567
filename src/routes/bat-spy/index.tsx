@@ -30,17 +30,51 @@ function Spy() {
   const [hot, setHot] = useState("todos");
   const [text, setText] = useState("");
   const [compact, setCompact] = useState(false);
+  const [target, setTarget] = useStore<number>("spy-target", 0);
+  const [progress, setProgress] = useState("");
   const set = <K extends keyof SpyFilters>(k: K, v: SpyFilters[K]) => setF({ ...f, [k]: v });
   const platformOf = (a: SpyAd) => checkoutFromUrl(a.link) || tech[a.link] || "";
 
   /** Reads landing pages (no Apify credit) to tag the checkout platform of each offer. */
   const detect = async (ads: SpyAd[]) => {
     const urls = [...new Set(ads.map((a) => a.link).filter((l) => /^https?:\/\//.test(l) && !checkoutFromUrl(l) && !(l in tech)))].slice(0, 40);
-    if (!urls.length) return;
+    if (!urls.length) return {} as Record<string, string>;
     setTechBusy(true);
     const found = await techFn({ data: { urls } }).catch(() => ({} as Record<string, string>));
     setTechBusy(false);
     setTech((prev) => Object.fromEntries(Object.entries({ ...prev, ...found }).slice(-600)));
+    return found;
+  };
+
+  /** Applies every free filter to a list (used by the feed and by the "meta de válidos" loop). */
+  const filterAds = (list: SpyAd[], techMap: Record<string, string>) => {
+    const plat = (a: SpyAd) => checkoutFromUrl(a.link) || techMap[a.link] || "";
+    let a = applyScale(applyMinDays(applyMinActive(list, f.minActive), f.minDays ?? 0), f.scale);
+    if (f.noBrands) a = a.filter((x) => !isBigBrand(x));
+    if (f.format && f.format !== "todos") a = a.filter((x) => formatOf(x) === f.format);
+    if (f.checkout && f.checkout !== "todos") a = a.filter((x) => plat(x) === f.checkout);
+    return a;
+  };
+
+  /** Keeps mining in batches until the filtered count reaches the goal (or everything, when -1), stopping at the end of the library. */
+  const fill = async (start: Results, techMap: Record<string, string>) => {
+    if (!target || start.end) return;
+    const goal = target < 0 ? Infinity : target;
+    const base = start.f ?? { ...f, since: "", minDays: f.minDays ?? 0 };
+    let cur = start; let tm = techMap;
+    const step = Math.max(f.limit, 100);
+    while (!cur.end && filterAds(cur.ads, tm).length < goal) {
+      const asked = Math.min(MAX_PER_SEARCH, (cur.asked ?? cur.ads.length) + step);
+      setProgress(`${filterAds(cur.ads, tm).length} válidos de ${cur.ads.length} minerados — buscando mais…`);
+      const r = await run({ data: { ...base, limit: asked } }).catch(() => ({ ads: [], error: "Falha ao minerar.", slot: "" }));
+      if (r.error && !r.ads.length) { toast.error(r.error); break; }
+      const m = mergeAds(cur.ads, r.ads);
+      cur = { ...cur, ads: m.ads, asked, end: reachedEnd(asked, r.ads.length, m.added) };
+      setRes(cur);
+      if (f.checkout && f.checkout !== "todos") tm = { ...tm, ...(await detect(m.ads.slice(-m.added))) };
+    }
+    setProgress("");
+    toast.success(`${filterAds(cur.ads, tm).length} anúncios válidos com seus filtros`);
   };
 
   const go = async () => {
@@ -52,9 +86,11 @@ function Spy() {
     if (r.error && !r.ads.length) { toast.error(r.error); return; }
     const { ads } = mergeAds([], r.ads);
     setRes({ ads, at: new Date().toISOString(), q: f.q || f.pageUrl, asked: f.limit, end: reachedEnd(f.limit, r.ads.length, ads.length), f: used });
+    const first: Results = { ads, at: new Date().toISOString(), q: f.q || f.pageUrl, asked: f.limit, end: reachedEnd(f.limit, r.ads.length, ads.length), f: used };
     toast.success(`${ads.length} anúncios minerados`);
     setTimeout(() => document.getElementById("spy-feed")?.scrollIntoView({ behavior: "smooth" }), 100);
-    void detect(ads);
+    const tm = { ...tech, ...(await detect(ads)) };
+    if (target) { setBusy(true); await fill(first, tm); setBusy(false); }
   };
 
   /** Next batch of the same search: asks for more, keeps the ones already loaded, stops when the library runs out. */
@@ -79,10 +115,7 @@ function Spy() {
   };
 
   const shown = useMemo(() => {
-    let a = applyScale(applyMinDays(applyMinActive(res.ads, f.minActive), f.minDays ?? 0), f.scale);
-    if (f.noBrands) a = a.filter((x) => !isBigBrand(x));
-    if (f.format && f.format !== "todos") a = a.filter((x) => formatOf(x) === f.format);
-    if (f.checkout && f.checkout !== "todos") a = a.filter((x) => platformOf(x) === f.checkout);
+    let a = filterAds(res.ads, tech);
     if (hot !== "todos") a = a.filter((x) => heat(x) === hot);
     if (text.trim()) a = a.filter((x) => `${x.text} ${x.title} ${x.pageName} ${x.link}`.toLowerCase().includes(text.toLowerCase()));
     return [...a].sort((x, y) => sort === "dias" ? y.days - x.days : sort === "recentes" ? x.days - y.days : y.sameCreative - x.sameCreative);
@@ -101,7 +134,8 @@ function Spy() {
       <Field label="Idioma"><NativeSelect value={f.lang} onChange={(e) => set("lang", e.target.value)}><option value="">Qualquer</option><option value="pt">Português</option><option value="en">Inglês</option><option value="es">Espanhol</option></NativeSelect></Field>
       <div className="md:col-span-3"><Field label="Ou espione uma página / link da biblioteca"><Input value={f.pageUrl} onChange={(e) => set("pageUrl", e.target.value)} placeholder="https://www.facebook.com/ads/library/?... ou link da página" inputMode="url" /></Field></div>
       <Field label="Lote por busca"><NativeSelect value={String(f.limit)} onChange={(e) => set("limit", Number(e.target.value))}>{[20, 50, 100, 200, 300].map((n) => <option key={n} value={n}>{n} anúncios por vez</option>)}</NativeSelect></Field>
-      <div className="flex items-end gap-2 md:col-span-4"><Button disabled={busy} className="w-full md:w-auto">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}{busy ? "Minerando (até 4 min)…" : "Minerar"}</Button><p className="text-xs text-muted-foreground">Cada busca gasta crédito da Apify. Os filtros abaixo não gastam.</p></div>
+      <Field label="Quantidade"><NativeSelect value={String(target)} onChange={(e) => setTarget(Number(e.target.value))}><option value="0">Só o lote</option>{[10, 20, 50, 100].map((n) => <option key={n} value={n}>Até {n} já filtrados</option>)}<option value="-1">Sem limite (todos compatíveis)</option></NativeSelect></Field>
+      <div className="flex items-end gap-2 md:col-span-4"><Button disabled={busy} className="w-full md:w-auto">{busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}{busy ? (progress || "Minerando (até 4 min)…") : "Minerar"}</Button><p className="text-xs text-muted-foreground">{target ? "Continua minerando até juntar os anúncios que passam nos seus filtros (para no fim da biblioteca ou em 1.000)." : "Cada busca gasta crédito da Apify. Os filtros abaixo não gastam."}</p></div>
     </form>
     {res.ads.length > 0 && <div className="space-y-2 rounded-lg border border-border bg-card p-3">
       <div className="flex flex-wrap items-center gap-2"><SlidersHorizontal className="h-4 w-4 text-muted-foreground" /><Input aria-label="Filtrar resultados" className="sm:w-64" placeholder="Filtrar texto, página, domínio" value={text} onChange={(e) => setText(e.target.value)} /><NativeSelect aria-label="Ordenar" value={sort} onChange={(e) => setSort(e.target.value)}><option value="escala">Mais escalados</option><option value="dias">Mais tempo no ar</option><option value="recentes">Mais recentes</option></NativeSelect><NativeSelect aria-label="Temperatura" value={hot} onChange={(e) => setHot(e.target.value)}><option value="todos">Todos</option><option value="quente">Quentes</option><option value="validando">Validando</option><option value="novo">Novos</option></NativeSelect><span className="text-xs text-muted-foreground">{shown.length} de {res.ads.length} · busca “{res.q}”</span><div className="ml-auto flex gap-1 sm:hidden"><Button type="button" size="icon" variant={compact ? "outline" : "default"} aria-label="1 coluna" onClick={() => setCompact(false)}><Rows3 className="h-4 w-4" /></Button><Button type="button" size="icon" variant={compact ? "default" : "outline"} aria-label="2 colunas" onClick={() => setCompact(true)}><LayoutGrid className="h-4 w-4" /></Button></div></div>
