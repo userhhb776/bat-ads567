@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Activity, Inbox, Pencil, Plus, QrCode, RefreshCw, Server, Smartphone, Star, Trash2, Unplug, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import { CronPingCard } from "@/components/cron-ping-card";
 import { waServerDelete, waServerSave, waServerTest, whatsappConnect, whatsappHook, whatsappList, whatsappRemove, type WaServerStatus } from "@/lib/channels.functions";
 
 type Draft = { slot?: string; name: string; url: string; key: string; primary: boolean };
@@ -20,6 +21,8 @@ export function WhatsappCard() {
   const save = useServerFn(waServerSave);
   const test = useServerFn(waServerTest);
   const delServer = useServerFn(waServerDelete);
+  const qc = useQueryClient();
+  const pinged = (text?: string) => { if (text) toast.message(text); void qc.invalidateQueries({ queryKey: ["cron-status"] }); };
   const q = useQuery({ queryKey: ["wa-list"], queryFn: () => list(), staleTime: 30000, retry: false });
   const [qr, setQr] = useState<{ name: string; img: string; code: string } | null>(null);
   const [name, setName] = useState("");
@@ -59,15 +62,16 @@ export function WhatsappCard() {
     if (!form.slot && !form.key.trim()) { toast.error("Informe a chave do servidor."); return; }
     const t = await test({ data: { url, key: form.key.trim() || undefined, slot: form.slot as never } });
     if (!t.ok && !window.confirm(`O teste falhou: ${t.error}\nSalvar mesmo assim?`)) return;
-    await save({ data: { slot: form.slot as never, name: form.name.trim() || "Servidor", url, key: form.key.trim(), primary: form.primary } });
+    const r = await save({ data: { slot: form.slot as never, name: form.name.trim() || "Servidor", url, key: form.key.trim(), primary: form.primary } });
+    pinged(r.ping);
     toast.success(t.ok ? "Servidor salvo e funcionando." : "Servidor salvo.");
     setForm(null); void q.refetch();
   });
   const doDelete = (s: WaServerStatus) => {
     if (!window.confirm(`Remover o servidor "${s.name}" do painel? Os números dele continuam no Render.`)) return;
-    void run(s.slot, async () => { await delServer({ data: { slot: s.slot as never } }); toast.success("Servidor removido."); void q.refetch(); });
+    void run(s.slot, async () => { const r = await delServer({ data: { slot: s.slot as never } }); toast.success("Servidor removido."); pinged(r.ping); void q.refetch(); });
   };
-  const makeMain = (s: WaServerStatus) => run(s.slot, async () => { await save({ data: { slot: s.slot as never, name: s.name, url: s.url, key: "", primary: true } }); toast.success(`${s.name} agora é o principal.`); void q.refetch(); });
+  const makeMain = (s: WaServerStatus) => run(s.slot, async () => { const r = await save({ data: { slot: s.slot as never, name: s.name, url: s.url, key: "", primary: true } }); toast.success(`${s.name} agora é o principal.`); pinged(r.ping); void q.refetch(); });
 
   return (
     <div className="space-y-4">
@@ -113,6 +117,8 @@ export function WhatsappCard() {
           <Button variant="outline" className="w-full" disabled={servers.filter((s) => s.source === "painel").length >= 6} onClick={() => setForm({ ...EMPTY, primary: !servers.some((s) => s.source === "painel") })}><Plus className="mr-1 h-4 w-4" /> Adicionar servidor</Button>
         )}
       </div>
+
+      <CronPingCard />
 
       <div className="space-y-3 rounded-md border border-border bg-card p-4">
         <div className="flex items-center gap-2">
