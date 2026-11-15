@@ -75,3 +75,7 @@
 ## 12/11 WhatsApp servers + home
 - [x] Home page scroll freeze fixed (no live blur / giant rotating layer / fixed background).
 - [x] WhatsApp servers: add, nickname, edit, test, choose main, automatic backup order, numbers per server.
+
+## 15/11 cron-job.org no painel
+- [x] Chave do cron-job.org salva no painel (Configurações → WhatsApp → Manter acordado)
+- [x] Ping segue o servidor principal sozinho; reservas pausadas
