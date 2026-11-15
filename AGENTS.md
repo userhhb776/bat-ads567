@@ -53,3 +53,4 @@ use the editor.
 
 - WhatsApp servers (Evolution API) are panel-managed in service-role `gateway_credentials` slots `wa-1..wa-6` (token = JSON url/name/primary, secret = key), ordered main → other panel → legacy `render-2` → env server; `evo()` in `channels.server.ts` fails over on network/5xx/401/403/404 unless a slot is pinned — lets the user edit servers without touching secrets.
 - The public home avoids live backdrop blur, fixed backgrounds and large rotating layers — they froze scrolling on phones.
+- The keep-awake ping lives on cron-job.org via `src/lib/cronjob.server.ts` (key in service-role `gateway_credentials` slot `cronjob`, env `CRONJOB_API_KEY` fallback); `syncWaPing` runs after every WhatsApp server save/delete and keeps exactly one ping on the main server, pausing backups — the decision logic is pure in `src/lib/cronjob.ts`.

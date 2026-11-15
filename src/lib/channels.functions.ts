@@ -127,7 +127,8 @@ export const waServerSave = createServerFn({ method: "POST" }).middleware([requi
     if (data.slot === "render-2") await supabaseAdmin.from("gateway_credentials" as never).delete().eq("user_id", context.userId).eq("platform", "render-2");
     clearWaCache();
     await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "whatsapp", action: old ? "editar_servidor" : "adicionar_servidor", target: data.name.trim(), result: "ok" });
-    return { ok: true, slot };
+    const ping = await (await import("@/lib/cronjob.server")).syncWaPing(context.userId).catch(() => null);
+    return { ok: true, slot, ping: ping?.ok ? ping.text : "" };
   });
 
 export const waServerDelete = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
@@ -139,7 +140,8 @@ export const waServerDelete = createServerFn({ method: "POST" }).middleware([req
     else await supabaseAdmin.from("gateway_credentials" as never).delete().eq("user_id", context.userId).eq("platform", data.slot);
     clearWaCache();
     await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "whatsapp", action: "remover_servidor", target: data.slot, result: "ok" });
-    return { ok: true };
+    const ping = await (await import("@/lib/cronjob.server")).syncWaPing(context.userId).catch(() => null);
+    return { ok: true, ping: ping?.ok ? ping.text : "" };
   });
 
 /** Creates a number (or reconnects one) on a chosen server and returns the QR Code; also points incoming messages to the support inbox. */
