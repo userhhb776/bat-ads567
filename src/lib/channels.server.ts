@@ -63,7 +63,7 @@ export function clearWaCache() { cache = null; }
 export async function waServers(userId?: string): Promise<WaServer[]> {
   if (!userId && cache && Date.now() - cache.at < 30000) return cache.list;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  let q = supabaseAdmin.from("gateway_credentials" as never).select("platform, token, secret").in("platform", [...WA_SLOTS, "render-2"]);
+  let q = supabaseAdmin.from("gateway_credentials" as never).select("platform, token, secret").in("platform", [...WA_SLOTS, "render-2", "wa-sys-off"]);
   if (userId) q = q.eq("user_id", userId);
   const { data } = await q;
   const rows = (data ?? []) as { platform: string; token: string; secret: string }[];
@@ -73,7 +73,7 @@ export async function waServers(userId?: string): Promise<WaServer[]> {
   const old = rows.find((r) => r.platform === "render-2");
   if (old?.token) list.push({ slot: "render-2", name: "Reserva antiga", url: old.token, key: old.secret, primary: false, source: "reserva" });
   const envUrl = process.env["RENDER_WHATSAPP_URL"];
-  if (envUrl) list.push({ slot: "sistema", name: "Servidor original", url: envUrl, key: process.env["RENDER_WHATSAPP_KEY"] ?? "", primary: false, source: "sistema" });
+  if (envUrl && !rows.some((r) => r.platform === "wa-sys-off")) list.push({ slot: "sistema", name: "Servidor original", url: envUrl, key: process.env["RENDER_WHATSAPP_KEY"] ?? "", primary: false, source: "sistema" });
   const seen = new Set<string>();
   const out = list.filter((s) => { const k = s.url.replace(/\/$/, "").toLowerCase(); if (!s.url || seen.has(k)) return false; seen.add(k); return true; });
   if (!userId) cache = { at: Date.now(), list: out };
@@ -86,7 +86,7 @@ export function waCall(server: Pick<WaServer, "url" | "key">, path: string, init
 
 /** Keeps each user's main WhatsApp server awake (Render free sleeps after 15 min); only the main one, to fit the free monthly hours. */
 export async function pingMainWa(admin: { from: (t: never) => any }): Promise<{ waPinged: number }> {
-  const { data } = await admin.from("gateway_credentials" as never).select("user_id").in("platform", [...WA_SLOTS, "render-2"]);
+  const { data } = await admin.from("gateway_credentials" as never).select("user_id").in("platform", [...WA_SLOTS, "render-2", "wa-sys-off"]);
   const users = [...new Set(((data ?? []) as { user_id: string }[]).map((r) => r.user_id))];
   const urls = new Set<string>();
   for (const u of users) { const first = (await waServers(u))[0]; if (first) urls.add(first.url.replace(/\/$/, "")); }

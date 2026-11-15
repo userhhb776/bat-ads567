@@ -131,11 +131,12 @@ export const waServerSave = createServerFn({ method: "POST" }).middleware([requi
   });
 
 export const waServerDelete = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ slot: z.string().regex(/^(wa-[1-6]|render-2)$/) }).parse(d))
+  .inputValidator((d) => z.object({ slot: z.string().regex(/^(wa-[1-6]|render-2|sistema)$/) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { clearWaCache } = await import("@/lib/channels.server");
-    await supabaseAdmin.from("gateway_credentials" as never).delete().eq("user_id", context.userId).eq("platform", data.slot);
+    if (data.slot === "sistema") await supabaseAdmin.from("gateway_credentials" as never).upsert({ user_id: context.userId, platform: "wa-sys-off", token: "1", secret: "" } as never, { onConflict: "user_id,platform" });
+    else await supabaseAdmin.from("gateway_credentials" as never).delete().eq("user_id", context.userId).eq("platform", data.slot);
     clearWaCache();
     await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "whatsapp", action: "remover_servidor", target: data.slot, result: "ok" });
     return { ok: true };
