@@ -737,6 +737,71 @@ export type Database = {
         }
         Relationships: []
       }
+      site_orders: {
+        Row: {
+          created_at: string
+          customer: Json
+          id: string
+          items: Json
+          site_key: string
+          status: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          customer?: Json
+          id?: string
+          items?: Json
+          site_key: string
+          status?: string
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          customer?: Json
+          id?: string
+          items?: Json
+          site_key?: string
+          status?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_orders_site_key_fkey"
+            columns: ["site_key"]
+            isOneToOne: false
+            referencedRelation: "site_stores"
+            referencedColumns: ["site_key"]
+          },
+        ]
+      }
+      site_stores: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          site_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          site_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          site_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_bots: {
         Row: {
           created_at: string
