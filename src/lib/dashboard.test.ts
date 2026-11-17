@@ -13,7 +13,7 @@ describe('estimatedProfit', () => {
   it('subtracts spend and product cost from approved revenue', () => {
     expect(estimatedProfit({ revenue: 500, spend: 200, approved: [{ product_name: 'A' }, { product_name: 'A' }], products: [{ name: 'A', cost: 30, currency: 'BRL' }], target: 'BRL', rate: 5 })).toBe(240);
   });
-  it('returns null when a sold product has no registered cost', () => {
-    expect(estimatedProfit({ revenue: 100, spend: 10, approved: [{ product_name: 'X' }], products: [], target: 'BRL', rate: 5 })).toBeNull();
+  it('works without products: revenue minus ad spend', () => {
+    expect(estimatedProfit({ revenue: 100, spend: 10, approved: [{ product_name: 'X' }], products: [], target: 'BRL', rate: 5 })).toBe(90);
   });
 });

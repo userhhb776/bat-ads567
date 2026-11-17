@@ -79,3 +79,15 @@
 ## 15/11 cron-job.org no painel
 - [x] Chave do cron-job.org salva no painel (Configurações → WhatsApp → Manter acordado)
 - [x] Ping segue o servidor principal sozinho; reservas pausadas
+
+## 17/11 Campanhas, agentes, conexão nativa, Bat Dev V-0
+- [ ] Agentes: remover horário e alerta de frequência (agem 24h enquanto ligados)
+- [ ] Agentes: métricas secundárias (CTR, CPC, cliques, LPV, IC, criação) + histórico de orçamento para voltar ao anterior
+- [ ] Campanhas: abrir/editar campanha, conjunto e anúncio; ver conjuntos/anúncios; duplicar por linha
+- [ ] Campanhas: personalizar colunas com todas as métricas (lucro, LPV, IC, vídeo, leads...)
+- [ ] Campanhas: cabeçalho fixo na rolagem
+- [ ] Criar campanha: personalizar domínio de exibição + anúncios com vários anunciantes (desligado)
+- [ ] Visão geral: períodos > 90 dias (agrupar por mês)
+- [ ] Produtos opcionais (lucro = receita − gasto quando não há custo)
+- [ ] Conexão nativa Meta por token (Configurações) com guia; sem menção a terceiros no painel
+- [ ] Bat Dev V-0: aba própria (Estúdio, Meus sites, Modelos) + modelos profissionais (psicologia, loja com /admin)

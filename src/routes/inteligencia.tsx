@@ -16,14 +16,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/inteligencia")({
-  head: () => head("Inteligência de campanhas", "Agentes que vigiam gasto, vendas, CPA, ROAS e frequência e agem sozinhos ou pedem aprovação."),
+  head: () => head("Inteligência de campanhas", "Agentes que vigiam gasto, vendas, CPA e ROAS 24h e agem sozinhos ou pedem aprovação."),
   component: IntelRoute,
 });
 
 type Entry = { id: string; at: number; ruleId: string; campaignId: string; campaign: string; decision: Decision; state: "executado" | "pendente" | "recusado" | "aviso" | "erro" };
 const PURCHASE = ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"];
 
-const blank = (): IntelRule => ({ id: uid(), name: "Teste de criativo", profile: "teste", campaignId: "*", maxSpendNoSale: 30, maxCpa: 0, minRoasToScale: 0, scalePercent: 20, maxDailyBudget: 0, maxFrequency: 0, hours: [0, 24], autonomy: "auto", active: true });
+const blank = (): IntelRule => ({ id: uid(), name: "Teste de criativo", profile: "teste", campaignId: "*", maxSpendNoSale: 30, maxCpa: 0, minRoasToScale: 0, scalePercent: 20, maxDailyBudget: 0, autonomy: "auto", active: true });
 
 type LogRow = { id: string; created_at: string; target_id: string | null; campaign_name: string | null; action: string; detail: string | null; state: string; new_budget: number | null };
 
@@ -153,8 +153,6 @@ function IntelRoute() {
           <Field label="Autonomia"><NativeSelect value={r.autonomy} onChange={(e) => patch(r.id, { autonomy: e.target.value as any })}><option value="auto">Agir sozinho</option><option value="aprovar">Pedir aprovação</option><option value="avisar">Só avisar</option></NativeSelect></Field>
           <Field label="Pausar se gastar sem vender (moeda da conta)"><Input type="number" value={r.maxSpendNoSale} onChange={(e) => patch(r.id, { maxSpendNoSale: Number(e.target.value) })} /></Field>
           <Field label="Pausar se CPA acima de"><Input type="number" value={r.maxCpa} onChange={(e) => patch(r.id, { maxCpa: Number(e.target.value) })} /></Field>
-          <Field label="Alerta se frequência acima de"><Input type="number" value={r.maxFrequency} onChange={(e) => patch(r.id, { maxFrequency: Number(e.target.value) })} /></Field>
-          <Field label="Horário (de/até)"><div className="flex gap-1"><Input type="number" value={r.hours[0]} onChange={(e) => patch(r.id, { hours: [Number(e.target.value), r.hours[1]] })} /><Input type="number" value={r.hours[1]} onChange={(e) => patch(r.id, { hours: [r.hours[0], Number(e.target.value)] })} /></div></Field>
           {r.profile === "escala" && <>
             <Field label="Escalar se ROAS ≥"><Input type="number" value={r.minRoasToScale} onChange={(e) => patch(r.id, { minRoasToScale: Number(e.target.value) })} /></Field>
             <Field label="Aumento de orçamento (%)"><Input type="number" value={r.scalePercent} onChange={(e) => patch(r.id, { scalePercent: Number(e.target.value) })} /></Field>

@@ -1,5 +1,8 @@
 /** Ready-made sales page templates (BatDev JSX). Real data comes from panel placeholders; nothing invented is presented as real. */
-export type TemplateId = "loja" | "vsl" | "servicos" | "suplemento";
+import psicologiaCode from "./site-templates/psicologia.jsx.txt?raw";
+import lojaAdminCode from "./site-templates/loja.jsx.txt?raw";
+
+export type TemplateId = "loja" | "vsl" | "servicos" | "suplemento" | "psicologia" | "loja-admin";
 type Item = Record<string, string>;
 type TemplateData = {
   brand: string; nav: string[];
@@ -24,7 +27,7 @@ const img = (id: string, w = 1200) => `https://images.unsplash.com/photo-${id}?w
 const REAL = "[Exemplo — substitua por depoimento real]";
 const testimonials = (title: string) => ({ title, items: [1, 2, 3].map((n) => ({ name: `Cliente ${n} [nome real]`, text: REAL })) });
 
-export const TEMPLATES: { id: TemplateId; name: string; description: string; image: string; data: TemplateData }[] = [
+export const TEMPLATES: { id: Exclude<TemplateId, ProId>; name: string; description: string; image: string; data: TemplateData }[] = [
   {
     id: "loja", name: "Loja virtual", description: "Vitrine com produtos, carrinho e checkout.", image: img("1523275335684-37898b6baf30", 600),
     data: {
@@ -282,8 +285,24 @@ function App() {
   );
 }`;
 
+type ProId = "psicologia" | "loja-admin";
+/** Hand-built professional sites (mobile-first, real photos). "admin" ones also publish an admin panel. */
+export const PRO_TEMPLATES: { id: ProId; name: string; description: string; image: string; niche: string; admin: boolean; brand: string; code: string }[] = [
+  { id: "psicologia", name: "Psicologia clínica", niche: "Saúde e bem-estar", admin: false, brand: "Dra. Seu Nome", description: "Acolhedor, com CRP, como funciona em 3 passos, modalidades, FAQ e aviso CVV.", image: img("1573496359142-b8d87734a5a2", 600), code: psicologiaCode },
+  { id: "loja-admin", name: "Loja virtual + Admin", niche: "Lojas", admin: true, brand: "Sua Loja", description: "Banners, categorias redondas, produtos com parcelas, sacola, cupom e painel admin com pedidos.", image: img("1441986300917-64674bd600d8", 600), code: lojaAdminCode },
+];
+
+/** Every template for galleries, professional ones first. */
+export const ALL_TEMPLATES = [
+  ...PRO_TEMPLATES.map((t) => ({ id: t.id as TemplateId, name: t.name, description: t.description, image: t.image, niche: t.niche, admin: t.admin })),
+  ...TEMPLATES.map((t) => ({ id: t.id as TemplateId, name: t.name, description: t.description, image: t.image, niche: t.id === "servicos" ? "Profissionais" : t.id === "loja" ? "Lojas" : "Páginas de vendas", admin: false })),
+];
+export const templateHasAdmin = (code: string) => code.includes("{{SITE_MODE}}");
+
 /** Builds the editable JSX for a template; product name, if given, replaces the generic brand. */
 export function templateCode(id: TemplateId, brand?: string): string {
+  const pro = PRO_TEMPLATES.find((x) => x.id === id);
+  if (pro) return pro.code.split("__BRAND__").join(brand?.trim().replace(/["\\]/g, "") || pro.brand);
   const t = TEMPLATES.find((x) => x.id === id);
   if (!t) throw new Error("Modelo não encontrado.");
   const data = { ...t.data, brand: brand?.trim() || t.data.brand };

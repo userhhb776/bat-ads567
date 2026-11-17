@@ -18,6 +18,13 @@ export type SalesPage = {
   videoUrl?: string | undefined;
   /** Address name used when publishing (slug.vercel.app). */
   slug?: string | undefined;
+  /** Catalog key for store templates (shared by the store and its admin site). */
+  storeKey?: string | undefined;
+  /** Published admin site of a store template. */
+  adminUrl?: string | undefined;
+  /** Template the site started from. */
+  template?: string | undefined;
+  updatedAt?: number | undefined;
 };
 
 /** Turns any typed phone into a wa.me link; empty when there are not enough digits. */
@@ -32,8 +39,10 @@ export function slugify(raw: string): string {
 }
 
 /** Replaces panel placeholders so preview, ZIP and publish carry the real checkout, pixel, WhatsApp and video. */
-export function fillPlaceholders(code: string, p: Pick<SalesPage, "checkoutUrl" | "pixelId" | "whatsapp" | "videoUrl">): string {
+export function fillPlaceholders(code: string, p: Pick<SalesPage, "checkoutUrl" | "pixelId" | "whatsapp" | "videoUrl"> & { storeKey?: string | undefined }, mode: "loja" | "admin" = "loja"): string {
   return code.split("{{CHECKOUT_URL}}").join(p.checkoutUrl || "#")
+    .split("{{STORE_KEY}}").join(/^[a-z0-9-]{3,60}$/.test(p.storeKey ?? "") ? p.storeKey! : "")
+    .split("{{SITE_MODE}}").join(mode)
     .split("{{PIXEL_ID}}").join(/^\d{5,20}$/.test(p.pixelId) ? p.pixelId : "")
     .split("{{WHATSAPP_URL}}").join(whatsappLink(p.whatsapp))
     .split("{{VIDEO_URL}}").join(/^https?:\/\//.test(p.videoUrl ?? "") ? p.videoUrl! : "");

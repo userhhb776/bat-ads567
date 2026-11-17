@@ -1,19 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { evaluate, type CampaignStats, type IntelRule } from "@/lib/intel";
-import { aiDue, aiPrompt, validateAiDecisions } from "@/lib/ai-agent";
+import { aiDue, aiPrompt, recordBudget, seedBudgets, validateAiDecisions, type BudgetHistory } from "@/lib/ai-agent";
+import { act as actOf, IC, PURCHASE } from "@/lib/meta-metrics";
 
-const GATEWAY = "https://connector-gateway.lovable.dev/meta_ads/v26.0";
-const PURCHASE = ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"];
-const FIELDS = "id,name,status,effective_status,daily_budget,insights.date_preset(today){spend,frequency,actions,action_values}";
-
-function metaHeaders() {
-  const a = process.env["LOVABLE_API_KEY"], b = process.env["META_ADS_API_KEY"];
-  if (!a || !b) throw new Error("Meta não conectado");
-  return { Authorization: `Bearer ${a}`, "X-Connection-Api-Key": b };
-}
-const pick = (list: { action_type: string; value: string }[] | undefined) =>
-  Number(list?.find((x) => PURCHASE.includes(x.action_type))?.value ?? 0);
+const FIELDS = "id,name,status,effective_status,daily_budget,created_time,start_time,insights.date_preset(today){spend,frequency,impressions,clicks,inline_link_clicks,ctr,cpc,cpm,actions,action_values}";
+const pick = (list: { action_type: string; value: string }[] | undefined) => actOf(list, PURCHASE);
 
 /** Runs every user's watch rules against today's numbers; called by an external scheduler with a secret header. */
 export const Route = createFileRoute("/api/public/cron/watch")({
@@ -48,9 +40,12 @@ export const Route = createFileRoute("/api/public/cron/watch")({
           if (stopped.has(userId)) continue;
           const active = (rules ?? []).filter((r) => r.active && (!r.accountId || r.accountId === account));
           if (!active.length || !account?.startsWith("act_")) continue;
-          const url = new URL(`${GATEWAY}/${account}/campaigns`);
-          url.searchParams.set("fields", FIELDS); url.searchParams.set("limit", "200");
-          const res = await fetch(url, { headers: metaHeaders() }).catch(() => null);
+          const { metaConn } = await import("@/lib/meta-conn.server");
+          const conn = await metaConn(userId, supabaseAdmin).catch(() => null);
+          if (!conn) continue;
+          const url = new URL(`${conn.base}/${account}/campaigns`);
+          url.searchParams.set("fields", FIELDS); url.searchParams.set("limit", "300");
+          const res = await fetch(url, { headers: conn.headers }).catch(() => null);
           if (!res?.ok) {
             const detail = res ? await res.text() : "sem resposta";
             console.error("watch meta", res?.status, detail);
@@ -59,18 +54,37 @@ export const Route = createFileRoute("/api/public/cron/watch")({
             continue;
           }
           const body = (await res.json()) as { data: any[] };
+          // Whole-life totals per campaign (best effort: strategies may look at total spend without a sale).
+          const totalsUrl = new URL(`${conn.base}/${account}/insights`);
+          for (const [k, v] of Object.entries({ level: "campaign", date_preset: "maximum", fields: "campaign_id,spend,actions,action_values", limit: "500" })) totalsUrl.searchParams.set(k, v);
+          const totals = new Map<string, any>();
+          try { const t = await fetch(totalsUrl, { headers: conn.headers }); if (t.ok) for (const x of ((await t.json()) as { data: any[] }).data ?? []) totals.set(String(x.campaign_id), x); } catch { /* totals optional */ }
           const stats: CampaignStats[] = body.data.map((c) => {
             const i = c.insights?.data?.[0];
-            return { id: c.id, accountId: account, name: c.name, status: c.effective_status ?? c.status, dailyBudget: Number(c.daily_budget ?? 0), spend: Number(i?.spend ?? 0), frequency: Number(i?.frequency ?? 0), purchases: pick(i?.actions), revenue: pick(i?.action_values) };
+            const t = totals.get(String(c.id));
+            return {
+              id: c.id, accountId: account, name: c.name, status: c.effective_status ?? c.status, dailyBudget: Number(c.daily_budget ?? 0),
+              spend: Number(i?.spend ?? 0), frequency: Number(i?.frequency ?? 0), purchases: pick(i?.actions), revenue: pick(i?.action_values),
+              impressions: Number(i?.impressions ?? 0), clicks: Number(i?.clicks ?? 0), linkClicks: Number(i?.inline_link_clicks ?? 0),
+              ctr: Number(i?.ctr ?? 0), cpc: Number(i?.cpc ?? 0), cpm: Number(i?.cpm ?? 0),
+              lpv: actOf(i?.actions, ["landing_page_view", "omni_landing_page_view"]), addToCart: actOf(i?.actions, ["add_to_cart", "omni_add_to_cart", "offsite_conversion.fb_pixel_add_to_cart"]), checkouts: actOf(i?.actions, IC),
+              createdAt: c.created_time, startedAt: c.start_time,
+              totalSpend: t ? Number(t.spend ?? 0) : undefined, totalPurchases: t ? pick(t.actions) : undefined, totalRevenue: t ? pick(t.action_values) : undefined,
+            };
           });
+          const histKey = "srv.budget-history";
+          const { data: histRow } = await supabaseAdmin.from("app_state").select("value").eq("user_id", userId).eq("key", histKey).maybeSingle();
+          let history: BudgetHistory = seedBudgets((histRow?.value ?? {}) as BudgetHistory, stats);
+          const histStart = JSON.stringify(history);
           const since = new Date(Date.now() - 6 * 3600e3).toISOString();
           const { data: recent } = await supabaseAdmin.from("watch_log").select("rule_id,target_id,action,state,created_at").eq("user_id", userId).gte("created_at", since);
           const act = async (rule: IntelRule, c: CampaignStats, d: { kind: string; reason: string; newBudget?: number | undefined }) => {
             let state = d.kind === "alerta" || rule.autonomy === "avisar" ? "aviso" : rule.autonomy === "aprovar" ? "pendente" : "executado";
             if (state === "executado") {
               const params = d.kind === "pausar" ? { status: "PAUSED" } : d.kind === "ativar" ? { status: "ACTIVE" } : { daily_budget: d.newBudget };
-              const r = await fetch(`${GATEWAY}/${c.id}`, { method: "POST", headers: { ...metaHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(params) });
+              const r = await fetch(`${conn.base}/${c.id}`, { method: "POST", headers: { ...conn.headers, "Content-Type": "application/json" }, body: JSON.stringify(params) });
               if (!r.ok) { state = "erro"; console.error("watch act", r.status, await r.text()); }
+              else if (d.newBudget && c.dailyBudget) { history = recordBudget(history, c.id, c.dailyBudget, d.newBudget, `agente:${rule.name ?? rule.id}`); c.dailyBudget = d.newBudget; }
             }
             await supabaseAdmin.from("watch_log").insert({ user_id: userId, rule_id: rule.id, target_id: c.id, campaign_name: c.name, action: d.kind, detail: d.reason, state, new_budget: d.newBudget ?? null });
             actions++;
@@ -91,7 +105,7 @@ export const Route = createFileRoute("/api/public/cron/watch")({
             if (!aiDue(rule, hour, Date.parse(String(last?.value ?? "")) || 0)) continue;
             await supabaseAdmin.from("app_state").upsert({ user_id: userId, key, value: new Date().toISOString() as never }, { onConflict: "user_id,key" });
             const { askAgentAi } = await import("@/lib/ai-agent.server");
-            const p = aiPrompt(rule, stats, hour);
+            const p = aiPrompt(rule, stats, hour, history);
             const ai = await askAgentAi(p.system, p.user);
             if (ai.error) {
               const { healthAlert } = await import("@/lib/notify.server");
@@ -105,6 +119,7 @@ export const Route = createFileRoute("/api/public/cron/watch")({
               await act(rule, c, d);
             }
           }
+          if (JSON.stringify(history) !== histStart) await supabaseAdmin.from("app_state").upsert({ user_id: userId, key: histKey, value: history as never }, { onConflict: "user_id,key" });
         }
         if (notes.length) {
           await supabaseAdmin.from("notifications").insert(notes.map((n) => ({ user_id: n.userId, kind: "campanha", title: n.title, body: n.body, link: "/inteligencia" })));

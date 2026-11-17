@@ -1,9 +1,16 @@
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 /** Published address Telegram calls; previews are private, so webhooks always point here. */
-const PUBLIC_URL = "https://bat-ads567.lovable.app";
+/** Public address Telegram calls back: env override, else the domain the panel is running on. */
+function publicUrl() {
+  const env = process.env["PUBLIC_APP_URL"];
+  if (env) return env.replace(/\/$/, "");
+  try { const o = new URL(getRequest().url).origin; if (!/id-preview--|localhost/.test(o)) return o; } catch { /* outside a request */ }
+  return "https://bat-ads567.lovable.app";
+}
 
 export type BotRow = { id: string; name: string; product_id: string; username: string; created_at: string };
 
@@ -25,7 +32,7 @@ export const createBot = createServerFn({ method: "POST" }).middleware([requireS
     const secret = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, "0")).join("");
     const { data: row, error } = await supabaseAdmin.from("support_bots").insert({ user_id: context.userId, name: data.name, product_id: data.productId, token: data.token, secret, username: String(me.result?.username ?? "") }).select("id").single();
     if (error) throw new Error(error.message);
-    const hook = await fetch(`https://api.telegram.org/bot${data.token}/setWebhook`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: `${PUBLIC_URL}/api/public/telegram/${row.id}`, secret_token: secret, allowed_updates: ["message"] }) }).then((r) => r.json()).catch(() => null) as any;
+    const hook = await fetch(`https://api.telegram.org/bot${data.token}/setWebhook`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: `${publicUrl()}/api/public/telegram/${row.id}`, secret_token: secret, allowed_updates: ["message"] }) }).then((r) => r.json()).catch(() => null) as any;
     await supabaseAdmin.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "atendimento", action: "criar_bot", target: row.id, after: { name: data.name, username: me.result?.username } as never, result: hook?.ok ? "ok" : "webhook_falhou" });
     return { id: row.id as string, username: String(me.result?.username ?? ""), webhook: !!hook?.ok };
   });

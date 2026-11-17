@@ -17,5 +17,6 @@ describe("campaign watch", () => {
     const d = evaluate({ ...rule, profile: "escala", maxSpendNoSale: 0, minRoasToScale: 2, maxDailyBudget: 3300 }, { ...c, purchases: 2, revenue: 100, spend: 40 }, 12);
     expect(d?.newBudget).toBe(3300);
   });
-  it("respects the time window", () => expect(evaluate({ ...rule, hours: [8, 18] }, c, 20)).toBeNull());
+  it("acts at any hour, even with an old saved time window", () => expect(evaluate({ ...rule, hours: [8, 18] }, c, 3)?.kind).toBe("pausar"));
+  it("never raises a frequency alert anymore", () => expect(evaluate({ ...rule, maxSpendNoSale: 0, maxFrequency: 2 }, { ...c, frequency: 5 }, 12)).toBeNull());
 });

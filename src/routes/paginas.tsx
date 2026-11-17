@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { outlinePage, publishPage } from "@/lib/pages.functions";
-import { TEMPLATES, templateCode, type TemplateId } from "@/lib/page-templates";
+import { ALL_TEMPLATES, templateCode, templateHasAdmin, type TemplateId } from "@/lib/page-templates";
+import type { SiteConnection } from "@/lib/site-connection";
 import { fillPlaceholders, loadPages, savePages, slugify, whatsappLink, type SalesPage } from "@/lib/pages";
 import { applyEdits, downloadZip, parseDecisions, previewHtml, wantsBuild, type Msg, type VisualEdit } from "@/lib/forge";
 import { validateGeneration } from "@/lib/forge-validation";
@@ -20,16 +21,27 @@ import { finalizeHtml } from "@/lib/pages";
 export const Route = createFileRoute("/paginas")({
   head: () => ({
     meta: [
-      { title: "Páginas de vendas — Bat Gotham" },
-      { name: "description", content: "Crie páginas de vendas com IA em tempo real, prévia ao vivo, pixel e UTMs." },
-      { property: "og:title", content: "Páginas de vendas — Bat Gotham" },
-      { property: "og:description", content: "Estúdio de páginas com IA, prévia ao vivo e publicação." },
+      { title: "Bat Dev V-0 · Estúdio — Bat Gotham" },
+      { name: "description", content: "Crie e edite sites e páginas com IA no chat, com prévia ao vivo, pixel e publicação." },
+      { property: "og:title", content: "Bat Dev V-0 · Estúdio — Bat Gotham" },
+      { property: "og:description", content: "Criador de sites com IA, modelos profissionais e publicação." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { site?: string } => (typeof s["site"] === "string" ? { site: s["site"] as string } : {}),
   component: PagesRoute,
 });
+
+/** Store templates read their catalog from the panel database with the public key. */
+function storeConnection(code: string): SiteConnection | undefined {
+  if (!code.includes("site_stores")) return undefined;
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined, publicKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  return url && publicKey ? { url, publicKey } : undefined;
+}
+const newStoreKey = (name: string) => `${(slugify(name) || "loja").slice(0, 40)}-${Math.random().toString(36).slice(2, 6)}`;
+/** Links in the chef's message that point to pages (not images/videos), read as references. */
+const referenceLinks = (t: string) => [...new Set(t.match(/https?:\/\/[^\s)>\]]+/g) ?? [])].filter((u) => !/\.(png|jpe?g|webp|gif|svg|mp4|webm|mov)(\?|$)/i.test(u)).slice(0, 3);
 
 const QUICK = ["Criar página VSL", "Mais agressiva", "Adicionar FAQ", "Mais depoimentos", "Deixar mais premium"];
 
@@ -70,17 +82,22 @@ function PagesRoute() {
   const [demoTpl, setDemoTpl] = useState<TemplateId | null>(null);
   const [demoMobile, setDemoMobile] = useState(false);
 
-  useEffect(() => { const p = loadPages(); setPages(p); setSel(p[0]?.id ?? null); }, []);
+  const search = Route.useSearch();
+  useEffect(() => { const p = loadPages(); setPages(p); setSel(search.site && p.some((x) => x.id === search.site) ? search.site : p[0]?.id ?? null); }, [search.site]);
   const page = pages.find((p) => p.id === sel);
   const chat = page?.chat ?? [];
   const code = page?.code ?? "";
   const demoCode = useMemo(() => (demoTpl ? fillPlaceholders(templateCode(demoTpl, page?.product), page ?? ({} as SalesPage)) : ""), [demoTpl, page]);
+  const [adminView, setAdminView] = useState(false);
   const filled = useMemo(() => (page && code ? fillPlaceholders(code, page) : ""), [page, code]);
+  const shown = useMemo(() => (adminView && page && code && templateHasAdmin(code) ? fillPlaceholders(code, page, "admin") : filled), [adminView, page, code, filled]);
+  const conn = useMemo(() => storeConnection(code), [code]);
+  const demoConn = useMemo(() => storeConnection(demoCode), [demoCode]);
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [live, chat.length]);
 
   const save = (next: SalesPage[]) => { setPages(next); savePages(next); };
   const patchPage = (id: string, c: Partial<SalesPage>) =>
-    setPages((all) => { const next = all.map((p) => (p.id === id ? { ...p, ...c } : p)); savePages(next); return next; });
+    setPages((all) => { const next = all.map((p) => (p.id === id ? { ...p, ...c, updatedAt: Date.now() } : p)); savePages(next); return next; });
 
   const create = () => {
     const p: SalesPage = { id: crypto.randomUUID(), name: "Nova página", product: "", checkoutUrl: "", pixelId: "", versions: [], chat: [] };
@@ -94,7 +111,14 @@ function PagesRoute() {
     const id = page.id;
     const mode = force ?? (wantsBuild(text, !!code) || !code ? "build" : "chat");
     const facts = `[Dados do painel — produto: ${page.product || "não informado"}; WhatsApp: ${whatsappLink(page.whatsapp) ? "configurado" : "não configurado (não crie botão de WhatsApp)"}; vídeo: ${page.videoUrl ? "configurado" : "não configurado"}]`;
-    const userText = mode === "build" && !code ? `${facts}\n${text}` : text;
+    let refs = "";
+    const links = mode === "build" ? referenceLinks(text) : [];
+    if (links.length) {
+      setBusy(true); setLive("Lendo as referências que você mandou…");
+      const read = await Promise.all(links.map((url) => outline({ data: { url } }).then((r) => (r.outline ? `### ${url}\n${r.outline.slice(0, 3500)}` : `### ${url}\n(não consegui ler: ${r.error})`)).catch(() => `### ${url}\n(não consegui ler)`)));
+      refs = `\n\nReferências lidas (siga a estrutura, a ordem das seções, o tom e o acabamento delas, com textos e fotos originais):\n${read.join("\n\n")}`;
+    }
+    const userText = (mode === "build" && !code ? `${facts}\n${text}` : text) + refs;
     const history: Msg[] = [...chat, { role: "user", text: userText }];
     patchPage(id, { chat: history }); setPrompt(""); setBusy(true); setLive("");
     const { data: s } = await supabase.auth.getSession();
@@ -143,8 +167,8 @@ function PagesRoute() {
     if (!page) return;
     if (code && !confirm("Trocar a página atual por este modelo? A versão atual fica salva no histórico.")) return;
     const next = templateCode(t, page.product);
-    const name = TEMPLATES.find((x) => x.id === t)!.name;
-    patchPage(page.id, { code: next, chat: [...chat, { role: "model", text: `Apliquei o modelo "${name}". Troque os textos entre colchetes pelos seus dados reais — toque no lápis para editar direto na prévia ou me peça mudanças aqui.` }], versions: [{ at: Date.now(), html: next, note: `Modelo: ${name}` }, ...page.versions].slice(0, 20) });
+    const name = ALL_TEMPLATES.find((x) => x.id === t)!.name;
+    patchPage(page.id, { code: next, template: t, ...(templateHasAdmin(next) && !page.storeKey ? { storeKey: newStoreKey(page.name) } : {}), chat: [...chat, { role: "model", text: `Apliquei o modelo "${name}". Troque os textos entre colchetes pelos seus dados reais — toque no lápis para editar direto na prévia ou me peça mudanças aqui.` }], versions: [{ at: Date.now(), html: next, note: `Modelo: ${name}` }, ...page.versions].slice(0, 20) });
     setShowTemplates(false); setTab("preview"); setSide("preview"); toast.success("Modelo aplicado");
   };
   const modelFrom = async () => {
@@ -166,11 +190,27 @@ function PagesRoute() {
   const publish = async () => {
     if (!page || !filled) return;
     setBusy(true);
-    const html = previewHtml(filled).replace("(window,true)", "(window,false)");
-    const r = await pub({ data: { name: page.name, slug: page.slug || undefined, html } }).catch(() => ({ url: "", error: "Falha ao publicar." }));
+    const live = (src: string) => previewHtml(src, conn).replace("(window,true)", "(window,false)");
+    const base = page.slug || slugify(page.name) || "site";
+    if (templateHasAdmin(code)) {
+      // Store + admin share one catalog row: make sure it exists and belongs to this account.
+      const key = page.storeKey;
+      const { data: u } = await supabase.auth.getUser();
+      if (!key || !u.user) { setBusy(false); toast.error("Entre na conta para publicar a loja."); return; }
+      const { data: row } = await supabase.from("site_stores" as never).select("user_id").eq("site_key", key).maybeSingle();
+      const owner = (row as { user_id?: string } | null)?.user_id;
+      if (owner && owner !== u.user.id) { patchPage(page.id, { storeKey: newStoreKey(page.name) }); setBusy(false); toast.error("Esse endereço de loja já existe. Gerei outro — toque em Publicar de novo."); return; }
+      if (!owner) { const ins = await supabase.from("site_stores" as never).insert({ user_id: u.user.id, site_key: key, data: {} } as never); if (ins.error) { setBusy(false); toast.error("Não consegui criar o catálogo da loja: " + ins.error.message); return; } }
+    }
+    const r = await pub({ data: { name: page.name, slug: base, html: live(filled) } }).catch(() => ({ url: "", error: "Falha ao publicar." }));
+    if (r.error) { setBusy(false); toast.error(r.error); return; }
+    let adminUrl = page.adminUrl;
+    if (templateHasAdmin(code)) {
+      const a = await pub({ data: { name: `${page.name} admin`, slug: `${base}-admin`.slice(0, 60), html: live(fillPlaceholders(code, page, "admin")) } }).catch(() => ({ url: "", error: "Falha ao publicar o admin." }));
+      if (a.error) toast.error(a.error); else adminUrl = a.url;
+    }
     setBusy(false);
-    if (r.error) { toast.error(r.error); return; }
-    patchPage(page.id, { publishedUrl: r.url }); toast.success("Publicada: " + r.url);
+    patchPage(page.id, { publishedUrl: r.url, adminUrl }); toast.success("Publicado: " + r.url + (adminUrl && adminUrl !== page.adminUrl ? " · admin: " + adminUrl : ""));
   };
 
   const strip = (t: string) => t.replace(/```decis[oõ]es[\s\S]*?(```|$)/gi, "").replace(/```[\s\S]*?(```|$)/g, "\n[código da página]\n").trim();
@@ -179,7 +219,7 @@ function PagesRoute() {
   return (
     <div className="flex min-h-[calc(100dvh-8rem)] flex-col gap-3 p-3 pb-24 md:h-dvh md:min-h-0 md:p-4 md:pb-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="w-full font-display text-2xl tracking-wide sm:w-auto">Estúdio de páginas</h1>
+        <h1 className="w-full font-display text-2xl tracking-wide sm:w-auto">Bat Dev V-0 · Estúdio</h1>
         <select value={sel ?? ""} onChange={(e) => setSel(e.target.value)} className="h-9 min-w-0 flex-1 rounded-md border border-border bg-card px-2 text-sm md:max-w-xs">
           {pages.length === 0 && <option value="">Nenhuma página</option>}
           {pages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -226,7 +266,7 @@ function PagesRoute() {
                   <div className="space-y-2">
                     <p className="text-muted-foreground">Comece por um modelo pronto ou descreva a oferta abaixo.</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {TEMPLATES.map((t) => (
+                      {ALL_TEMPLATES.map((t) => (
                         <div key={t.id} className="overflow-hidden rounded-lg border border-border text-left transition hover:border-primary">
                           <button type="button" onClick={() => setDemoTpl(t.id)} className="block w-full text-left"><img src={t.image} alt="" loading="lazy" className="aspect-video w-full object-cover" />
                           <div className="p-2"><div className="text-xs font-semibold">{t.name}</div><div className="text-[11px] text-muted-foreground">{t.description}</div></div></button>
@@ -281,9 +321,10 @@ function PagesRoute() {
                 <div className="ml-auto flex flex-wrap gap-1">
                   <Button size="icon" variant={device === "mobile" ? "secondary" : "ghost"} onClick={() => setDevice("mobile")} aria-label="Celular"><Smartphone className="h-4 w-4" /></Button>
                   <Button size="icon" variant={device === "desktop" ? "secondary" : "ghost"} onClick={() => setDevice("desktop")} aria-label="Computador"><Monitor className="h-4 w-4" /></Button>
+                  {templateHasAdmin(code) && <Button size="sm" variant={adminView ? "secondary" : "ghost"} onClick={() => setAdminView((v) => !v)}>{adminView ? "Ver loja" : "Ver admin"}</Button>}
                   <Button size="icon" variant="ghost" onClick={() => setReload((n) => n + 1)} aria-label="Recarregar"><RotateCw className="h-4 w-4" /></Button>
                   <Button size="icon" variant={editing ? "secondary" : "ghost"} disabled={!code} onClick={() => setEditing((v) => !v)} aria-label="Edição visual"><Pencil className="h-4 w-4" /></Button>
-                  <Button size="sm" variant="outline" disabled={!filled} onClick={() => downloadZip(filled)}><Download className="h-4 w-4" /> ZIP</Button>
+                  <Button size="sm" variant="outline" disabled={!filled} onClick={() => downloadZip(filled, conn)}><Download className="h-4 w-4" /> ZIP</Button>
                   <Button size="sm" disabled={!filled || busy} onClick={publish}><Globe className="h-4 w-4" /> Publicar</Button>
                 </div>
               </div>
@@ -297,7 +338,8 @@ function PagesRoute() {
                 </div>
               )}
               {editing && <p className="border-b border-border bg-primary/10 px-3 py-1 text-xs">Edição visual: toque num texto para editar ou numa imagem para trocar (link, foto do celular ou descrição para a IA criar).</p>}
-              {page.publishedUrl && <a href={page.publishedUrl} target="_blank" rel="noreferrer" className="truncate border-b border-border px-3 py-1 text-xs text-primary underline">{page.publishedUrl}</a>}
+              {page.publishedUrl && <div className="flex flex-wrap gap-x-4 border-b border-border px-3 py-1 text-xs"><a href={page.publishedUrl} target="_blank" rel="noreferrer" className="truncate text-primary underline">{page.publishedUrl}</a>{page.adminUrl && <a href={page.adminUrl} target="_blank" rel="noreferrer" className="truncate text-primary underline">Admin: {page.adminUrl}</a>}</div>}
+              {templateHasAdmin(code) && <p className="border-b border-border px-3 py-1 text-[11px] text-muted-foreground">Loja com admin: ao publicar saem dois sites — a loja e o admin ({(page.slug || slugify(page.name) || "site")}-admin). No admin, entre com a mesma conta deste painel. Use “Ver admin” para testar o painel aqui.</p>}
               <div className="min-h-[75dvh] flex-1 overflow-auto bg-muted/30 p-2 md:min-h-0">
                 {tab === "blocks" ? (
                   <div className="grid gap-3 xl:grid-cols-2">
@@ -309,7 +351,7 @@ function PagesRoute() {
                   <pre className="h-full overflow-auto rounded-lg bg-background p-3 text-xs"><code>{code || "Nenhum código ainda."}</code></pre>
                 ) : filled ? (
                   <div className={`mx-auto h-full overflow-hidden rounded-lg border border-border ${device === "mobile" ? "w-[375px] max-w-full" : "w-full"}`}>
-                    <ForgePreview key={reload} code={filled} busy={busy} editing={editing} onEdit={onEdit} onPickImage={(from) => setPick({ from, url: "", busy: false })} onRepair={(err) => send(`Corrija este erro da prévia: ${err}`)} />
+                    <ForgePreview key={reload} code={shown} connection={conn} busy={busy} editing={editing} onEdit={onEdit} onPickImage={(from) => setPick({ from, url: "", busy: false })} onRepair={(err) => send(`Corrija este erro da prévia: ${err}`)} />
                   </div>
                 ) : page.versions[0]?.html?.includes("<html") ? (
                   <iframe title="prévia antiga" sandbox="allow-scripts" srcDoc={finalizeHtml(page, page.versions[0].html)} className="h-full w-full rounded-lg bg-card" />
@@ -338,7 +380,7 @@ function PagesRoute() {
       {demoTpl && (
         <div className="fixed inset-0 z-50 flex flex-col bg-background">
           <div className="flex flex-wrap items-center gap-2 border-b border-border p-3">
-            <p className="font-display text-xl">Demonstração: {TEMPLATES.find((x) => x.id === demoTpl)?.name}</p>
+            <p className="font-display text-xl">Demonstração: {ALL_TEMPLATES.find((x) => x.id === demoTpl)?.name}</p>
             <div className="ml-auto flex gap-1">
               <Button size="sm" variant={demoMobile ? "outline" : "default"} onClick={() => setDemoMobile(false)} aria-label="Computador"><Monitor className="h-4 w-4" /></Button>
               <Button size="sm" variant={demoMobile ? "default" : "outline"} onClick={() => setDemoMobile(true)} aria-label="Celular"><Smartphone className="h-4 w-4" /></Button>
@@ -347,7 +389,7 @@ function PagesRoute() {
             </div>
           </div>
           <div className="flex min-h-0 flex-1 justify-center bg-muted/30 p-2 pb-20 md:pb-2">
-            <div className={`h-full w-full overflow-hidden rounded-lg border border-border ${demoMobile ? "max-w-[390px]" : ""}`}><ForgePreview code={demoCode} onRepair={() => {}} busy={false} /></div>
+            <div className={`h-full w-full overflow-hidden rounded-lg border border-border ${demoMobile ? "max-w-[390px]" : ""}`}><ForgePreview code={demoCode} connection={demoConn} onRepair={() => {}} busy={false} /></div>
           </div>
         </div>
       )}

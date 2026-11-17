@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aiDue, validateAiDecisions } from "./ai-agent";
+import { aiDue, aiPrompt, recordBudget, seedBudgets, validateAiDecisions } from "./ai-agent";
 import type { CampaignStats, IntelRule } from "./intel";
 
 const rule: IntelRule = { id: "r", name: "Estratégia", profile: "escala", campaignId: "*", maxSpendNoSale: 0, maxCpa: 0, minRoasToScale: 0, scalePercent: 0, maxDailyBudget: 30000, maxFrequency: 0, hours: [0, 24], autonomy: "auto", active: true, strategy: "Escalar o que vende", maxChangePercent: 20, everyMinutes: 30 };
@@ -28,5 +28,20 @@ describe("AI strategy agent limits", () => {
     const now = Date.now();
     expect(aiDue(rule, 10, now - 10 * 60_000, now)).toBe(false);
     expect(aiDue(rule, 10, now - 31 * 60_000, now)).toBe(true);
+  });
+  it("runs at 3h in the morning too (no time window)", () => {
+    const now = Date.now();
+    expect(aiDue({ ...rule, hours: [8, 18] }, 3, now - 31 * 60_000, now)).toBe(true);
+  });
+  it("remembers the budget before a raise so it can go back to 30", () => {
+    let h = seedBudgets({}, [{ id: "c1", dailyBudget: 3000 }]);
+    h = recordBudget(h, "c1", 3000, 3900, "agente");
+    h = recordBudget(h, "c1", 3900, 5070, "agente");
+    expect(h["c1"]!.base).toBe(3000);
+    expect(h["c1"]!.changes.at(-1)!.from).toBe(3900);
+    const p = aiPrompt(rule, [{ id: "c1", name: "A", spend: 10, purchases: 1, revenue: 97, frequency: 1, dailyBudget: 5070, status: "ACTIVE", ctr: 1.234, checkouts: 3 }], 0, h);
+    expect(p.user).toContain('"orcamentoBase":30');
+    expect(p.user).toContain('"orcamentoAnterior":39');
+    expect(p.user).toContain('"checkoutsHoje":3');
   });
 });

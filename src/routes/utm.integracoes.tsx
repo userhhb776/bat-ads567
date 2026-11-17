@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useSession, useWebhookToken, useGatewayEvents } from "@/lib/sales";
 import { CheckCircle2, Clock } from "lucide-react";
@@ -21,12 +22,20 @@ export const Route = createFileRoute("/utm/integracoes")({
 
 const gateways = ["Kiwify", "Hotmart", "Eduzz", "Monetizze", "Perfect Pay", "Yampi", "Cartpanda", "Shopify", "Pagar.me", "Appmax", "Ticto", "Braip"];
 
+/** Address the gateways must call: the domain where the panel is open (preview falls back to the published site). */
+function usePublicBase() {
+  const [base, setBase] = useState("");
+  useEffect(() => { const o = window.location.origin; setBase(/id-preview--|localhost/.test(o) ? PUBLISHED : o); }, []);
+  return base;
+}
+const PUBLISHED = "https://bat-ads567.lovable.app";
+
 function GatewayLinks() {
   const session = useSession();
   const token = useWebhookToken(!!session.data);
   const events = useGatewayEvents(!!session.data, 7);
   if (!session.data) return <p className="text-xs text-muted-foreground">Entre na sua conta (<Link to="/entrar" className="text-primary underline">entrar</Link>) para gerar seus links secretos de webhook.</p>;
-  const base = "https://bat-ads567.lovable.app";
+  const base = usePublicBase();
   const link = (g: string) => `${base}/api/public/webhooks/${g.toLowerCase().replace(/[^a-z0-9]/g, "")}?token=${token.data ?? "..."}`;
   const count = (g: string) => events.data?.filter((e) => e.platform === g.toLowerCase().replace(/[^a-z0-9]/g, "")).length ?? 0;
   return (

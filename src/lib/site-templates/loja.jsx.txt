@@ -1,0 +1,293 @@
+// Modelo Bat Dev V-0 · Loja virtual com painel admin. A vitrine e o admin usam o mesmo catálogo salvo no banco.
+const STORE_KEY = "{{STORE_KEY}}";
+const SITE_MODE = "{{SITE_MODE}}";
+const WHATSAPP_URL = "{{WHATSAPP_URL}}";
+const CHECKOUT_URL = "{{CHECKOUT_URL}}";
+const img = (id, w) => "https://images.unsplash.com/photo-" + id + "?w=" + (w || 900) + "&q=80&auto=format&fit=crop";
+const DEFAULT = {
+  brand: "__BRAND__", announce: "Frete grátis acima de R$ 199 · Parcele em até 12x", installments: 12, freeShippingFrom: 199,
+  colors: { bg: "#ffffff", ink: "#16181d", muted: "#6b7280", soft: "#f4f4f5", accent: "#e11d48" },
+  banners: [
+    { title: "Nova coleção chegou", text: "Peças selecionadas com até 30% OFF", image: img("1441986300917-64674bd600d8", 1600), cta: "Ver ofertas" },
+    { title: "Mais vendidos da semana", text: "Os favoritos dos nossos clientes", image: img("1483985988355-763728e1935b", 1600), cta: "Comprar agora" },
+    { title: "Leve 3, pague 2", text: "Em toda a linha de acessórios", image: img("1472851294608-062f824d29cc", 1600), cta: "Aproveitar" },
+  ],
+  categories: [
+    { name: "Novidades", image: img("1515886657613-9f3515b0c78f", 300) },
+    { name: "Roupas", image: img("1489987707025-afc232f7ea0f", 300) },
+    { name: "Calçados", image: img("1542291026-7eec264c27ff", 300) },
+    { name: "Acessórios", image: img("1523275335684-37898b6baf30", 300) },
+    { name: "Bolsas", image: img("1584917865442-de89df76afd3", 300) },
+    { name: "Ofertas", image: img("1607083206968-13611e3d76db", 300) },
+  ],
+  products: [
+    { id: "p1", name: "Tênis Urban Runner", price: 289.9, oldPrice: 359.9, category: "Calçados", image: img("1542291026-7eec264c27ff"), rating: 4.8, stock: 12, active: true, description: "[Descreva o produto: material, tamanhos e diferenciais.]" },
+    { id: "p2", name: "Relógio Classic Steel", price: 349.9, oldPrice: 0, category: "Acessórios", image: img("1523275335684-37898b6baf30"), rating: 4.9, stock: 8, active: true, description: "[Descreva o produto.]" },
+    { id: "p3", name: "Bolsa Couro Caramelo", price: 259.9, oldPrice: 299.9, category: "Bolsas", image: img("1584917865442-de89df76afd3"), rating: 4.7, stock: 5, active: true, description: "[Descreva o produto.]" },
+    { id: "p4", name: "Jaqueta Jeans Oversized", price: 219.9, oldPrice: 0, category: "Roupas", image: img("1551028719-00167b16eac5"), rating: 4.6, stock: 15, active: true, description: "[Descreva o produto.]" },
+    { id: "p5", name: "Óculos Solar Retrô", price: 149.9, oldPrice: 189.9, category: "Acessórios", image: img("1572635196237-14b3f281503f"), rating: 4.5, stock: 20, active: true, description: "[Descreva o produto.]" },
+    { id: "p6", name: "Camiseta Essential", price: 79.9, oldPrice: 0, category: "Roupas", image: img("1521572163474-6864f9cf17ab"), rating: 4.8, stock: 40, active: true, description: "[Descreva o produto.]" },
+    { id: "p7", name: "Fone Wireless Pro", price: 399.9, oldPrice: 499.9, category: "Novidades", image: img("1505740420928-5e560c06d30e"), rating: 4.9, stock: 7, active: true, description: "[Descreva o produto.]" },
+    { id: "p8", name: "Mochila Everyday", price: 189.9, oldPrice: 0, category: "Bolsas", image: img("1553062407-98eeb64c6a62"), rating: 4.7, stock: 10, active: true, description: "[Descreva o produto.]" },
+  ],
+  coupons: [{ code: "BEMVINDO10", percent: 10, active: true }],
+  whatsapp: "", instagram: "", email: "", address: "[Cidade - UF]",
+};
+const brl = (n) => Number(n || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const uid = () => Math.random().toString(36).slice(2, 10);
+const validKey = /^[a-z0-9-]{3,60}$/.test(STORE_KEY);
+const LOCAL = "batdev-store-" + (validKey ? STORE_KEY : "local");
+const merge = (d) => Object.assign({}, DEFAULT, d || {}, { colors: Object.assign({}, DEFAULT.colors, (d && d.colors) || {}) });
+
+function useCatalog() {
+  const [data, setData] = useState(DEFAULT);
+  const [loaded, setLoaded] = useState(false);
+  const [source, setSource] = useState("modelo");
+  const load = async () => {
+    if (supabase && validKey) {
+      const r = await supabase.from("site_stores").select("data").eq("site_key", STORE_KEY).maybeSingle();
+      if (r.data && r.data.data) { setData(merge(r.data.data)); setSource("banco"); setLoaded(true); return; }
+    }
+    try { const raw = localStorage.getItem(LOCAL); if (raw) { setData(merge(JSON.parse(raw))); setSource("aparelho"); } } catch (e) {}
+    setLoaded(true);
+  };
+  useEffect(() => { load(); }, []);
+  return { data, setData, loaded, source, reload: load };
+}
+
+function Stars({ value, color }) {
+  return <span className="flex items-center gap-0.5" style={{ color }}>{[1, 2, 3, 4, 5].map((k) => <Star key={k} className="h-3.5 w-3.5" style={{ fill: k <= Math.round(value || 0) ? color : "none" }} />)}<span className="ml-1 text-[11px] font-semibold text-gray-500">{Number(value || 0).toFixed(1)}</span></span>;
+}
+
+function Store({ cat }) {
+  const d = cat.data, c = d.colors;
+  const [slide, setSlide] = useState(0);
+  const [filter, setFilter] = useState("");
+  const [q, setQ] = useState("");
+  const [cart, setCart] = useState([]);
+  const [bag, setBag] = useState(false);
+  const [view, setView] = useState(null);
+  const [step, setStep] = useState("cart");
+  const [coupon, setCoupon] = useState("");
+  const [applied, setApplied] = useState(null);
+  const [form, setForm] = useState({ name: "", phone: "", address: "" });
+  const [notice, setNotice] = useState("");
+  const say = (t) => { setNotice(t); setTimeout(() => setNotice(""), 2600); };
+  useEffect(() => { batTracking.configure({ pixelId: "{{PIXEL_ID}}" }); batTracking.setConsent(true); batTracking.track("PageView"); }, []);
+  useEffect(() => { const t = setInterval(() => setSlide((s) => (s + 1) % Math.max(1, d.banners.length)), 5000); return () => clearInterval(t); }, [d.banners.length]);
+  const list = d.products.filter((p) => p.active !== false && (!filter || p.category === filter) && (!q || p.name.toLowerCase().indexOf(q.toLowerCase()) > -1));
+  const add = (p) => { if (p.stock <= 0) { say("Produto esgotado"); return; } setCart((cs) => { const f = cs.find((x) => x.id === p.id); return f ? cs.map((x) => x.id === p.id ? Object.assign({}, x, { qty: x.qty + 1 }) : x) : cs.concat([{ id: p.id, name: p.name, price: p.price, image: p.image, qty: 1 }]); }); batTracking.track("AddToCart", { value: p.price, currency: "BRL" }); say(p.name + " na sacola"); };
+  const setQty = (id, n) => setCart((cs) => cs.map((x) => x.id === id ? Object.assign({}, x, { qty: n }) : x).filter((x) => x.qty > 0));
+  const subtotal = cart.reduce((s, x) => s + x.price * x.qty, 0);
+  const discount = applied ? subtotal * applied.percent / 100 : 0;
+  const total = subtotal - discount;
+  const count = cart.reduce((s, x) => s + x.qty, 0);
+  const waNumber = (d.whatsapp || "").replace(/\D/g, "");
+  const waBase = waNumber.length >= 10 ? "https://wa.me/" + (waNumber.length <= 11 ? "55" + waNumber : waNumber) : (WHATSAPP_URL.indexOf("http") === 0 ? WHATSAPP_URL : "");
+  const applyCoupon = () => { const f = d.coupons.find((x) => x.active !== false && x.code.toUpperCase() === coupon.trim().toUpperCase()); if (!f) { say("Cupom inválido"); return; } setApplied(f); say("Cupom aplicado: " + f.percent + "% OFF"); };
+  const finish = async () => {
+    if (!form.name.trim() || form.phone.replace(/\D/g, "").length < 10) { say("Informe nome e WhatsApp com DDD"); return; }
+    batTracking.track("InitiateCheckout", { value: total, currency: "BRL" });
+    if (supabase && validKey && cat.source === "banco") {
+      const r = await supabase.from("site_orders").insert({ site_key: STORE_KEY, customer: form, items: cart.map((x) => ({ id: x.id, name: x.name, price: x.price, qty: x.qty })), total: Math.round(total * 100) / 100 });
+      if (r.error) { say("Não consegui registrar o pedido. Tente de novo."); return; }
+    }
+    const lines = cart.map((x) => "• " + x.qty + "x " + x.name + " — " + brl(x.price * x.qty)).join("\n");
+    const msg = "Olá! Quero finalizar meu pedido na " + d.brand + ":\n" + lines + (applied ? "\nCupom: " + applied.code : "") + "\nTotal: " + brl(total) + "\n\nNome: " + form.name + "\nEndereço: " + form.address;
+    if (CHECKOUT_URL.indexOf("http") === 0) { window.location.href = batTracking.attributedUrl(CHECKOUT_URL); return; }
+    if (waBase) { window.open(batTracking.whatsappUrl ? batTracking.whatsappUrl(waBase.replace("https://wa.me/", ""), msg) : waBase + "?text=" + encodeURIComponent(msg), "_blank"); }
+    else say("Pedido registrado! A loja vai entrar em contato.");
+    setCart([]); setBag(false); setStep("cart"); setApplied(null);
+  };
+  const wrap = "mx-auto w-full max-w-7xl px-4 sm:px-6";
+  const b = d.banners[slide] || d.banners[0];
+
+  return (
+    <div className="min-h-screen overflow-x-hidden" style={{ background: c.bg, color: c.ink, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="px-4 py-2 text-center text-xs font-semibold" style={{ background: c.ink, color: c.bg }}>{d.announce}</div>
+      <header className="sticky top-0 z-30 border-b bg-white/95" style={{ borderColor: "#0000000f" }}>
+        <div className={wrap + " flex h-16 items-center gap-3"}>
+          <span className="shrink-0 text-xl font-extrabold tracking-tight">{d.brand}</span>
+          <label className="relative hidden flex-1 sm:block"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar produtos" className="h-11 w-full rounded-full border bg-gray-50 pl-10 pr-4 text-sm outline-none focus:border-gray-400" /></label>
+          <button onClick={() => { setBag(true); setStep("cart"); }} aria-label="Abrir sacola" className="relative ml-auto flex h-11 w-11 items-center justify-center rounded-full" style={{ background: c.soft }}><ShoppingBag className="h-5 w-5" />{count > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[11px] font-bold text-white" style={{ background: c.accent }}>{count}</span>}</button>
+        </div>
+        <div className="px-4 pb-3 sm:hidden"><label className="relative block"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar produtos" className="h-11 w-full rounded-full border bg-gray-50 pl-10 pr-4 text-sm outline-none" /></label></div>
+      </header>
+
+      {b && <section className={wrap + " pt-4"}>
+        <div className="relative overflow-hidden rounded-3xl">
+          <img src={b.image} alt={b.title} className="aspect-[4/3] w-full object-cover sm:aspect-[21/8]" />
+          <div className="absolute inset-0 flex flex-col items-center justify-end bg-gradient-to-t from-black/70 via-black/20 to-transparent p-6 text-center text-white sm:items-start sm:justify-center sm:bg-gradient-to-r sm:p-12 sm:text-left">
+            <h1 className="max-w-md text-3xl font-extrabold leading-tight sm:text-5xl">{b.title}</h1><p className="mt-2 max-w-md text-sm opacity-90 sm:text-lg">{b.text}</p>
+            <a href="#produtos" className="mt-5 inline-flex min-h-[48px] items-center rounded-full px-7 font-bold" style={{ background: c.accent }}>{b.cta || "Comprar"}</a>
+          </div>
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 sm:left-12 sm:translate-x-0">{d.banners.map((_, i) => <button key={i} aria-label={"Banner " + (i + 1)} onClick={() => setSlide(i)} className="h-2 rounded-full transition-all" style={{ width: i === slide ? 22 : 8, background: i === slide ? "#fff" : "#ffffff88" }} />)}</div>
+        </div>
+      </section>}
+
+      <section className={wrap + " py-7"}>
+        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:justify-center sm:px-0">
+          {d.categories.map((k) => <button key={k.name} onClick={() => setFilter(filter === k.name ? "" : k.name)} className="flex w-[76px] shrink-0 flex-col items-center gap-2">
+            <span className="h-[72px] w-[72px] overflow-hidden rounded-full p-[3px]" style={{ background: filter === k.name ? c.accent : c.soft }}><img src={k.image} alt={k.name} className="h-full w-full rounded-full object-cover" /></span>
+            <span className="text-center text-[12px] font-semibold leading-tight">{k.name}</span></button>)}
+        </div>
+      </section>
+
+      <section id="produtos" className={wrap + " pb-16"}>
+        <div className="mb-5 flex items-end justify-between"><h2 className="text-2xl font-extrabold sm:text-3xl">{filter || "Destaques"}</h2>{filter && <button onClick={() => setFilter("")} className="text-sm font-semibold" style={{ color: c.accent }}>Ver tudo</button>}</div>
+        {list.length === 0 && <p className="py-10 text-center text-gray-500">Nenhum produto encontrado.</p>}
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4">
+          {list.map((p) => { const off = p.oldPrice > p.price ? Math.round((1 - p.price / p.oldPrice) * 100) : 0; return (
+            <article key={p.id} className="group flex flex-col overflow-hidden rounded-2xl border bg-white transition hover:shadow-xl" style={{ borderColor: "#0000000f" }}>
+              <button onClick={() => setView(p)} className="relative block overflow-hidden"><img src={p.image} alt={p.name} loading="lazy" className="aspect-square w-full object-cover transition duration-500 group-hover:scale-105" />
+                {off > 0 && <span className="absolute left-2 top-2 rounded-full px-2 py-1 text-[11px] font-bold text-white" style={{ background: c.accent }}>-{off}%</span>}
+                {p.stock <= 0 && <span className="absolute inset-0 flex items-center justify-center bg-white/70 text-sm font-bold">Esgotado</span>}</button>
+              <div className="flex flex-1 flex-col gap-1.5 p-3">
+                <Stars value={p.rating} color="#f59e0b" />
+                <h3 className="line-clamp-2 text-sm font-semibold leading-snug">{p.name}</h3>
+                <div className="mt-auto">{off > 0 && <p className="text-xs text-gray-400 line-through">{brl(p.oldPrice)}</p>}<p className="text-lg font-extrabold">{brl(p.price)}</p><p className="text-[11px] text-gray-500">ou {d.installments}x de {brl(p.price / d.installments)}</p></div>
+                <button onClick={() => add(p)} className="mt-2 flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-full text-sm font-bold text-white" style={{ background: c.ink }}><Plus className="h-4 w-4" /> Adicionar</button>
+              </div>
+            </article>); })}
+        </div>
+      </section>
+
+      <section className="border-y py-10" style={{ background: c.soft, borderColor: "#0000000a" }}>
+        <div className={wrap + " grid grid-cols-2 gap-5 text-center md:grid-cols-4"}>
+          {[[Truck, "Entrega para todo o Brasil"], [CreditCard, "Até " + d.installments + "x no cartão"], [ShieldCheck, "Compra 100% segura"], [RefreshCw, "Troca fácil"]].map(([Ic, t]) => <div key={t} className="flex flex-col items-center gap-2"><Ic className="h-6 w-6" style={{ color: c.accent }} /><p className="text-sm font-semibold">{t}</p></div>)}
+        </div>
+      </section>
+
+      <footer className="py-10 text-center text-sm text-gray-500"><div className={wrap + " space-y-2"}><p className="text-lg font-extrabold" style={{ color: c.ink }}>{d.brand}</p><p>{d.address}</p>{d.instagram && <p>Instagram: {d.instagram}</p>}{d.email && <p>{d.email}</p>}<p className="text-xs">© {new Date().getFullYear()} {d.brand}</p></div></footer>
+
+      {view && <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={() => setView(null)}><div className="absolute inset-0 bg-black/50" /><div onClick={(e) => e.stopPropagation()} className="relative max-h-[92dvh] w-full max-w-3xl overflow-y-auto rounded-t-3xl bg-white sm:grid sm:grid-cols-2 sm:rounded-3xl">
+        <img src={view.image} alt={view.name} className="aspect-square w-full object-cover" />
+        <div className="space-y-3 p-5 sm:p-7"><button onClick={() => setView(null)} aria-label="Fechar" className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white shadow"><X className="h-5 w-5" /></button>
+          <Stars value={view.rating} color="#f59e0b" /><h3 className="text-2xl font-extrabold">{view.name}</h3>
+          {view.oldPrice > view.price && <p className="text-sm text-gray-400 line-through">{brl(view.oldPrice)}</p>}<p className="text-3xl font-extrabold">{brl(view.price)}</p><p className="text-sm text-gray-500">ou {d.installments}x de {brl(view.price / d.installments)} sem juros</p>
+          <p className="text-sm leading-relaxed text-gray-600">{view.description}</p><p className="text-xs text-gray-500">{view.stock > 0 ? view.stock + " em estoque" : "Esgotado"}</p>
+          <button onClick={() => { add(view); setView(null); }} className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full font-bold text-white" style={{ background: c.accent }}><ShoppingBag className="h-5 w-5" /> Adicionar à sacola</button></div></div></div>}
+
+      {bag && <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setBag(false)}><div className="absolute inset-0 bg-black/50" /><aside onClick={(e) => e.stopPropagation()} className="relative flex h-full w-full max-w-md flex-col bg-white">
+        <div className="flex items-center justify-between border-b p-5"><h3 className="text-xl font-extrabold">{step === "cart" ? "Sua sacola" : "Seus dados"}</h3><button onClick={() => setBag(false)} aria-label="Fechar" className="flex h-10 w-10 items-center justify-center"><X className="h-5 w-5" /></button></div>
+        {step === "cart" ? <div className="flex-1 space-y-3 overflow-y-auto p-5">{cart.length === 0 ? <p className="py-10 text-center text-gray-500">Sua sacola está vazia.</p> : cart.map((x) => <div key={x.id} className="flex items-center gap-3 rounded-2xl border p-3"><img src={x.image} alt={x.name} className="h-16 w-16 rounded-xl object-cover" /><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{x.name}</p><p className="text-sm text-gray-500">{brl(x.price)}</p></div><div className="flex items-center gap-2"><button onClick={() => setQty(x.id, x.qty - 1)} className="h-8 w-8 rounded-full border">−</button><span className="w-5 text-center font-bold">{x.qty}</span><button onClick={() => setQty(x.id, x.qty + 1)} className="h-8 w-8 rounded-full border">+</button></div></div>)}
+          {cart.length > 0 && <div className="flex gap-2 pt-2"><input value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="Cupom de desconto" className="h-11 flex-1 rounded-full border px-4 text-sm uppercase" /><button onClick={applyCoupon} className="rounded-full border px-4 text-sm font-bold">Aplicar</button></div>}
+        </div> : <div className="flex-1 space-y-3 overflow-y-auto p-5">{[["name", "Nome completo"], ["phone", "WhatsApp com DDD"], ["address", "Endereço de entrega (rua, número, bairro, cidade, CEP)"]].map(([k, l]) => <label key={k} className="block"><span className="text-xs font-semibold text-gray-500">{l}</span>{k === "address" ? <textarea value={form[k]} onChange={(e) => setForm(Object.assign({}, form, { [k]: e.target.value }))} rows={3} className="mt-1 w-full rounded-2xl border p-3 text-sm" /> : <input value={form[k]} onChange={(e) => setForm(Object.assign({}, form, { [k]: e.target.value }))} className="mt-1 h-12 w-full rounded-2xl border px-4 text-sm" />}</label>)}</div>}
+        {cart.length > 0 && <div className="space-y-2 border-t p-5 text-sm"><div className="flex justify-between"><span>Subtotal</span><span>{brl(subtotal)}</span></div>{applied && <div className="flex justify-between" style={{ color: c.accent }}><span>Cupom {applied.code}</span><span>-{brl(discount)}</span></div>}<div className="flex justify-between text-lg font-extrabold"><span>Total</span><span>{brl(total)}</span></div>
+          {subtotal < d.freeShippingFrom && <p className="text-xs text-gray-500">Faltam {brl(d.freeShippingFrom - subtotal)} para frete grátis</p>}
+          {step === "cart" ? <button onClick={() => setStep("data")} className="mt-2 flex min-h-[52px] w-full items-center justify-center rounded-full font-bold text-white" style={{ background: c.accent }}>Continuar</button>
+            : <div className="flex gap-2"><button onClick={() => setStep("cart")} className="min-h-[52px] rounded-full border px-5 font-bold">Voltar</button><button onClick={finish} className="flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full font-bold text-white" style={{ background: c.accent }}><MessageCircle className="h-5 w-5" /> Finalizar pedido</button></div>}</div>}
+      </aside></div>}
+      {notice && <div className="fixed bottom-24 left-1/2 z-[60] -translate-x-1/2 whitespace-nowrap rounded-full px-5 py-3 text-sm font-bold text-white shadow-2xl" style={{ background: c.ink }}>{notice}</div>}
+      {waBase && <a href={waBase} target="_blank" rel="noreferrer" aria-label="Falar no WhatsApp" className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-2xl" style={{ background: "#25d366" }}><MessageCircle className="h-7 w-7" /></a>}
+    </div>
+  );
+}
+
+function Admin({ cat }) {
+  const [session, setSession] = useState(null);
+  const [login, setLogin] = useState({ email: "", password: "" });
+  const [tab, setTab] = useState("produtos");
+  const [draft, setDraft] = useState(cat.data);
+  const [edit, setEdit] = useState(null);
+  const [orders, setOrders] = useState([]);
+  const [msg, setMsg] = useState("");
+  const [saving, setSaving] = useState(false);
+  const online = !!(supabase && validKey);
+  useEffect(() => { setDraft(cat.data); }, [cat.data]);
+  useEffect(() => { if (!supabase) return; supabase.auth.getSession().then((r) => setSession(r.data.session)); const s = supabase.auth.onAuthStateChange((_e, ss) => setSession(ss)); return () => s.data.subscription.unsubscribe(); }, []);
+  const loadOrders = async () => { if (!online || !session) return; const r = await supabase.from("site_orders").select("*").eq("site_key", STORE_KEY).order("created_at", { ascending: false }).limit(200); setOrders(r.data || []); };
+  useEffect(() => { loadOrders(); }, [session]);
+  const flash = (t) => { setMsg(t); setTimeout(() => setMsg(""), 3000); };
+  const save = async (next) => {
+    const data = next || draft; setSaving(true);
+    if (online) {
+      if (!session) { setSaving(false); flash("Entre para salvar."); return; }
+      const r = await supabase.from("site_stores").upsert({ user_id: session.user.id, site_key: STORE_KEY, data: data }, { onConflict: "site_key" });
+      setSaving(false);
+      if (r.error) { flash("Erro ao salvar: " + r.error.message); return; }
+    } else { localStorage.setItem(LOCAL, JSON.stringify(data)); setSaving(false); }
+    cat.setData(merge(data)); setDraft(data); flash("Loja atualizada!");
+  };
+  const set = (k, v) => setDraft(Object.assign({}, draft, { [k]: v }));
+  const inp = "mt-1 h-11 w-full rounded-xl border bg-white px-3 text-sm";
+
+  if (online && !session) return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <form onSubmit={async (e) => { e.preventDefault(); const r = await supabase.auth.signInWithPassword(login); if (r.error) flash("E-mail ou senha incorretos."); }} className="w-full max-w-sm space-y-4 rounded-3xl bg-white p-7 shadow-xl">
+        <div className="text-center"><span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-900 text-white"><Lock className="h-5 w-5" /></span><h1 className="text-2xl font-extrabold">Admin · {cat.data.brand}</h1><p className="text-sm text-gray-500">Entre com a conta do painel</p></div>
+        <input type="email" required placeholder="E-mail" value={login.email} onChange={(e) => setLogin(Object.assign({}, login, { email: e.target.value }))} className={inp} />
+        <input type="password" required placeholder="Senha" value={login.password} onChange={(e) => setLogin(Object.assign({}, login, { password: e.target.value }))} className={inp} />
+        <button className="h-12 w-full rounded-xl bg-gray-900 font-bold text-white">Entrar</button>
+        {msg && <p className="text-center text-sm text-red-600">{msg}</p>}
+      </form>
+    </div>
+  );
+
+  const tabs = [[Package, "produtos", "Produtos"], [Receipt, "pedidos", "Pedidos"], [GalleryHorizontal, "banners", "Banners"], [LayoutGrid, "categorias", "Categorias"], [TicketPercent, "cupons", "Cupons"], [Settings, "loja", "Loja"]];
+  const newProduct = { id: uid(), name: "", price: 0, oldPrice: 0, category: (draft.categories[0] || {}).name || "", image: "", rating: 5, stock: 10, active: true, description: "" };
+  const Row = ({ children }) => <div className="flex items-center gap-3 rounded-2xl border bg-white p-3">{children}</div>;
+  const listEditor = (key, blank, fields) => (
+    <div className="space-y-3">{draft[key].map((it, i) => <div key={i} className="space-y-2 rounded-2xl border bg-white p-4">
+      <div className="grid gap-2 sm:grid-cols-2">{fields.map(([f, l, type]) => <label key={f} className={"block text-xs font-semibold text-gray-500 " + (f === "image" ? "sm:col-span-2" : "")}>{l}{type === "bool" ? <input type="checkbox" className="ml-2 align-middle" checked={it[f] !== false} onChange={(e) => set(key, draft[key].map((x, j) => j === i ? Object.assign({}, x, { [f]: e.target.checked }) : x))} /> : <input type={type || "text"} value={it[f] == null ? "" : it[f]} onChange={(e) => set(key, draft[key].map((x, j) => j === i ? Object.assign({}, x, { [f]: type === "number" ? Number(e.target.value) : e.target.value }) : x))} className={inp} />}</label>)}</div>
+      {it.image && <img src={it.image} alt="" className="h-20 w-32 rounded-xl object-cover" />}
+      <button onClick={() => set(key, draft[key].filter((_, j) => j !== i))} className="text-xs font-bold text-red-600">Remover</button></div>)}
+      <button onClick={() => set(key, draft[key].concat([blank]))} className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-sm font-bold"><Plus className="h-4 w-4" /> Adicionar</button>
+      <button disabled={saving} onClick={() => save()} className="h-12 w-full rounded-xl bg-gray-900 font-bold text-white">{saving ? "Salvando…" : "Salvar alterações"}</button>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24 text-gray-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <header className="sticky top-0 z-30 border-b bg-white"><div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4"><span className="font-extrabold">Admin · {draft.brand}</span><span className={"rounded-full px-2 py-0.5 text-[11px] font-bold " + (online ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")}>{online ? "Salvando no banco" : "Modo local"}</span>{session && <button onClick={() => supabase.auth.signOut()} className="ml-auto text-sm font-semibold text-gray-500">Sair</button>}</div>
+        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-2">{tabs.map(([Ic, k, l]) => <button key={k} onClick={() => setTab(k)} className={"flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold " + (tab === k ? "bg-gray-900 text-white" : "text-gray-600")}><Ic className="h-4 w-4" />{l}</button>)}</nav></header>
+      {!online && <p className="mx-auto mt-4 max-w-5xl px-4 text-sm text-amber-700">Modo local: as mudanças ficam só neste aparelho. Publique pelo Bat Dev V-0 para salvar no banco e aparecer para os clientes.</p>}
+      <main className="mx-auto max-w-5xl space-y-4 p-4">
+        {tab === "produtos" && <>
+          <div className="grid grid-cols-3 gap-2">{[["Produtos", draft.products.length], ["Ativos", draft.products.filter((p) => p.active !== false).length], ["Sem estoque", draft.products.filter((p) => p.stock <= 0).length]].map(([l, v]) => <div key={l} className="rounded-2xl border bg-white p-3 text-center"><p className="text-2xl font-extrabold">{v}</p><p className="text-xs text-gray-500">{l}</p></div>)}</div>
+          <button onClick={() => setEdit(newProduct)} className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gray-900 font-bold text-white"><Plus className="h-4 w-4" /> Novo produto</button>
+          {draft.products.map((p) => <Row key={p.id}><img src={p.image} alt="" className="h-14 w-14 rounded-xl object-cover" /><div className="min-w-0 flex-1"><p className="truncate font-bold">{p.name}</p><p className="text-sm text-gray-500">{brl(p.price)} · {p.stock} un · {p.category}{p.active === false ? " · oculto" : ""}</p></div><button onClick={() => setEdit(p)} aria-label="Editar" className="flex h-10 w-10 items-center justify-center rounded-full border"><Pencil className="h-4 w-4" /></button></Row>)}
+        </>}
+        {tab === "pedidos" && (!online ? <p className="text-sm text-gray-500">Os pedidos aparecem aqui quando a loja estiver publicada e salvando no banco.</p> : <>
+          <button onClick={loadOrders} className="flex items-center gap-2 text-sm font-bold"><RefreshCw className="h-4 w-4" /> Atualizar</button>
+          {orders.length === 0 && <p className="text-sm text-gray-500">Nenhum pedido ainda.</p>}
+          {orders.map((o) => <div key={o.id} className="space-y-2 rounded-2xl border bg-white p-4"><div className="flex items-center justify-between gap-2"><p className="font-bold">{(o.customer || {}).name || "Cliente"}</p><p className="font-extrabold">{brl(o.total)}</p></div>
+            <p className="text-xs text-gray-500">{new Date(o.created_at).toLocaleString("pt-BR")} · {(o.customer || {}).phone}</p>
+            <ul className="text-sm">{(o.items || []).map((x, i) => <li key={i}>{x.qty}x {x.name}</li>)}</ul><p className="text-xs text-gray-500">{(o.customer || {}).address}</p>
+            <select value={o.status} onChange={async (e) => { const st = e.target.value; const r = await supabase.from("site_orders").update({ status: st }).eq("id", o.id); if (r.error) flash(r.error.message); else setOrders(orders.map((x) => x.id === o.id ? Object.assign({}, x, { status: st }) : x)); }} className="h-10 rounded-xl border px-3 text-sm">{["novo", "pago", "enviado", "entregue", "cancelado"].map((s) => <option key={s} value={s}>{s}</option>)}</select></div>)}
+        </>)}
+        {tab === "banners" && listEditor("banners", { title: "", text: "", image: "", cta: "Comprar" }, [["title", "Título"], ["text", "Texto"], ["cta", "Botão"], ["image", "Link da imagem"]])}
+        {tab === "categorias" && listEditor("categories", { name: "", image: "" }, [["name", "Nome"], ["image", "Link da imagem"]])}
+        {tab === "cupons" && listEditor("coupons", { code: "", percent: 10, active: true }, [["code", "Código"], ["percent", "Desconto (%)", "number"], ["active", "Ativo", "bool"]])}
+        {tab === "loja" && <div className="space-y-3 rounded-2xl border bg-white p-4">
+          {[["brand", "Nome da loja"], ["announce", "Faixa do topo"], ["whatsapp", "WhatsApp dos pedidos (com DDD)"], ["instagram", "Instagram"], ["email", "E-mail"], ["address", "Cidade / endereço"]].map(([k, l]) => <label key={k} className="block text-xs font-semibold text-gray-500">{l}<input value={draft[k] || ""} onChange={(e) => set(k, e.target.value)} className={inp} /></label>)}
+          <div className="grid grid-cols-2 gap-3"><label className="block text-xs font-semibold text-gray-500">Parcelas<input type="number" value={draft.installments} onChange={(e) => set("installments", Number(e.target.value) || 1)} className={inp} /></label><label className="block text-xs font-semibold text-gray-500">Frete grátis a partir de (R$)<input type="number" value={draft.freeShippingFrom} onChange={(e) => set("freeShippingFrom", Number(e.target.value) || 0)} className={inp} /></label></div>
+          <div className="grid grid-cols-2 gap-3">{[["accent", "Cor principal"], ["ink", "Cor do texto"]].map(([k, l]) => <label key={k} className="flex items-center gap-2 text-xs font-semibold text-gray-500"><input type="color" value={draft.colors[k]} onChange={(e) => set("colors", Object.assign({}, draft.colors, { [k]: e.target.value }))} className="h-10 w-12 rounded" />{l}</label>)}</div>
+          <button disabled={saving} onClick={() => save()} className="h-12 w-full rounded-xl bg-gray-900 font-bold text-white">{saving ? "Salvando…" : "Salvar alterações"}</button>
+        </div>}
+      </main>
+      {edit && <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={() => setEdit(null)}><div className="absolute inset-0 bg-black/50" /><div onClick={(e) => e.stopPropagation()} className="relative max-h-[92dvh] w-full max-w-lg space-y-3 overflow-y-auto rounded-t-3xl bg-white p-5 sm:rounded-3xl">
+        <div className="flex items-center justify-between"><h3 className="text-lg font-extrabold">{draft.products.some((p) => p.id === edit.id) ? "Editar produto" : "Novo produto"}</h3><button onClick={() => setEdit(null)} aria-label="Fechar"><X className="h-5 w-5" /></button></div>
+        {edit.image && <img src={edit.image} alt="" className="h-40 w-full rounded-2xl object-cover" />}
+        {[["name", "Nome"], ["image", "Link da foto"], ["description", "Descrição"]].map(([k, l]) => <label key={k} className="block text-xs font-semibold text-gray-500">{l}<input value={edit[k] || ""} onChange={(e) => setEdit(Object.assign({}, edit, { [k]: e.target.value }))} className={inp} /></label>)}
+        <div className="grid grid-cols-2 gap-3">{[["price", "Preço (R$)"], ["oldPrice", "Preço antigo (R$)"], ["stock", "Estoque"], ["rating", "Nota (0-5)"]].map(([k, l]) => <label key={k} className="block text-xs font-semibold text-gray-500">{l}<input type="number" step="0.01" value={edit[k]} onChange={(e) => setEdit(Object.assign({}, edit, { [k]: Number(e.target.value) }))} className={inp} /></label>)}</div>
+        <label className="block text-xs font-semibold text-gray-500">Categoria<select value={edit.category} onChange={(e) => setEdit(Object.assign({}, edit, { category: e.target.value }))} className={inp}>{draft.categories.map((k) => <option key={k.name}>{k.name}</option>)}</select></label>
+        <label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={edit.active !== false} onChange={(e) => setEdit(Object.assign({}, edit, { active: e.target.checked }))} /> Visível na loja</label>
+        <div className="flex gap-2">{draft.products.some((p) => p.id === edit.id) && <button onClick={() => { const next = Object.assign({}, draft, { products: draft.products.filter((p) => p.id !== edit.id) }); setEdit(null); save(next); }} className="h-12 rounded-xl border px-4 text-sm font-bold text-red-600">Excluir</button>}
+          <button disabled={saving || !edit.name.trim()} onClick={() => { const exists = draft.products.some((p) => p.id === edit.id); const next = Object.assign({}, draft, { products: exists ? draft.products.map((p) => p.id === edit.id ? edit : p) : [edit].concat(draft.products) }); setEdit(null); save(next); }} className="h-12 flex-1 rounded-xl bg-gray-900 font-bold text-white">{saving ? "Salvando…" : "Salvar produto"}</button></div>
+      </div></div>}
+      {msg && <div className="fixed bottom-6 left-1/2 z-[60] -translate-x-1/2 rounded-full bg-gray-900 px-5 py-3 text-sm font-bold text-white shadow-2xl">{msg}</div>}
+    </div>
+  );
+}
+
+function App() {
+  const cat = useCatalog();
+  const [hash, setHash] = useState(typeof location !== "undefined" ? location.hash : "");
+  useEffect(() => {
+    const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap"; document.head.appendChild(l);
+    const on = () => setHash(location.hash); window.addEventListener("hashchange", on); return () => window.removeEventListener("hashchange", on);
+  }, []);
+  if (!cat.loaded) return <div className="flex min-h-screen items-center justify-center text-sm text-gray-500">Carregando loja…</div>;
+  return SITE_MODE === "admin" || hash === "#/admin" ? <Admin cat={cat} /> : <Store cat={cat} />;
+}

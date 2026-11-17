@@ -51,8 +51,8 @@ export const SYSTEM_PROMPT = `Você é o BatDev, um designer e engenheiro front-
 
 
 export const SALES_PROMPT = `
-## Especialista Sênior em Direct Response e UI/UX de alta conversão (Bat Gotham)
-Você cria PÁGINAS DE VENDAS. Ao construir uma página nova, estruture SEMPRE nesta ordem:
+## Roteiro A — PÁGINA DE VENDAS (só para infoproduto, VSL, produto único, suplemento, lançamento)
+Especialista Sênior em Direct Response e UI/UX de alta conversão. Quando o pedido for uma página de vendas, estruture nesta ordem:
 1. Headline magnética (promessa específica + subtítulo que reforça o mecanismo) e CTA acima da dobra.
 2. VSL em container aspect-video (16:9) com rounded e sombra: se houver URL de vídeo use iframe; senão, um placeholder elegante com ícone Play escrito "Seu vídeo aqui".
 3. Benefícios em cards com ícones Lucide (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3).
@@ -67,6 +67,26 @@ Você cria PÁGINAS DE VENDAS. Ao construir uma página nova, estruture SEMPRE n
 - WhatsApp: const WHATSAPP_URL = "{{WHATSAPP_URL}}"; só mostre botão de WhatsApp se WHATSAPP_URL começar com http. Nunca escreva número de telefone, link wa.me próprio nem mensagem pronta.
 - FIDELIDADE À OFERTA (obrigatório): fale SOMENTE do produto/oferta informados pelo usuário. Nunca invente outro tema, nicho, nome de produto, marca, bônus ou assunto que ele não citou. O que faltar vira marcador entre colchetes ("[PREÇO]", "[X] dias", "[nome do bônus]").
 - React 18 + Tailwind + ícones Lucide, mobile-first impecável.`;
+
+/** Institutional sites (clinics, professionals, stores, local businesses) follow their niche, not the sales-page script. */
+export const SITE_PROMPT = `
+## Roteiro B — SITE PROFISSIONAL / INSTITUCIONAL / LOJA (psicologia, clínicas, advocacia, restaurantes, barbearias, academias, lojas, empresas)
+Quando o pedido for um site de um profissional, negócio ou loja, NÃO use o roteiro de página de vendas (sem VSL, sem "oferta irresistível", sem garantia de X dias). Construa um site de verdade, no padrão de sites profissionais de referência:
+- Faixa fina no topo com informação de confiança (registro profissional, "Atendimento online para todo o Brasil", frete etc.).
+- Cabeçalho fixo com nome/marca à esquerda, menu hambúrguer no celular e botão de ação (ex.: "Agendar sessão").
+- Hero humanizado: título curto e acolhedor, subtítulo claro, 2 botões (ação principal + "Como funciona"), selos de confiança em 3 colunas compactas e uma FOTO REAL grande com moldura/forma decorativa.
+- Seções com ritmo alternando fundos (claro / suave / escuro): como posso ajudar (cards com ícone), sobre (foto + formação em lista com check), como funciona (3 passos numerados), modalidades/serviços com valores "[R$ valor]", frase de impacto sobre foto escura, FAQ em accordion, CTA final em bloco colorido arredondado e rodapé completo.
+- No celular TUDO centralizado e no mesmo eixo (text-center, mx-auto, botões w-full); a partir de lg: o hero vira duas colunas. Nada lateralizado sem motivo.
+- MÍNIMO 4 fotos reais coerentes com o nicho. Use preferencialmente estas fotos verificadas (https://images.unsplash.com/photo-<ID>?w=1200&q=80&auto=format&fit=crop):
+  pessoas/profissionais: 1573496359142-b8d87734a5a2, 1580489944761-15a19d654956, 1568602471122-7832951cc4c5, 1544367567-0f2fcb009e0b, 1527613426441-4da17471b66d
+  ambientes/escritório/consultório: 1600585154340-be6161a56a0c, 1497366216548-37526070297c, 1600880292203-757bb62b4baf, 1556761175-5973dc0f32e7
+  saúde: 1519494026892-80bbd2d6fd0d, 1576091160399-112ba8d25d1d · direito: 1589829545856-d10d557cf95f · academia: 1534438327276-14e5300c3a48, 1571019613454-1cb2f99b2d8b
+  comida/restaurante/café: 1517248135467-4c7edcad34c4, 1514933651103-005eec06c04b · barbearia: 1503951914875-452162b0f3f1
+  loja/moda: 1441986300917-64674bd600d8, 1483985988355-763728e1935b, 1472851294608-062f824d29cc, 1542291026-7eec264c27ff, 1523275335684-37898b6baf30, 1584917865442-de89df76afd3
+  Para algo muito específico, gere com https://image.pollinations.ai/prompt/<descrição em inglês>?width=1200&height=800&nologo=true. Nunca invente IDs do Unsplash.
+- Ética por nicho: psicologia e saúde NÃO usam depoimentos de pacientes (proibido pelos conselhos), não prometem cura e mostram o registro (CRP/CRM "[CRP 00/000000]"); psicologia inclui no rodapé o aviso "Em caso de crise ligue para o CVV 188 ou SAMU 192". Advocacia não promete resultado. Lojas mostram preço, parcelamento, frete e trocas.
+- Contato pelo WHATSAPP_URL quando configurado (botão flutuante verde + CTAs com mensagem pronta via ?text=), senão rolar para a seção de contato.
+- REFERÊNCIAS: quando a conversa trouxer "Referências lidas", siga a estrutura, ordem das seções, tom e nível de acabamento delas (com textos e fotos originais, sem copiar frases, nomes ou marcas).`;
 
 export type Msg = { role: "user" | "model"; text: string };
 
@@ -114,7 +134,9 @@ export function buildPrompt(mode: "chat" | "build", date: Date, code = "", conne
   return `${SYSTEM_PROMPT}
 ${connectionPrompt(connection)}
 ${trackingPrompt}
+Escolha o roteiro pelo pedido: página de vendas → Roteiro A; site de profissional, negócio ou loja → Roteiro B.
 ${SALES_PROMPT}
+${SITE_PROMPT}
 Data atual: ${date.toISOString().slice(0, 10)}. Use o ano ${date.getUTCFullYear()} em coleções e copyright, exceto se o usuário pedir outra data. Não alegue acesso a notícias ou à internet.
 ${mode === "chat" ? "MODO CONVERSA: apenas converse e planeje. Nunca gere código, nem quando pedirem para criar. Não envie o arquivo atual nem o reescreva. Responda em até 120 palavras, naturalmente, em 1 ou 2 parágrafos. Não dê checklist de identidade, paleta ou fontes; fale do objetivo da pessoa. No máximo UMA pergunta, apenas se a resposta for necessária. Não repita a instrução de escolher Construir a cada mensagem." : "MODO CONSTRUÇÃO: implemente o pedido; devolva um único bloco jsx completo. Preserve as partes não mencionadas em alterações."}
 ${mode === "build" && code ? `Site atual (base obrigatória para alterações):\n${code}` : ""}`;
@@ -252,7 +274,8 @@ export const slugify = (value: string) => value.normalize("NFD").replace(/[\u030
 
 /** Capitalized JSX tags the generated code uses but never declares — the preview resolves them as lucide icons, so the export must too. */
 export function missingComponents(code: string) {
-  const used = new Set([...code.matchAll(/<([A-Z][A-Za-z0-9]*)\b/g)].flatMap(m => m[1] ? [m[1]] : []));
+  // Icons used as JSX tags or passed as values at the start of data rows (e.g. [HeartPulse, "Ansiedade"]).
+  const used = new Set([...code.matchAll(/<([A-Z][A-Za-z0-9]*)\b|\[\s*([A-Z][A-Za-z0-9]+)\s*,/g)].flatMap(m => m[1] ? [m[1]] : m[2] ? [m[2]] : []));
   const builtin = new Set(["React", "Fragment", "App"]);
   return [...used].filter(n => !builtin.has(n) && !new RegExp(`(?:function|class|const|let|var)\\s+${n}\\b|[{,]\\s*${n}\\s*[,}=]`).test(code));
 }

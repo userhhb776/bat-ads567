@@ -1,0 +1,178 @@
+// Modelo Bat Dev V-0 · Psicologia (mobile-first). Troque os textos entre [colchetes] pelos dados reais.
+const WHATSAPP_URL = "{{WHATSAPP_URL}}";
+const BRAND = "__BRAND__";
+const CRP = "[CRP 00/000000]";
+const C = { bg: "#fbf7f2", soft: "#f3ebe1", ink: "#2b2320", muted: "#6f625a", accent: "#8c4a52", accentSoft: "#efdcdc", sage: "#7c8b73", card: "#ffffff" };
+const img = (id, w) => "https://images.unsplash.com/photo-" + id + "?w=" + (w || 1200) + "&q=80&auto=format&fit=crop";
+const PHOTO = img("1573496359142-b8d87734a5a2", 900);
+const ABOUT = img("1580489944761-15a19d654956", 900);
+const OFFICE = img("1600585154340-be6161a56a0c", 1400);
+
+const CARE = [
+  [HeartPulse, "Ansiedade", "Crises, preocupação constante, pensamentos acelerados e dificuldade de desligar."],
+  [CloudRain, "Depressão", "Desânimo, falta de energia e perda de interesse pelo que antes fazia sentido."],
+  [Sparkles, "Autoestima", "Insegurança, autocrítica excessiva e dificuldade de se reconhecer com carinho."],
+  [Users, "Relacionamentos", "Conflitos, dependência emocional, término e dificuldade de impor limites."],
+  [Flame, "Esgotamento", "Burnout, cobrança no trabalho e a sensação de nunca dar conta."],
+  [Feather, "Luto e mudanças", "Perdas, recomeços e fases de transição que pedem acolhimento."],
+];
+const STEPS = [
+  [CalendarCheck, "Agendamento", "Você chama no WhatsApp e escolhe o melhor dia e horário."],
+  [BadgeCheck, "Confirmação", "Confirmamos a sessão e você recebe as orientações de pagamento."],
+  [Video, "Sessão online", "No horário marcado você recebe o link da chamada, com total sigilo."],
+];
+const PLANS = [
+  ["Sessão individual online", "50 minutos · por chamada de vídeo", "[R$ valor]"],
+  ["Sessão individual presencial", "50 minutos · [bairro/cidade]", "[R$ valor]"],
+  ["Pacote mensal", "4 sessões · melhor acompanhamento", "[R$ valor]"],
+];
+const FAQ = [
+  ["Como funciona a terapia online?", "A sessão acontece por chamada de vídeo, com a mesma ética, sigilo e cuidado do atendimento presencial. Você só precisa de internet e um lugar reservado."],
+  ["Quanto tempo dura cada sessão?", "Cada sessão tem cerca de 50 minutos. A frequência mais comum é semanal, e combinamos juntos o que faz mais sentido para você."],
+  ["Atende por plano de saúde?", "[Informe se atende convênio ou se emite recibo para reembolso.]"],
+  ["O que eu falo na primeira sessão?", "Você não precisa preparar nada. A primeira conversa é para nos conhecermos, entender o que te trouxe e tirar suas dúvidas."],
+  ["Tudo o que eu falar fica em sigilo?", "Sim. O sigilo é garantido pelo Código de Ética Profissional do Psicólogo."],
+];
+
+function App() {
+  const [menu, setMenu] = useState(false);
+  const [open, setOpen] = useState(0);
+  const [notice, setNotice] = useState("");
+  useEffect(() => {
+    const l = document.createElement("link"); l.rel = "stylesheet";
+    l.href = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Nunito+Sans:wght@400;600;700;800&display=swap";
+    document.head.appendChild(l);
+    batTracking.configure({ pixelId: "{{PIXEL_ID}}" }); batTracking.setConsent(true); batTracking.track("PageView");
+  }, []);
+  const hasWa = WHATSAPP_URL.indexOf("http") === 0;
+  const wa = (msg) => hasWa ? WHATSAPP_URL + "?text=" + encodeURIComponent(msg || "Olá! Vim pelo site e gostaria de agendar uma sessão.") : "#contato";
+  const go = (e) => { batTracking.track("Contact"); if (!hasWa) { e.preventDefault(); setNotice("WhatsApp ainda não configurado"); setTimeout(() => setNotice(""), 2500); } };
+  const serif = { fontFamily: "'Cormorant Garamond', serif" };
+  const wrap = "mx-auto w-full max-w-6xl px-5 sm:px-8";
+  const Cta = ({ children, light, msg }) => (
+    <a href={wa(msg)} target={hasWa ? "_blank" : undefined} rel="noreferrer" onClick={go}
+      className={"inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-7 text-base font-bold shadow-lg transition active:scale-[.98] sm:w-auto " + (light ? "" : "hover:brightness-110")}
+      style={light ? { background: C.card, color: C.accent } : { background: C.accent, color: "#fff" }}>
+      <MessageCircle className="h-5 w-5" />{children}
+    </a>
+  );
+  const Title = ({ kicker, children, center }) => (
+    <div className={"mb-10 " + (center === false ? "" : "text-center")}>
+      <p className="text-xs font-extrabold uppercase tracking-[.2em]" style={{ color: C.sage }}>{kicker}</p>
+      <h2 className="mt-3 text-4xl leading-[1.05] sm:text-5xl" style={serif}>{children}</h2>
+    </div>
+  );
+  const nav = [["Como posso ajudar", "#ajuda"], ["Sobre mim", "#sobre"], ["Como funciona", "#como"], ["Dúvidas", "#duvidas"]];
+
+  return (
+    <div className="min-h-screen overflow-x-hidden" style={{ background: C.bg, color: C.ink, fontFamily: "'Nunito Sans', sans-serif" }}>
+      <style>{"@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}.up{animation:up .8s ease both}html{scroll-behavior:smooth}"}</style>
+      <div className="px-4 py-2 text-center text-[12px] font-semibold" style={{ background: C.accent, color: "#fff" }}>Psicóloga Clínica · {CRP} · Atendimento online para todo o Brasil</div>
+
+      <header className="sticky top-0 z-30 border-b" style={{ background: C.bg + "f2", borderColor: C.ink + "12" }}>
+        <div className={wrap + " flex h-16 items-center justify-between gap-3"}>
+          <a href="#topo" className="min-w-0"><span className="block truncate text-2xl font-semibold" style={serif}>{BRAND}</span><span className="block text-[11px] font-semibold uppercase tracking-widest" style={{ color: C.muted }}>Psicologia clínica</span></a>
+          <nav className="hidden items-center gap-7 lg:flex">{nav.map(([l, h]) => <a key={h} href={h} className="text-sm font-semibold" style={{ color: C.muted }}>{l}</a>)}</nav>
+          <div className="flex items-center gap-2">
+            <a href={wa()} onClick={go} target={hasWa ? "_blank" : undefined} rel="noreferrer" className="hidden rounded-full px-5 py-2.5 text-sm font-bold sm:inline-flex" style={{ background: C.accent, color: "#fff" }}>Agendar sessão</a>
+            <button onClick={() => setMenu(!menu)} aria-label="Menu" className="flex h-11 w-11 items-center justify-center rounded-full lg:hidden" style={{ background: C.soft }}>{menu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
+          </div>
+        </div>
+        {menu && <nav className="border-t px-5 pb-5 pt-2 lg:hidden" style={{ borderColor: C.ink + "12" }}>{nav.map(([l, h]) => <a key={h} href={h} onClick={() => setMenu(false)} className="block border-b py-4 text-center text-base font-semibold" style={{ borderColor: C.ink + "0d" }}>{l}</a>)}<div className="mt-4"><Cta>Agendar sessão</Cta></div></nav>}
+      </header>
+
+      <main id="topo">
+        <section className={wrap + " grid items-center gap-10 py-12 sm:py-20 lg:grid-cols-[1.05fr_.95fr]"}>
+          <div className="up text-center lg:text-left">
+            <span className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold" style={{ background: C.accentSoft, color: C.accent }}><Heart className="h-3.5 w-3.5" /> Primeira conversa sem custo</span>
+            <h1 className="mx-auto mt-5 max-w-xl text-[2.6rem] leading-[1.02] sm:text-6xl lg:mx-0" style={serif}>Um espaço seguro para você <em style={{ color: C.accent }}>se escutar</em> e se cuidar</h1>
+            <p className="mx-auto mt-5 max-w-lg text-[17px] leading-relaxed lg:mx-0" style={{ color: C.muted }}>Psicoterapia online e presencial para adultos que querem lidar melhor com a ansiedade, as emoções e os relacionamentos — no seu tempo, sem julgamentos.</p>
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start"><Cta>Agendar minha sessão</Cta><a href="#como" className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border px-7 font-bold sm:w-auto" style={{ borderColor: C.ink + "26" }}>Como funciona</a></div>
+            <div className="mx-auto mt-9 grid max-w-md grid-cols-3 gap-2 lg:mx-0">{[["Lock", "Sigilo absoluto"], ["MonitorSmartphone", "Online ou presencial"], ["HandHeart", "Escuta acolhedora"]].map(([ic, t], i) => <div key={t} className="flex flex-col items-center gap-1.5 rounded-2xl p-3 text-center text-[12px] font-bold" style={{ background: C.soft }}>{i === 0 ? <Lock className="h-5 w-5" style={{ color: C.accent }} /> : i === 1 ? <MonitorSmartphone className="h-5 w-5" style={{ color: C.accent }} /> : <HandHeart className="h-5 w-5" style={{ color: C.accent }} />}{t}</div>)}</div>
+          </div>
+          <div className="up relative mx-auto w-full max-w-md lg:max-w-none">
+            <div className="absolute -right-3 -top-3 h-full w-full rounded-[2.5rem]" style={{ background: C.accentSoft }} />
+            <img src={PHOTO} alt={"Foto de " + BRAND} className="relative aspect-[4/5] w-full rounded-[2.5rem] object-cover shadow-2xl" />
+            <div className="absolute -bottom-5 left-1/2 flex w-[85%] -translate-x-1/2 items-center gap-3 rounded-2xl p-4 shadow-xl" style={{ background: C.card }}>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ background: C.accentSoft, color: C.accent }}><ShieldCheck className="h-5 w-5" /></span>
+              <div className="text-left"><p className="text-sm font-extrabold">Psicóloga registrada</p><p className="text-xs" style={{ color: C.muted }}>{CRP} · Conselho Federal de Psicologia</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="ajuda" className="py-16 sm:py-24" style={{ background: C.soft }}>
+          <div className={wrap}>
+            <Title kicker="Como posso ajudar">Você não precisa passar por isso sozinha(o)</Title>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{CARE.map(([Ic, t, d]) => <article key={t} className="rounded-3xl p-6 text-center sm:text-left" style={{ background: C.card }}>
+              <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl sm:mx-0" style={{ background: C.accentSoft, color: C.accent }}><Ic className="h-6 w-6" /></span>
+              <h3 className="text-2xl font-semibold" style={serif}>{t}</h3><p className="mt-2 leading-relaxed" style={{ color: C.muted }}>{d}</p></article>)}</div>
+            <div className="mt-10 text-center"><Cta msg="Olá! Gostaria de conversar sobre o que estou passando.">Quero conversar</Cta></div>
+          </div>
+        </section>
+
+        <section id="sobre" className={wrap + " grid items-center gap-10 py-16 sm:py-24 lg:grid-cols-2"}>
+          <img src={ABOUT} alt={"Sobre " + BRAND} loading="lazy" className="mx-auto aspect-square w-full max-w-md rounded-[2.5rem] object-cover shadow-xl lg:max-w-none" />
+          <div className="text-center lg:text-left">
+            <Title kicker="Sobre mim" center={false}><span className="block text-center lg:text-left">Olá, eu sou {BRAND}</span></Title>
+            <p className="-mt-4 leading-relaxed" style={{ color: C.muted }}>[Conte sua história em 3 ou 4 linhas: por que escolheu a psicologia, há quanto tempo atende e como é o seu jeito de conduzir as sessões.]</p>
+            <ul className="mx-auto mt-6 max-w-md space-y-3 text-left lg:mx-0">{["[Formação — instituição]", "[Especialização ou abordagem, ex.: TCC]", "[Experiência — anos de atendimento]", CRP].map((x) => <li key={x} className="flex items-start gap-3"><CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" style={{ color: C.sage }} /><span className="font-semibold">{x}</span></li>)}</ul>
+          </div>
+        </section>
+
+        <section id="como" className="py-16 sm:py-24" style={{ background: C.ink, color: C.bg }}>
+          <div className={wrap}>
+            <div className="mb-10 text-center"><p className="text-xs font-extrabold uppercase tracking-[.2em]" style={{ color: C.accentSoft }}>Simples e rápido</p><h2 className="mt-3 text-4xl sm:text-5xl" style={serif}>Como funciona o atendimento</h2></div>
+            <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">{STEPS.map(([Ic, t, d], i) => <li key={t} className="relative rounded-3xl p-7 text-center" style={{ background: "#ffffff0d", border: "1px solid #ffffff1a" }}>
+              <span className="absolute right-5 top-4 text-5xl opacity-20" style={serif}>{i + 1}</span>
+              <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: C.accent }}><Ic className="h-6 w-6" /></span>
+              <h3 className="text-2xl" style={serif}>{t}</h3><p className="mt-2 text-sm leading-relaxed opacity-80">{d}</p></li>)}</ol>
+            <div className="mt-10 text-center"><Cta light>Agendar agora</Cta></div>
+          </div>
+        </section>
+
+        <section className={wrap + " py-16 sm:py-24"}>
+          <Title kicker="Modalidades">Escolha como prefere ser atendida(o)</Title>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">{PLANS.map(([t, d, p], i) => <div key={t} className={"flex flex-col rounded-3xl border p-7 text-center " + (i === 0 ? "shadow-xl" : "")} style={{ background: C.card, borderColor: i === 0 ? C.accent : C.ink + "14" }}>
+            {i === 0 && <span className="mx-auto mb-3 rounded-full px-3 py-1 text-[11px] font-extrabold uppercase" style={{ background: C.accentSoft, color: C.accent }}>Mais procurada</span>}
+            <h3 className="text-2xl font-semibold" style={serif}>{t}</h3><p className="mt-1 text-sm" style={{ color: C.muted }}>{d}</p><p className="my-5 text-3xl font-extrabold" style={{ color: C.accent }}>{p}</p>
+            <div className="mt-auto"><Cta msg={"Olá! Tenho interesse em: " + t}>Agendar</Cta></div></div>)}</div>
+        </section>
+
+        <section className="relative overflow-hidden">
+          <img src={OFFICE} alt="Ambiente de atendimento" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0" style={{ background: C.ink + "cc" }} />
+          <div className={wrap + " relative py-20 text-center"} style={{ color: "#fff" }}>
+            <Quote className="mx-auto h-10 w-10 opacity-60" />
+            <p className="mx-auto mt-4 max-w-3xl text-3xl leading-snug sm:text-4xl" style={serif}>"Cuidar da saúde emocional não é sinal de fraqueza. É um ato de coragem e amor por si."</p>
+          </div>
+        </section>
+
+        <section id="duvidas" className={wrap + " max-w-3xl py-16 sm:py-24"}>
+          <Title kicker="Dúvidas frequentes">Perguntas que costumo receber</Title>
+          <div className="space-y-3">{FAQ.map(([q, a], i) => <div key={q} className="overflow-hidden rounded-2xl" style={{ background: C.card, border: "1px solid " + C.ink + "12" }}>
+            <button onClick={() => setOpen(open === i ? -1 : i)} className="flex min-h-[60px] w-full items-center justify-between gap-3 px-5 text-left font-bold">{q}<ChevronDown className={"h-5 w-5 shrink-0 transition " + (open === i ? "rotate-180" : "")} style={{ color: C.accent }} /></button>
+            {open === i && <p className="px-5 pb-5 leading-relaxed" style={{ color: C.muted }}>{a}</p>}</div>)}</div>
+        </section>
+
+        <section id="contato" className="px-5 pb-16 sm:pb-24">
+          <div className="mx-auto max-w-4xl rounded-[2rem] px-6 py-12 text-center sm:px-12" style={{ background: C.accent, color: "#fff" }}>
+            <h2 className="text-4xl leading-tight sm:text-5xl" style={serif}>Dê o primeiro passo hoje</h2>
+            <p className="mx-auto mt-3 max-w-lg opacity-90">A primeira conversa é sem custo e sem compromisso. Me chame e vamos encontrar o melhor horário para você.</p>
+            <div className="mt-8"><Cta light>Falar no WhatsApp</Cta></div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t py-10 text-center text-sm" style={{ borderColor: C.ink + "14", color: C.muted }}>
+        <div className={wrap + " space-y-3"}>
+          <p className="text-2xl font-semibold" style={{ ...serif, color: C.ink }}>{BRAND}</p>
+          <p>Psicóloga Clínica · {CRP}</p>
+          <p className="mx-auto max-w-xl rounded-2xl p-3 text-xs" style={{ background: C.soft }}>Este site não oferece atendimento de urgência. Em caso de crise ligue para o CVV (188, 24h e gratuito) ou procure o SAMU (192).</p>
+          <p className="text-xs">© {new Date().getFullYear()} {BRAND}. Todos os direitos reservados.</p>
+        </div>
+      </footer>
+      {notice && <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full px-5 py-3 text-sm font-bold shadow-2xl" style={{ background: C.ink, color: C.bg }}>{notice}</div>}
+      {hasWa && <a href={wa()} onClick={go} target="_blank" rel="noreferrer" aria-label="Falar no WhatsApp" className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full shadow-2xl" style={{ background: "#25d366", color: "#fff" }}><MessageCircle className="h-7 w-7" /></a>}
+    </div>
+  );
+}
