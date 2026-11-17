@@ -8,9 +8,11 @@ const INSIGHT_FIELDS =
 export const getStatus = createServerFn({ method: "GET" }).middleware([withMeta]).handler(async ({ context }) => {
   try {
     const me = await context.graph("me", { params: { fields: "id,name" } });
-    return { connected: true as const, name: me.name as string, error: null };
+    const conn = await context.metaConn();
+    return { connected: true as const, name: me.name as string, source: conn.source, error: null };
   } catch (e) {
-    return { connected: false as const, name: null, error: (e as Error).message };
+    const msg = (e as Error).message;
+    return { connected: false as const, name: null, source: null, error: msg === "META_NOT_CONNECTED" ? "Meta não conectada. Cole o token em Configurações → Conexão Meta." : msg };
   }
 });
 
@@ -18,7 +20,7 @@ export const getAdAccounts = createServerFn({ method: "GET" }).middleware([withM
   const r = await context.graph("me/adaccounts", {
     params: { fields: "id,name,account_status,currency,timezone_id,timezone_name,business{id,name}", limit: "200" },
   });
-  return (r.data as any[]).map((a) => ({
+  return ((r.data ?? []) as any[]).map((a) => ({
     id: a.id as string,
     name: String(a.name).trim(),
     account_status: a.account_status as number,
@@ -76,6 +78,18 @@ export const searchTargeting = createServerFn({ method: "GET" }).middleware([wit
   });
 
 const levelSchema = z.enum(["campaigns", "adsets", "ads"]);
+const LEVEL_ONE = { campaigns: "campaign", adsets: "adset", ads: "ad" } as const;
+const OBJECT_INSIGHTS =
+  "spend,impressions,reach,frequency,clicks,unique_clicks,inline_link_clicks,unique_inline_link_clicks,outbound_clicks,ctr,cpc,cpm,actions,action_values,cost_per_action_type,purchase_roas,video_play_actions,video_thruplay_watched_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,video_avg_time_watched_actions";
+const day = (d: Date) => d.toISOString().slice(0, 10);
+/** Meta only keeps insights for the last 37 months; older starts are moved forward instead of failing. */
+function clampRange(r?: { since: string; until: string }) {
+  if (!r) return r;
+  const min = new Date(); min.setMonth(min.getMonth() - 37); min.setDate(min.getDate() + 1);
+  const since = r.since < day(min) ? day(min) : r.since;
+  return { since, until: r.until < since ? since : r.until };
+}
+const rangeDays = (r?: { since: string; until: string }) => (r ? Math.round((Date.parse(r.until) - Date.parse(r.since)) / 864e5) + 1 : 0);
 
 export const getObjects = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) =>
@@ -90,24 +104,28 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([withMeta
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const base = "id,name,status,effective_status,created_time";
+    const { graphAll } = await import("@/lib/meta-conn.server");
+    const base = "id,name,status,effective_status,created_time,updated_time";
     const extra =
       data.level === "campaigns"
-        ? "objective,daily_budget,lifetime_budget,bid_strategy"
+        ? "objective,daily_budget,lifetime_budget,bid_strategy,spend_cap,start_time,stop_time,budget_remaining"
         : data.level === "adsets"
-          ? "campaign_id,campaign{name},daily_budget,lifetime_budget,optimization_goal"
-          : "campaign_id,adset_id,adset{name},creative{thumbnail_url}";
-    const params: Record<string, unknown> = {
-      fields: `${base},${extra},insights.${data.timeRange ? `time_range(${JSON.stringify(data.timeRange)})` : `date_preset(${data.datePreset})`}{${INSIGHT_FIELDS}}`,
-      limit: "200",
-    };
-    if (data.parentIds?.length) {
-      params["filtering"] = [
-        { field: data.level === "adsets" ? "campaign.id" : "adset.id", operator: "IN", value: data.parentIds },
-      ];
-    }
-    const r = await context.graph(`${data.accountId}/${data.level}`, { params });
-    return (r.data as any[]).map((o) => ({ ...o, insights: o.insights?.data?.[0] ?? null }));
+          ? "campaign_id,campaign{name},daily_budget,lifetime_budget,optimization_goal,bid_strategy,bid_amount,start_time,end_time"
+          : "campaign_id,adset_id,adset{name},campaign{name},creative{id,thumbnail_url}";
+    const filtering = data.parentIds?.length ? [{ field: data.level === "adsets" ? "campaign.id" : "adset.id", operator: "IN", value: data.parentIds }] : undefined;
+    const timeRange = clampRange(data.timeRange);
+    const range = timeRange ? { time_range: timeRange } : { date_preset: data.datePreset };
+    const one = LEVEL_ONE[data.level];
+    const fields = `${one}_id,${OBJECT_INSIGHTS}${data.level === "ads" ? ",quality_ranking,engagement_rate_ranking,conversion_rate_ranking" : ""}`;
+    // Objects and numbers come from two paged calls: big periods (years of history) don't time out a nested request.
+    const [objects, numbers] = await Promise.all([
+      graphAll(context.graph, `${data.accountId}/${data.level}`, { fields: `${base},${extra}`, limit: "200", filtering }, 2000),
+      graphAll(context.graph, `${data.accountId}/insights`, { level: one, fields, ...range, limit: "500", filtering }, 5000).catch((e: Error) => ({ error: e.message })),
+    ]);
+    const list = Array.isArray(numbers) ? numbers : [];
+    const byId = new Map(list.map((x: any) => [String(x[`${one}_id`]), x]));
+    const insightsError = Array.isArray(numbers) ? null : numbers.error;
+    return objects.map((o: any) => ({ ...o, insights: byId.get(String(o.id)) ?? null, insightsError }));
   });
 
 export const getInsights = createServerFn({ method: "GET" }).middleware([withMeta])
@@ -115,25 +133,34 @@ export const getInsights = createServerFn({ method: "GET" }).middleware([withMet
     z.object({ accountIds: z.array(z.string()).min(1), datePreset: z.string(), campaignIds: z.array(z.string()).optional(), timeRange: z.object({ since: z.string(), until: z.string() }).optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    const { graphAll } = await import("@/lib/meta-conn.server");
+    const timeRange = clampRange(data.timeRange);
+    // Long periods are grouped by month (daily rows over years are heavy and get cut).
+    const step = timeRange && rangeDays(timeRange) > 92 ? "monthly" : data.datePreset === "maximum" ? "monthly" : "1";
     const results = await Promise.all(
       data.accountIds.map(async (acc) => {
-        const range = data.timeRange ? { time_range: data.timeRange } : { date_preset: data.datePreset };
-        const filters = data.campaignIds?.length ? { filtering: [{ field: "campaign.id", operator: "IN", value: data.campaignIds }] } : {};
+        const range = timeRange ? { time_range: timeRange } : { date_preset: data.datePreset };
+        const filters = data.campaignIds?.length ? { filtering: [{ field: "campaign.id", operator: "IN", value: data.campaignIds.slice(0, 300) }] } : {};
         const [daily, byCampaign] = await Promise.all([
-          context.graph(`${acc}/insights`, {
-            params: { fields: INSIGHT_FIELDS, ...range, ...filters, time_increment: "1", limit: "100" },
-          }),
-          context.graph(`${acc}/insights`, {
-            params: { fields: `campaign_id,campaign_name,${INSIGHT_FIELDS}`, ...range, ...filters, level: "campaign", limit: "200" },
-          }),
+          graphAll(context.graph, `${acc}/insights`, { fields: INSIGHT_FIELDS, ...range, ...filters, time_increment: step, limit: "500" }, 1200).catch(() => [] as any[]),
+          graphAll(context.graph, `${acc}/insights`, { fields: `campaign_id,campaign_name,${INSIGHT_FIELDS}`, ...range, ...filters, level: "campaign", limit: "500" }, 3000).catch(() => [] as any[]),
         ]);
-        return { daily: daily.data as any[], campaigns: byCampaign.data as any[] };
+        return { daily, campaigns: byCampaign };
       }),
     );
-    return {
-      daily: results.flatMap((r) => r.daily),
-      campaigns: results.flatMap((r) => r.campaigns),
-    };
+    return { step, daily: results.flatMap((r) => r.daily), campaigns: results.flatMap((r) => r.campaigns) };
+  });
+
+/** Full editable state of one campaign, ad set or ad. */
+export const getObjectDetail = createServerFn({ method: "GET" }).middleware([withMeta])
+  .inputValidator((d) => z.object({ id: z.string().regex(/^\d+$/), level: levelSchema }).parse(d))
+  .handler(async ({ data, context }) => {
+    const fields = {
+      campaigns: "id,name,status,objective,buying_type,daily_budget,lifetime_budget,bid_strategy,spend_cap,start_time,stop_time,special_ad_categories,account_id,created_time",
+      adsets: "id,name,status,campaign_id,campaign{name,daily_budget,lifetime_budget},daily_budget,lifetime_budget,bid_strategy,bid_amount,optimization_goal,billing_event,start_time,end_time,targeting,promoted_object,account_id,created_time",
+      ads: "id,name,status,adset_id,campaign_id,account_id,created_time,creative{id,name,title,body,thumbnail_url,image_url,object_story_spec,object_story_id,effective_object_story_id,asset_feed_spec,url_tags,instagram_user_id,call_to_action_type,link_url}",
+    }[data.level];
+    return (await context.graph(data.id, { params: { fields } })) as Record<string, any>;
   });
 
 export const updateObject = createServerFn({ method: "POST" }).middleware([withMeta])
@@ -150,15 +177,26 @@ export const updateObject = createServerFn({ method: "POST" }).middleware([withM
         bid_amount: z.number().int().positive().optional(),
         start_time: z.string().optional(),
         end_time: z.string().optional(),
+        stop_time: z.string().optional(),
+        targeting: z.record(z.string(), z.any()).optional(),
+        /** Budget before this edit, kept so agents can go back to it. */
+        before_budget: z.number().int().positive().optional(),
         actor: z.string().max(80).optional(),
       })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { id, actor, ...rest } = data;
+    const { id, actor, before_budget, ...rest } = data;
     try {
       const r = await context.graph(id, { method: "POST", params: rest });
-      await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: rest.status === "DELETED" ? "excluir" : "editar", target: id, after: rest as never });
+      await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: rest.status === "DELETED" ? "excluir" : "editar", target: id, before: before_budget ? ({ daily_budget: before_budget } as never) : null, after: rest as never });
+      if (rest.daily_budget && before_budget && before_budget !== rest.daily_budget) {
+        const { recordBudget } = await import("@/lib/ai-agent");
+        const key = "srv.budget-history";
+        const { data: row } = await context.supabase.from("app_state").select("value").eq("user_id", context.userId).eq("key", key).maybeSingle();
+        const next = recordBudget((row?.value ?? {}) as never, id, before_budget, rest.daily_budget, actor ?? "chefe");
+        await context.supabase.from("app_state").upsert({ user_id: context.userId, key, value: next as never }, { onConflict: "user_id,key" });
+      }
       return r;
     } catch (e) {
       await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: "editar", target: id, after: rest as never, result: "erro", error: (e as Error).message.slice(0, 900) });
@@ -166,14 +204,48 @@ export const updateObject = createServerFn({ method: "POST" }).middleware([withM
     }
   });
 
-export const duplicateObject = createServerFn({ method: "POST" }).middleware([withMeta])
-  .inputValidator((d) => z.object({ id: z.string(), deep: z.boolean() }).parse(d))
-  .handler(async ({ data, context }) =>
-    context.graph(`${data.id}/copies`, {
+/** Creatives can't be edited in place: a new creative is made from the current one with the new text/link, then swapped into the ad. */
+export const updateAdCreative = createServerFn({ method: "POST" }).middleware([withMeta])
+  .inputValidator((d) => z.object({
+    adId: z.string().regex(/^\d+$/),
+    message: z.string().max(5000).optional(),
+    headline: z.string().max(255).optional(),
+    description: z.string().max(255).optional(),
+    link: z.string().url().optional(),
+    url_tags: z.string().max(1000).optional(),
+    image_hash: z.string().optional(),
+    video_id: z.string().optional(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ad = await context.graph(data.adId, { params: { fields: "id,name,account_id,creative{id,name,object_story_spec,url_tags,instagram_user_id,asset_feed_spec}" } });
+    const c = ad.creative ?? {};
+    if (!c.object_story_spec) throw new Error("Este anúncio usa uma publicação já existente ou criativo dinâmico. Edite o texto direto na publicação ou crie um anúncio novo.");
+    const { patchStorySpec } = await import("@/lib/meta-edit");
+    const story = patchStorySpec(c.object_story_spec, data);
+    const account = String(ad.account_id).startsWith("act_") ? ad.account_id : `act_${ad.account_id}`;
+    const creative = await context.graph(`${account}/adcreatives`, {
       method: "POST",
-      params: { deep_copy: data.deep, status_option: "PAUSED", rename_options: { rename_suffix: " - Cópia" } },
-    }),
-  );
+      params: { name: `${c.name ?? ad.name} - editado`, object_story_spec: story, url_tags: data.url_tags ?? c.url_tags, instagram_user_id: c.instagram_user_id },
+    });
+    await context.graph(data.adId, { method: "POST", params: { creative: { creative_id: creative.id } } });
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "meta", action: "editar_anuncio", target: data.adId, before: { creative: c.id } as never, after: { creative: creative.id, ...data } as never, result: "ok" });
+    return { creativeId: String(creative.id) };
+  });
+
+export const duplicateObject = createServerFn({ method: "POST" }).middleware([withMeta])
+  .inputValidator((d) => z.object({ id: z.string(), deep: z.boolean(), level: levelSchema.optional(), copies: z.number().int().min(1).max(10).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ids: string[] = [];
+    for (let i = 0; i < (data.copies ?? 1); i++) {
+      const r = await context.graph(`${data.id}/copies`, {
+        method: "POST",
+        params: { ...(data.level === "ads" ? {} : { deep_copy: data.deep }), status_option: "PAUSED", rename_options: { rename_suffix: " - Cópia" } },
+      });
+      ids.push(String(r.copied_campaign_id ?? r.copied_adset_id ?? r.copied_ad_id ?? r.id ?? ""));
+    }
+    await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "meta", action: "duplicar", target: data.id, after: { ids } as never, result: "ok" });
+    return { ids };
+  });
 
 export const uploadMedia = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) =>
