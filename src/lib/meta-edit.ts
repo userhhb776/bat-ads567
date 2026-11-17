@@ -1,8 +1,8 @@
 /** Pure helpers for editing an existing ad's creative (Meta creatives are immutable, so a patched copy is created). */
 export type CreativePatch = { message?: string; headline?: string; description?: string; link?: string; image_hash?: string; video_id?: string };
 
-export function patchStorySpec(spec: Record<string, any>, p: CreativePatch) {
-  const s = JSON.parse(JSON.stringify(spec ?? {})) as Record<string, any>;
+export function patchStorySpec(spec: any, p: CreativePatch) {
+  const s: any = JSON.parse(JSON.stringify(spec ?? {}));
   const setCta = (cta: any) => (cta && p.link ? { ...cta, value: { ...(cta.value ?? {}), link: p.link } } : cta);
   if (s["video_data"]) {
     const v = s["video_data"];
@@ -33,7 +33,7 @@ export function patchStorySpec(spec: Record<string, any>, p: CreativePatch) {
 }
 
 /** Readable text fields of a creative for the edit form. */
-export function readCreative(spec: Record<string, any> | undefined) {
+export function readCreative(spec: any) {
   const v = spec?.["video_data"], l = spec?.["link_data"];
   if (v) return { kind: "video" as const, message: v.message ?? "", headline: v.title ?? "", description: v.link_description ?? "", link: v.call_to_action?.value?.link ?? "" };
   if (l) return { kind: l.child_attachments?.length ? ("carousel" as const) : ("image" as const), message: l.message ?? "", headline: l.name ?? "", description: l.description ?? "", link: l.link ?? "" };

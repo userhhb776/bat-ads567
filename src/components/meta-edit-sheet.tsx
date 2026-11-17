@@ -32,9 +32,9 @@ export function MetaEditSheet({ target, onClose, currency }: { target: { id: str
   const detail = useServerFn(getObjectDetail), save = useServerFn(updateObject), saveCreative = useServerFn(updateAdCreative);
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["meta-detail", target?.id], queryFn: () => detail({ data: target! }), enabled: !!target, retry: false });
-  const [f, setF] = useState<Record<string, any>>({});
+  const [f, setF] = useState<any>({});
   const [busy, setBusy] = useState(false);
-  const d = q.data;
+  const d = q.data as any;
   useEffect(() => {
     if (!d) return;
     const t = d.targeting ?? {};
@@ -46,7 +46,7 @@ export function MetaEditSheet({ target, onClose, currency }: { target: { id: str
       ...c, urlTags: d.creative?.url_tags ?? "", creativeKind: c.kind, creativeLocked: !!target && target.level === "ads" && !d.creative?.object_story_spec,
     });
   }, [d, target]);
-  const set = (k: string, v: unknown) => setF((x) => ({ ...x, [k]: v }));
+  const set = (k: string, v: unknown) => setF((x: any) => ({ ...x, [k]: v }));
 
   async function submit() {
     if (!target || !d) return;
@@ -67,7 +67,7 @@ export function MetaEditSheet({ target, onClose, currency }: { target: { id: str
       if (target.level === "adsets") {
         const ba = cents(f.bidAmount); if (ba && ba !== Number(d.bid_amount ?? 0)) p["bid_amount"] = ba;
         if (f.start && f.start !== toLocal(d.start_time)) p["start_time"] = fromLocal(f.start);
-        const t = { ...(d.targeting ?? {}) } as Record<string, any>;
+        const t: any = { ...(d.targeting ?? {}) };
         const before = JSON.stringify(t);
         if (f.ageMin) t["age_min"] = Number(f.ageMin); if (f.ageMax) t["age_max"] = Number(f.ageMax);
         if (f.gender === "all") delete t["genders"]; else t["genders"] = [Number(f.gender)];
