@@ -252,7 +252,8 @@ export const slugify = (value: string) => value.normalize("NFD").replace(/[\u030
 
 /** Capitalized JSX tags the generated code uses but never declares — the preview resolves them as lucide icons, so the export must too. */
 export function missingComponents(code: string) {
-  const used = new Set([...code.matchAll(/<([A-Z][A-Za-z0-9]*)\b/g)].flatMap(m => m[1] ? [m[1]] : []));
+  // Icons used as JSX tags or passed as values at the start of data rows (e.g. [HeartPulse, "Ansiedade"]).
+  const used = new Set([...code.matchAll(/<([A-Z][A-Za-z0-9]*)\b|\[\s*([A-Z][A-Za-z0-9]+)\s*,/g)].flatMap(m => m[1] ? [m[1]] : m[2] ? [m[2]] : []));
   const builtin = new Set(["React", "Fragment", "App"]);
   return [...used].filter(n => !builtin.has(n) && !new RegExp(`(?:function|class|const|let|var)\\s+${n}\\b|[{,]\\s*${n}\\s*[,}=]`).test(code));
 }
