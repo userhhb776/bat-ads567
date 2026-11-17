@@ -88,7 +88,9 @@ function PagesRoute() {
   const chat = page?.chat ?? [];
   const code = page?.code ?? "";
   const demoCode = useMemo(() => (demoTpl ? fillPlaceholders(templateCode(demoTpl, page?.product), page ?? ({} as SalesPage)) : ""), [demoTpl, page]);
+  const [adminView, setAdminView] = useState(false);
   const filled = useMemo(() => (page && code ? fillPlaceholders(code, page) : ""), [page, code]);
+  const shown = useMemo(() => (adminView && page && code && templateHasAdmin(code) ? fillPlaceholders(code, page, "admin") : filled), [adminView, page, code, filled]);
   const conn = useMemo(() => storeConnection(code), [code]);
   const demoConn = useMemo(() => storeConnection(demoCode), [demoCode]);
   useEffect(() => { endRef.current?.scrollIntoView({ block: "end" }); }, [live, chat.length]);
@@ -319,6 +321,7 @@ function PagesRoute() {
                 <div className="ml-auto flex flex-wrap gap-1">
                   <Button size="icon" variant={device === "mobile" ? "secondary" : "ghost"} onClick={() => setDevice("mobile")} aria-label="Celular"><Smartphone className="h-4 w-4" /></Button>
                   <Button size="icon" variant={device === "desktop" ? "secondary" : "ghost"} onClick={() => setDevice("desktop")} aria-label="Computador"><Monitor className="h-4 w-4" /></Button>
+                  {templateHasAdmin(code) && <Button size="sm" variant={adminView ? "secondary" : "ghost"} onClick={() => setAdminView((v) => !v)}>{adminView ? "Ver loja" : "Ver admin"}</Button>}
                   <Button size="icon" variant="ghost" onClick={() => setReload((n) => n + 1)} aria-label="Recarregar"><RotateCw className="h-4 w-4" /></Button>
                   <Button size="icon" variant={editing ? "secondary" : "ghost"} disabled={!code} onClick={() => setEditing((v) => !v)} aria-label="Edição visual"><Pencil className="h-4 w-4" /></Button>
                   <Button size="sm" variant="outline" disabled={!filled} onClick={() => downloadZip(filled, conn)}><Download className="h-4 w-4" /> ZIP</Button>
@@ -336,7 +339,7 @@ function PagesRoute() {
               )}
               {editing && <p className="border-b border-border bg-primary/10 px-3 py-1 text-xs">Edição visual: toque num texto para editar ou numa imagem para trocar (link, foto do celular ou descrição para a IA criar).</p>}
               {page.publishedUrl && <div className="flex flex-wrap gap-x-4 border-b border-border px-3 py-1 text-xs"><a href={page.publishedUrl} target="_blank" rel="noreferrer" className="truncate text-primary underline">{page.publishedUrl}</a>{page.adminUrl && <a href={page.adminUrl} target="_blank" rel="noreferrer" className="truncate text-primary underline">Admin: {page.adminUrl}</a>}</div>}
-              {templateHasAdmin(code) && <p className="border-b border-border px-3 py-1 text-[11px] text-muted-foreground">Loja com admin: ao publicar saem dois sites — a loja e o admin ({(page.slug || slugify(page.name) || "site")}-admin). No admin, entre com a mesma conta deste painel. Na prévia, adicione #/admin ao fim do endereço para ver o admin.</p>}
+              {templateHasAdmin(code) && <p className="border-b border-border px-3 py-1 text-[11px] text-muted-foreground">Loja com admin: ao publicar saem dois sites — a loja e o admin ({(page.slug || slugify(page.name) || "site")}-admin). No admin, entre com a mesma conta deste painel. Use “Ver admin” para testar o painel aqui.</p>}
               <div className="min-h-[75dvh] flex-1 overflow-auto bg-muted/30 p-2 md:min-h-0">
                 {tab === "blocks" ? (
                   <div className="grid gap-3 xl:grid-cols-2">
@@ -348,7 +351,7 @@ function PagesRoute() {
                   <pre className="h-full overflow-auto rounded-lg bg-background p-3 text-xs"><code>{code || "Nenhum código ainda."}</code></pre>
                 ) : filled ? (
                   <div className={`mx-auto h-full overflow-hidden rounded-lg border border-border ${device === "mobile" ? "w-[375px] max-w-full" : "w-full"}`}>
-                    <ForgePreview key={reload} code={filled} connection={conn} busy={busy} editing={editing} onEdit={onEdit} onPickImage={(from) => setPick({ from, url: "", busy: false })} onRepair={(err) => send(`Corrija este erro da prévia: ${err}`)} />
+                    <ForgePreview key={reload} code={shown} connection={conn} busy={busy} editing={editing} onEdit={onEdit} onPickImage={(from) => setPick({ from, url: "", busy: false })} onRepair={(err) => send(`Corrija este erro da prévia: ${err}`)} />
                   </div>
                 ) : page.versions[0]?.html?.includes("<html") ? (
                   <iframe title="prévia antiga" sandbox="allow-scripts" srcDoc={finalizeHtml(page, page.versions[0].html)} className="h-full w-full rounded-lg bg-card" />
