@@ -78,6 +78,12 @@ export const searchTargeting = createServerFn({ method: "GET" }).middleware([wit
   });
 
 const levelSchema = z.enum(["campaigns", "adsets", "ads"]);
+/** Statuses to list when the chefe also wants archived items (the default list hides them). */
+const ARCHIVE_STATUSES = {
+  campaigns: ["ACTIVE", "PAUSED", "ARCHIVED", "IN_PROCESS", "WITH_ISSUES"],
+  adsets: ["ACTIVE", "PAUSED", "ARCHIVED", "CAMPAIGN_PAUSED", "IN_PROCESS", "WITH_ISSUES"],
+  ads: ["ACTIVE", "PAUSED", "ARCHIVED", "CAMPAIGN_PAUSED", "ADSET_PAUSED", "DISAPPROVED", "PENDING_REVIEW", "WITH_ISSUES", "IN_PROCESS"],
+};
 const LEVEL_ONE = { campaigns: "campaign", adsets: "adset", ads: "ad" } as const;
 const OBJECT_INSIGHTS =
   "spend,impressions,reach,frequency,clicks,unique_clicks,inline_link_clicks,unique_inline_link_clicks,outbound_clicks,ctr,cpc,cpm,actions,action_values,cost_per_action_type,purchase_roas,video_play_actions,video_thruplay_watched_actions,video_p25_watched_actions,video_p50_watched_actions,video_p75_watched_actions,video_p95_watched_actions,video_p100_watched_actions,video_avg_time_watched_actions";
@@ -100,6 +106,7 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([withMeta
         datePreset: z.string(),
         timeRange: z.object({ since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), until: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).optional(),
         parentIds: z.array(z.string()).optional(),
+        includeArchived: z.boolean().optional(),
       })
       .parse(d),
   )
@@ -112,14 +119,17 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([withMeta
         : data.level === "adsets"
           ? "campaign_id,campaign{name},daily_budget,lifetime_budget,optimization_goal,bid_strategy,bid_amount,start_time,end_time"
           : "campaign_id,adset_id,adset{name},campaign{name},creative{id,thumbnail_url}";
-    const filtering = data.parentIds?.length ? [{ field: data.level === "adsets" ? "campaign.id" : "adset.id", operator: "IN", value: data.parentIds }] : undefined;
+    const parent = data.parentIds?.length ? [{ field: data.level === "adsets" ? "campaign.id" : "adset.id", operator: "IN", value: data.parentIds }] : [];
+    const filtering = parent.length ? parent : undefined;
+    const archived = data.includeArchived ? [{ field: "effective_status", operator: "IN", value: ARCHIVE_STATUSES[data.level] }] : [];
+    const objectFilter = [...parent, ...archived];
     const timeRange = clampRange(data.timeRange);
     const range = timeRange ? { time_range: timeRange } : { date_preset: data.datePreset };
     const one = LEVEL_ONE[data.level];
     const fields = `${one}_id,${OBJECT_INSIGHTS}${data.level === "ads" ? ",quality_ranking,engagement_rate_ranking,conversion_rate_ranking" : ""}`;
     // Objects and numbers come from two paged calls: big periods (years of history) don't time out a nested request.
     const [objects, numbers] = await Promise.all([
-      graphAll(context.graph, `${data.accountId}/${data.level}`, { fields: `${base},${extra}`, limit: "200", filtering }, 2000),
+      graphAll(context.graph, `${data.accountId}/${data.level}`, { fields: `${base},${extra}`, limit: "200", filtering: objectFilter.length ? objectFilter : undefined }, 2000),
       graphAll(context.graph, `${data.accountId}/insights`, { level: one, fields, ...range, limit: "500", filtering }, 5000).catch((e: Error) => ({ error: e.message })),
     ]);
     const list = Array.isArray(numbers) ? numbers : [];
