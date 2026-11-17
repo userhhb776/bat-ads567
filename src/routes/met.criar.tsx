@@ -194,7 +194,7 @@ function Create() {
   });
   const [a, setA] = useState({
     name: "", page_id: "", ig_id: "", format: "single" as "single" | "carousel", message: "", headline: "", description: "",
-    link: "", display_link: "", cta: "SHOP_NOW", url_tags: DEFAULT_UTM, tracking: true, enhancements: false, multi: true,
+    link: "", display_link: "", cta: "SHOP_NOW", url_tags: DEFAULT_UTM, tracking: true, enhancements: false, multi: false, customDomain: false,
   });
   const [media, setMedia] = useState<Media[]>([]);
   const [publishActive, setPublishActive] = useState(false);
@@ -288,7 +288,7 @@ function Create() {
           ad: {
             name: a.name || `${c.name} - Anúncio`, page_id: a.page_id, instagram_user_id: a.ig_id || undefined, format: a.format,
             media: uploaded, message: a.message, headline: a.headline, description: a.description, link: a.link,
-            display_link: a.display_link || undefined, cta: a.cta, url_tags: a.url_tags || undefined,
+            display_link: (a.customDomain && a.display_link) || undefined, cta: a.cta, url_tags: a.url_tags || undefined,
             pixel_tracking: a.tracking && s.pixel_id ? s.pixel_id : undefined,
             enhancements: a.enhancements,
             multi_advertiser: a.multi,
@@ -549,12 +549,13 @@ function Create() {
             <Field label="Descrição" hint={`${a.description.length}/30`}><Input value={a.description} onChange={(e) => setA({ ...a, description: e.target.value })} /></Field>
             <Field label="Chamada para ação"><Pick value={a.cta} onChange={(v) => setA({ ...a, cta: v })} options={ctas} /></Field>
             <Field label={isMsg ? "Link (ex.: https://wa.me/55...)" : "URL do site"}><Input inputMode="url" value={a.link} onChange={(e) => setA({ ...a, link: e.target.value })} placeholder="https://..." /></Field>
-            <Field label="Link de exibição (opcional)"><Input value={a.display_link} onChange={(e) => setA({ ...a, display_link: e.target.value })} placeholder="seusite.com" /></Field>
+            <div className="md:col-span-2 space-y-2"><Toggle checked={a.customDomain} onChange={(v) => setA({ ...a, customDomain: v, display_link: v ? a.display_link : "" })} label="Personalizar o domínio exibido no anúncio" />
+              {a.customDomain && <Field label="Domínio exibido"><Input value={a.display_link} onChange={(e) => setA({ ...a, display_link: e.target.value })} placeholder="seusite.com" /></Field>}</div>
             <Field label="Parâmetros de URL (UTMs)" wide><Textarea rows={2} value={a.url_tags} onChange={(e) => setA({ ...a, url_tags: e.target.value })} className="font-mono text-xs" /></Field>
           </Group>
           <Group title="Rastreamento">
             <div className="md:col-span-2"><Toggle checked={a.tracking} onChange={(v) => setA({ ...a, tracking: v })} label="Rastrear eventos do site com o pixel do conjunto" /></div>
-            <div className="md:col-span-2"><Toggle checked={a.multi} onChange={(v) => setA({ ...a, multi: v })} label="Anúncios com múltiplos anunciantes (pode aparecer junto de outros anúncios)" /></div>
+            <div className="md:col-span-2"><Toggle checked={a.multi} onChange={(v) => setA({ ...a, multi: v })} label="Anúncios com vários anunciantes (seu anúncio pode aparecer junto de outros anunciantes) — desligado por padrão" /></div>
             <div className="md:col-span-2"><Toggle checked={a.enhancements} onChange={(v) => setA({ ...a, enhancements: v })} label="Melhorias de criativo Advantage+ (a Meta ajusta brilho, texto e formato)" /></div>
           </Group>
         </Section>
