@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const META_VERSION = "v26.0";
 const DIRECT = `https://graph.facebook.com/${META_VERSION}`;
 // Original managed bridge; only used when no own token exists (keeps the current setup working).
-const BRIDGE = ["https://connector-gateway", "lovable", `dev/meta_ads/${META_VERSION}`].join(".").replace(".dev/", ".dev/");
+const BRIDGE = `https://connector-gateway.lovable.dev/meta_ads/${META_VERSION}`;
 
 export type MetaSource = "painel" | "servidor" | "nativa";
 export type MetaConn = { base: string; headers: Record<string, string>; source: MetaSource };

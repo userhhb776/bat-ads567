@@ -1,66 +1,21 @@
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { withMeta } from "@/lib/meta-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-
-const GATEWAY = "https://connector-gateway.lovable.dev/meta_ads/v26.0";
-
-function headers() {
-  const lovable = process.env["LOVABLE_API_KEY"];
-  const conn = process.env["META_ADS_API_KEY"];
-  if (!lovable || !conn) throw new Error("META_NOT_CONNECTED");
-  return { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": conn };
-}
-
-async function parse(res: Response) {
-  const text = await res.text();
-  let json: any;
-  try {
-    json = JSON.parse(text);
-  } catch {
-    json = { raw: text };
-  }
-  if (!res.ok || json?.error) {
-    const e = json?.error ?? {};
-    console.error(`Meta request failed [${res.status}]: ${text}`);
-    throw new Error(`Meta [${res.status}]: ${e.error_user_msg || e.message || text}`);
-  }
-  return json;
-}
-
-async function graph(path: string, init?: { method?: string; params?: Record<string, unknown> }) {
-  const method = init?.method ?? "GET";
-  const url = new URL(`${GATEWAY}/${path}`);
-  const clean: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(init?.params ?? {})) {
-    if (v !== undefined && v !== null && v !== "") clean[k] = v;
-  }
-  if (method === "GET") {
-    for (const [k, v] of Object.entries(clean)) url.searchParams.set(k, typeof v === "string" ? v : JSON.stringify(v));
-    return parse(await fetch(url, { headers: headers() }));
-  }
-  return parse(
-    await fetch(url, {
-      method,
-      headers: { ...headers(), "Content-Type": "application/json" },
-      body: JSON.stringify(clean),
-    }),
-  );
-}
 
 const INSIGHT_FIELDS =
   "spend,impressions,reach,clicks,inline_link_clicks,ctr,cpc,cpm,frequency,actions,action_values,cost_per_action_type,purchase_roas";
 
-export const getStatus = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const getStatus = createServerFn({ method: "GET" }).middleware([withMeta]).handler(async ({ context }) => {
   try {
-    const me = await graph("me", { params: { fields: "id,name" } });
+    const me = await context.graph("me", { params: { fields: "id,name" } });
     return { connected: true as const, name: me.name as string, error: null };
   } catch (e) {
     return { connected: false as const, name: null, error: (e as Error).message };
   }
 });
 
-export const getAdAccounts = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
-  const r = await graph("me/adaccounts", {
+export const getAdAccounts = createServerFn({ method: "GET" }).middleware([withMeta]).handler(async ({ context }) => {
+  const r = await context.graph("me/adaccounts", {
     params: { fields: "id,name,account_status,currency,timezone_id,timezone_name,business{id,name}", limit: "200" },
   });
   return (r.data as any[]).map((a) => ({
@@ -74,17 +29,17 @@ export const getAdAccounts = createServerFn({ method: "GET" }).middleware([requi
   }));
 });
 
-export const getAssets = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const getAssets = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) => z.object({ accountId: z.string() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const failures: string[] = [];
     const failed = (label: string) => (error: unknown) => { failures.push(`${label}: ${error instanceof Error ? error.message : "consulta falhou"}`); return { data: [] }; };
     const [pages, pixels, ig, audiences, saved] = await Promise.all([
-      graph("me/accounts", { params: { fields: "id,name", limit: "100" } }).catch(failed("Páginas")),
-      graph(`${data.accountId}/adspixels`, { params: { fields: "id,name" } }).catch(failed("Pixels")),
-      graph(`${data.accountId}/instagram_accounts`, { params: { fields: "id,username" } }).catch(failed("Instagram")),
-      graph(`${data.accountId}/customaudiences`, { params: { fields: "id,name,subtype", limit: "200" } }).catch(failed("Públicos")),
-      graph(`${data.accountId}/saved_audiences`, { params: { fields: "id,name,targeting", limit: "100" } }).catch(failed("Públicos salvos")),
+      context.graph("me/accounts", { params: { fields: "id,name", limit: "100" } }).catch(failed("Páginas")),
+      context.graph(`${data.accountId}/adspixels`, { params: { fields: "id,name" } }).catch(failed("Pixels")),
+      context.graph(`${data.accountId}/instagram_accounts`, { params: { fields: "id,username" } }).catch(failed("Instagram")),
+      context.graph(`${data.accountId}/customaudiences`, { params: { fields: "id,name,subtype", limit: "200" } }).catch(failed("Públicos")),
+      context.graph(`${data.accountId}/saved_audiences`, { params: { fields: "id,name,targeting", limit: "100" } }).catch(failed("Públicos salvos")),
     ]);
     return {
       errors: failures,
@@ -96,20 +51,20 @@ export const getAssets = createServerFn({ method: "GET" }).middleware([requireSu
     };
   });
 
-export const searchTargeting = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const searchTargeting = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) =>
     z.object({ kind: z.enum(["interest", "geo", "locale"]), q: z.string().min(1) }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     if (data.kind === "interest") {
-      const r = await graph("search", { params: { type: "adinterest", q: data.q, limit: "25", locale: "pt_BR" } });
+      const r = await context.graph("search", { params: { type: "adinterest", q: data.q, limit: "25", locale: "pt_BR" } });
       return (r.data as any[]).map((x) => ({ id: String(x.id), name: x.name as string, extra: x.audience_size_upper_bound ? `até ${Number(x.audience_size_upper_bound).toLocaleString("pt-BR")}` : "", type: "interest" }));
     }
     if (data.kind === "locale") {
-      const r = await graph("search", { params: { type: "adlocale", q: data.q } });
+      const r = await context.graph("search", { params: { type: "adlocale", q: data.q } });
       return (r.data as any[]).map((x) => ({ id: String(x.key), name: x.name as string, extra: "", type: "locale" }));
     }
-    const r = await graph("search", {
+    const r = await context.graph("search", {
       params: { type: "adgeolocation", q: data.q, location_types: ["country", "region", "city"], locale: "pt_BR" },
     });
     return (r.data as any[]).map((x) => ({
@@ -122,7 +77,7 @@ export const searchTargeting = createServerFn({ method: "GET" }).middleware([req
 
 const levelSchema = z.enum(["campaigns", "adsets", "ads"]);
 
-export const getObjects = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const getObjects = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) =>
     z
       .object({
@@ -134,7 +89,7 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
       })
       .parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const base = "id,name,status,effective_status,created_time";
     const extra =
       data.level === "campaigns"
@@ -151,24 +106,24 @@ export const getObjects = createServerFn({ method: "GET" }).middleware([requireS
         { field: data.level === "adsets" ? "campaign.id" : "adset.id", operator: "IN", value: data.parentIds },
       ];
     }
-    const r = await graph(`${data.accountId}/${data.level}`, { params });
+    const r = await context.graph(`${data.accountId}/${data.level}`, { params });
     return (r.data as any[]).map((o) => ({ ...o, insights: o.insights?.data?.[0] ?? null }));
   });
 
-export const getInsights = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const getInsights = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) =>
     z.object({ accountIds: z.array(z.string()).min(1), datePreset: z.string(), campaignIds: z.array(z.string()).optional(), timeRange: z.object({ since: z.string(), until: z.string() }).optional() }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const results = await Promise.all(
       data.accountIds.map(async (acc) => {
         const range = data.timeRange ? { time_range: data.timeRange } : { date_preset: data.datePreset };
         const filters = data.campaignIds?.length ? { filtering: [{ field: "campaign.id", operator: "IN", value: data.campaignIds }] } : {};
         const [daily, byCampaign] = await Promise.all([
-          graph(`${acc}/insights`, {
+          context.graph(`${acc}/insights`, {
             params: { fields: INSIGHT_FIELDS, ...range, ...filters, time_increment: "1", limit: "100" },
           }),
-          graph(`${acc}/insights`, {
+          context.graph(`${acc}/insights`, {
             params: { fields: `campaign_id,campaign_name,${INSIGHT_FIELDS}`, ...range, ...filters, level: "campaign", limit: "200" },
           }),
         ]);
@@ -181,7 +136,7 @@ export const getInsights = createServerFn({ method: "GET" }).middleware([require
     };
   });
 
-export const updateObject = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const updateObject = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) =>
     z
       .object({
@@ -202,7 +157,7 @@ export const updateObject = createServerFn({ method: "POST" }).middleware([requi
   .handler(async ({ data, context }) => {
     const { id, actor, ...rest } = data;
     try {
-      const r = await graph(id, { method: "POST", params: rest });
+      const r = await context.graph(id, { method: "POST", params: rest });
       await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: actor ?? "usuario", module: "meta", action: rest.status === "DELETED" ? "excluir" : "editar", target: id, after: rest as never });
       return r;
     } catch (e) {
@@ -211,22 +166,22 @@ export const updateObject = createServerFn({ method: "POST" }).middleware([requi
     }
   });
 
-export const duplicateObject = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const duplicateObject = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => z.object({ id: z.string(), deep: z.boolean() }).parse(d))
-  .handler(async ({ data }) =>
-    graph(`${data.id}/copies`, {
+  .handler(async ({ data, context }) =>
+    context.graph(`${data.id}/copies`, {
       method: "POST",
       params: { deep_copy: data.deep, status_option: "PAUSED", rename_options: { rename_suffix: " - Cópia" } },
     }),
   );
 
-export const uploadMedia = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const uploadMedia = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) =>
     z.object({ accountId: z.string(), kind: z.enum(["image", "video"]), base64: z.string().min(1), name: z.string() }).parse(d),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     if (data.kind === "image") {
-      const img = await graph(`${data.accountId}/adimages`, { method: "POST", params: { bytes: data.base64, name: data.name } });
+      const img = await context.graph(`${data.accountId}/adimages`, { method: "POST", params: { bytes: data.base64, name: data.name } });
       const first = Object.values(img.images ?? {})[0] as any;
       return { image_hash: first?.hash as string, video_id: null as string | null };
     }
@@ -234,8 +189,10 @@ export const uploadMedia = createServerFn({ method: "POST" }).middleware([requir
     const form = new FormData();
     form.append("name", data.name);
     form.append("source", new Blob([bin], { type: "video/mp4" }), data.name);
-    const res = await fetch(`${GATEWAY}/${data.accountId}/advideos`, { method: "POST", headers: headers(), body: form });
-    const v = await parse(res);
+    const { metaParse } = await import("@/lib/meta-conn.server");
+    const conn = await context.metaConn();
+    const res = await fetch(`${conn.base}/${data.accountId}/advideos`, { method: "POST", headers: conn.headers, body: form });
+    const v = await metaParse(res);
     return { image_hash: null as string | null, video_id: v.id as string };
   });
 
@@ -303,30 +260,30 @@ const createSchema = z.object({
 });
 
 /** Creates a new Pixel/dataset in the chosen ad account. */
-export const createPixel = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const createPixel = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => z.object({ accountId: z.string().startsWith("act_"), name: z.string().min(1).max(100) }).parse(d))
-  .handler(async ({ data }) => {
-    const r = await graph(`${data.accountId}/adspixels`, { method: "POST", params: { name: data.name } });
+  .handler(async ({ data, context }) => {
+    const r = await context.graph(`${data.accountId}/adspixels`, { method: "POST", params: { name: data.name } });
     return { id: String(r.id) };
   });
 
-export const getBusinesses = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
-  const r = await graph("me/businesses", { params: { fields: "id,name", limit: 50 } });
+export const getBusinesses = createServerFn({ method: "GET" }).middleware([withMeta]).handler(async ({ context }) => {
+  const r = await context.graph("me/businesses", { params: { fields: "id,name", limit: 50 } });
   return (r.data ?? []) as { id: string; name: string }[];
 });
 
-export const getAccountSettings = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const getAccountSettings = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) => z.object({ accountId: z.string().startsWith("act_") }).parse(d))
-  .handler(async ({ data }) => {
-    const r = await graph(data.accountId, { params: { fields: "id,name,currency,timezone_id,timezone_name,account_status,user_tasks,business{id,name}" } });
+  .handler(async ({ data, context }) => {
+    const r = await context.graph(data.accountId, { params: { fields: "id,name,currency,timezone_id,timezone_name,account_status,user_tasks,business{id,name}" } });
     return r as { id: string; name: string; currency: string; timezone_id: number; timezone_name: string; account_status: number; user_tasks?: string[]; business?: { id: string; name: string } };
   });
 
 /** Official Business /adaccount create edge. Eligibility is decided by the provider. */
-export const createAdAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const createAdAccount = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/), name: z.string().trim().min(1).max(100), currency: z.enum(["BRL", "USD"]), timezoneId: z.number().int().positive(), confirmed: z.literal(true) }).parse(d))
-  .handler(async ({ data }) => {
-    const result = await graph(`${data.businessId}/adaccount`, { method: "POST", params: { name: data.name, currency: data.currency, timezone_id: data.timezoneId, end_advertiser: data.businessId } });
+  .handler(async ({ data, context }) => {
+    const result = await context.graph(`${data.businessId}/adaccount`, { method: "POST", params: { name: data.name, currency: data.currency, timezone_id: data.timezoneId, end_advertiser: data.businessId } });
     const id = String(result.id ?? result.account_id ?? "");
     if (!id) throw new Error("A criação não retornou um identificador. Atualize a lista antes de tentar novamente.");
     return { id: id.startsWith("act_") ? id : `act_${id}` };
@@ -334,12 +291,12 @@ export const createAdAccount = createServerFn({ method: "POST" }).middleware([re
 
 export type PublishInput = z.infer<typeof createSchema>;
 
-export const publishCampaign = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const publishCampaign = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => createSchema.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { accountId, campaign: c, adset: s, ad: a } = data;
     const budgetKey = c.budget_type === "daily" ? "daily_budget" : "lifetime_budget";
-    const camp = await graph(`${accountId}/campaigns`, {
+    const camp = await context.graph(`${accountId}/campaigns`, {
       method: "POST",
       params: {
         name: c.name,
@@ -357,7 +314,7 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
     if (s.pixel_id) Object.assign(promoted, { pixel_id: s.pixel_id, custom_event_type: s.custom_event_type });
     if (s.page_id_promoted) promoted["page_id"] = s.page_id_promoted;
 
-    const adset = await graph(`${accountId}/adsets`, {
+    const adset = await context.graph(`${accountId}/adsets`, {
       method: "POST",
       params: {
         name: s.name,
@@ -434,7 +391,7 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
       };
     }
 
-    const creative = await graph(`${accountId}/adcreatives`, {
+    const creative = await context.graph(`${accountId}/adcreatives`, {
       method: "POST",
       params: {
         name: `${a.name} - criativo`,
@@ -445,7 +402,7 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
         degrees_of_freedom_spec: a.enhancements === undefined ? undefined : { creative_features_spec: { standard_enhancements: { enroll_status: a.enhancements ? "OPT_IN" : "OPT_OUT" } } },
       },
     });
-    const ad = await graph(`${accountId}/ads`, {
+    const ad = await context.graph(`${accountId}/ads`, {
       method: "POST",
       params: {
         name: a.name,
@@ -459,15 +416,15 @@ export const publishCampaign = createServerFn({ method: "POST" }).middleware([re
   });
 
 /** Business Manager center: linked accounts, pages, pixels, people and catalogs, as allowed by the connection. */
-export const getBusinessDetail = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const getBusinessDetail = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/) }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const safe = async (path: string, fields: string) => {
-      try { const r = await graph(`${data.businessId}/${path}`, { params: { fields, limit: 100 } }); return { items: (r.data ?? []) as any[], error: null as string | null }; }
+      try { const r = await context.graph(`${data.businessId}/${path}`, { params: { fields, limit: 100 } }); return { items: (r.data ?? []) as any[], error: null as string | null }; }
       catch (e) { return { items: [] as any[], error: (e as Error).message }; }
     };
     const [info, owned, client, pages, pixels, people, catalogs, instagram] = await Promise.all([
-      graph(data.businessId, { params: { fields: "id,name,verification_status,created_time,primary_page{name}" } }).catch((e) => ({ error: (e as Error).message })),
+      context.graph(data.businessId, { params: { fields: "id,name,verification_status,created_time,primary_page{name}" } }).catch((e) => ({ error: (e as Error).message })),
       safe("owned_ad_accounts", "id,name,account_status,currency"), safe("client_ad_accounts", "id,name,account_status,currency"),
       safe("owned_pages", "id,name"), safe("adspixels", "id,name,last_fired_time"),
       safe("business_users", "id,name,role"), safe("owned_product_catalogs", "id,name,product_count"),
@@ -477,24 +434,24 @@ export const getBusinessDetail = createServerFn({ method: "GET" }).middleware([r
   });
 
 /** Approval state, rejection reasons and preview for one ad. */
-export const getAdReview = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const getAdReview = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) => z.object({ adId: z.string().regex(/^\d+$/), format: z.enum(["MOBILE_FEED_STANDARD", "DESKTOP_FEED_STANDARD", "INSTAGRAM_STANDARD", "INSTAGRAM_STORY"]).default("MOBILE_FEED_STANDARD") }).parse(d))
-  .handler(async ({ data }) => {
-    const ad = await graph(data.adId, { params: { fields: "id,name,status,effective_status,ad_review_feedback,issues_info,creative{id,title,body,thumbnail_url,object_story_spec,url_tags}" } });
+  .handler(async ({ data, context }) => {
+    const ad = await context.graph(data.adId, { params: { fields: "id,name,status,effective_status,ad_review_feedback,issues_info,creative{id,title,body,thumbnail_url,object_story_spec,url_tags}" } });
     let preview = "";
-    try { const p = await graph(`${data.adId}/previews`, { params: { ad_format: data.format } }); preview = String(p.data?.[0]?.body ?? ""); } catch { /* preview not available for this format */ }
+    try { const p = await context.graph(`${data.adId}/previews`, { params: { ad_format: data.format } }); preview = String(p.data?.[0]?.body ?? ""); } catch { /* preview not available for this format */ }
     const src = preview.match(/src="([^"]+)"/)?.[1]?.replace(/&amp;/g, "&") ?? "";
     return { ad, previewUrl: src };
   });
 
 /** Pixel health: last event, recent event counts and stats by event name. */
-export const getPixelHealth = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth])
+export const getPixelHealth = createServerFn({ method: "GET" }).middleware([withMeta])
   .inputValidator((d) => z.object({ pixelId: z.string().regex(/^\d+$/) }).parse(d))
-  .handler(async ({ data }) => {
-    const info = await graph(data.pixelId, { params: { fields: "id,name,last_fired_time,is_unavailable,data_use_setting,enable_automatic_matching" } });
+  .handler(async ({ data, context }) => {
+    const info = await context.graph(data.pixelId, { params: { fields: "id,name,last_fired_time,is_unavailable,data_use_setting,enable_automatic_matching" } });
     let stats: { event: string; count: number }[] = [];
     try {
-      const r = await graph(`${data.pixelId}/stats`, { params: { aggregation: "event" } });
+      const r = await context.graph(`${data.pixelId}/stats`, { params: { aggregation: "event" } });
       const acc = new Map<string, number>();
       for (const bucket of r.data ?? []) for (const x of bucket.data ?? []) acc.set(String(x.value), (acc.get(String(x.value)) ?? 0) + Number(x.count ?? 0));
       stats = [...acc].map(([event, count]) => ({ event, count })).sort((a, b) => b.count - a.count);
@@ -503,22 +460,22 @@ export const getPixelHealth = createServerFn({ method: "GET" }).middleware([requ
   });
 
 /** Sends a Conversions API test event (shows in Events Manager › Test events). */
-export const sendTestEvent = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const sendTestEvent = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => z.object({ pixelId: z.string().regex(/^\d+$/), testCode: z.string().min(3).max(40), event: z.enum(["PageView", "ViewContent", "Lead", "AddToCart", "InitiateCheckout", "Purchase"]), url: z.string().url() }).parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const eventId = `test-${Date.now()}`;
-    const r = await graph(`${data.pixelId}/events`, { method: "POST", params: { test_event_code: data.testCode, data: [{ event_name: data.event, event_time: Math.floor(Date.now() / 1000), event_id: eventId, action_source: "website", event_source_url: data.url, user_data: { client_user_agent: "BatGotham-Test" }, ...(data.event === "Purchase" ? { custom_data: { currency: "BRL", value: 1 } } : {}) }] } });
+    const r = await context.graph(`${data.pixelId}/events`, { method: "POST", params: { test_event_code: data.testCode, data: [{ event_name: data.event, event_time: Math.floor(Date.now() / 1000), event_id: eventId, action_source: "website", event_source_url: data.url, user_data: { client_user_agent: "BatGotham-Test" }, ...(data.event === "Purchase" ? { custom_data: { currency: "BRL", value: 1 } } : {}) }] } });
     return { received: Number(r.events_received ?? 0), eventId };
   });
 
-export const shareObjectToAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const shareObjectToAccount = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => z.object({ pixelId: z.string().regex(/^\d+$/), businessId: z.string().regex(/^\d+$/), accountId: z.string().regex(/^act_\d+$/) }).parse(d))
-  .handler(async ({ data }) => graph(`${data.pixelId}/shared_accounts`, { method: "POST", params: { account_id: data.accountId.replace("act_", ""), business: data.businessId } }));
+  .handler(async ({ data, context }) => context.graph(`${data.pixelId}/shared_accounts`, { method: "POST", params: { account_id: data.accountId.replace("act_", ""), business: data.businessId } }));
 
 /** Every ad account with money left, lifetime history and campaign count, for Crowley and the balance cards. */
-export const getAccountsOverview = createServerFn({ method: "GET" }).middleware([requireSupabaseAuth]).handler(async () => {
+export const getAccountsOverview = createServerFn({ method: "GET" }).middleware([withMeta]).handler(async ({ context }) => {
   const { accountFunds } = await import("@/lib/funds");
-  const r = await graph("me/adaccounts", {
+  const r = await context.graph("me/adaccounts", {
     params: { fields: "id,name,currency,account_status,created_time,amount_spent,spend_cap,balance,is_prepay_account,funding_source_details,business{name},campaigns.limit(0).summary(true),insights.date_preset(maximum){spend,actions,action_values}", limit: "100" },
   });
   const buy = ["purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"];
@@ -538,19 +495,19 @@ export const getAccountsOverview = createServerFn({ method: "GET" }).middleware(
 });
 
 /** Asks for agency access to an ad account owned by another BM (the owner approves in their Business settings). */
-export const requestClientAccount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const requestClientAccount = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/), accountId: z.string().regex(/^(act_)?\d+$/) }).parse(d))
   .handler(async ({ data, context }) => {
-    const r = await graph(`${data.businessId}/client_ad_accounts`, { method: "POST", params: { adaccount_id: data.accountId.startsWith("act_") ? data.accountId : `act_${data.accountId}`, permitted_tasks: ["MANAGE", "ADVERTISE", "ANALYZE"] } });
+    const r = await context.graph(`${data.businessId}/client_ad_accounts`, { method: "POST", params: { adaccount_id: data.accountId.startsWith("act_") ? data.accountId : `act_${data.accountId}`, permitted_tasks: ["MANAGE", "ADVERTISE", "ANALYZE"] } });
     await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "bm", action: "pedir_acesso_conta", target: data.accountId, after: r as never, result: "ok" });
     return r as { access_status?: string };
   });
 
 /** Asks for agency access to a Facebook page owned by another BM. */
-export const requestClientPage = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+export const requestClientPage = createServerFn({ method: "POST" }).middleware([withMeta])
   .inputValidator((d) => z.object({ businessId: z.string().regex(/^\d+$/), pageId: z.string().regex(/^\d+$/) }).parse(d))
   .handler(async ({ data, context }) => {
-    const r = await graph(`${data.businessId}/client_pages`, { method: "POST", params: { page_id: data.pageId, permitted_tasks: ["MANAGE", "CREATE_CONTENT", "ADVERTISE", "ANALYZE"] } });
+    const r = await context.graph(`${data.businessId}/client_pages`, { method: "POST", params: { page_id: data.pageId, permitted_tasks: ["MANAGE", "CREATE_CONTENT", "ADVERTISE", "ANALYZE"] } });
     await context.supabase.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "bm", action: "pedir_acesso_pagina", target: data.pageId, after: r as never, result: "ok" });
     return r as { access_status?: string };
   });
