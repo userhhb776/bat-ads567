@@ -208,7 +208,7 @@ function Manager() {
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead className="text-xs uppercase text-muted-foreground">
               <tr>
-                <th className="sticky left-0 top-0 z-30 border-b border-border bg-muted px-3 py-3 text-left"><Checkbox checked={allSel} onCheckedChange={() => setSelected((s) => ({ ...s, [level]: allSel ? [] : rows.map((r: any) => r.id) }))} aria-label="Selecionar todos" /></th>
+                <th className="sticky left-0 top-0 z-30 w-10 border-b border-border bg-muted px-3 py-3 text-left"><Checkbox checked={allSel} onCheckedChange={() => setSelected((s) => ({ ...s, [level]: allSel ? [] : rows.map((r: any) => r.id) }))} aria-label="Selecionar todos" /></th>
                 <th className="sticky top-0 z-20 border-b border-border bg-muted px-3 py-3 text-left font-semibold">Status</th>
                 <th className="sticky left-10 top-0 z-30 min-w-[13rem] border-b border-border bg-muted px-3 py-3 text-left font-semibold">{level === "campaigns" ? "Campanha" : level === "adsets" ? "Conjunto" : "Anúncio"}</th>
                 <th className="sticky top-0 z-20 border-b border-border bg-muted px-3 py-3 text-left font-semibold">Orçamento</th>
