@@ -1,3 +1,4 @@
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -46,7 +47,12 @@ export const supportReply = createServerFn({ method: "POST" }).middleware([requi
 export type WaInstance = { name: string; status: string; profile: string; number: string; pic: string; receiving: boolean; slot: string; server: string };
 export type WaServerStatus = { slot: string; name: string; url: string; source: "painel" | "reserva" | "sistema"; primary: boolean; ok: boolean; ms: number; version: string; error: string; key: string; count: number };
 /** Incoming messages must reach the published app (the preview is private), so webhooks always point there. */
-const APP_URL = () => (process.env["PUBLIC_APP_URL"] || "https://bat-ads567.lovable.app").replace(/\/$/, "");
+const APP_URL = () => {
+  const env = process.env["PUBLIC_APP_URL"];
+  if (env) return env.replace(/\/$/, "");
+  try { const o = new URL(getRequest().url).origin; if (!/id-preview--|localhost/.test(o)) return o; } catch { /* outside a request */ }
+  return "https://bat-ads567.lovable.app";
+};
 const slotSchema = z.string().regex(/^(wa-[1-6]|render-2|sistema)$/);
 const nameSchema = z.string().regex(/^[a-zA-Z0-9_-]{2,60}$/);
 const maskKey = (v: string) => (v ? `••••${v.slice(-4)}` : "");
