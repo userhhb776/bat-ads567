@@ -3,13 +3,13 @@ import { deliver } from "./channels.server";
 import { gatewayToOrder, runEngine, type Automation, type RunLog } from "./automation";
 import type { Product, Order } from "./biz";
 
-const GATEWAY = "https://connector-gateway.lovable.dev/meta_ads/v26.0";
 type Admin = SupabaseClient<any>;
 
-export async function metaPost(id: string, params: Record<string, unknown>) {
-  const a = process.env["LOVABLE_API_KEY"], b = process.env["META_ADS_API_KEY"];
-  if (!a || !b) throw new Error("Meta não conectado");
-  const r = await fetch(`${GATEWAY}/${id}`, { method: "POST", headers: { Authorization: `Bearer ${a}`, "X-Connection-Api-Key": b, "Content-Type": "application/json" }, body: JSON.stringify(params) });
+/** Meta write with the owner's connection (own token first). */
+export async function metaPost(id: string, params: Record<string, unknown>, userId?: string, admin?: Admin) {
+  const { metaConn } = await import("./meta-conn.server");
+  const conn = await metaConn(userId, admin).catch(() => { throw new Error("Meta não conectado"); });
+  const r = await fetch(`${conn.base}/${id}`, { method: "POST", headers: { ...conn.headers, "Content-Type": "application/json" }, body: JSON.stringify(params) });
   const t = await r.text();
   if (!r.ok) throw new Error(`Meta ${r.status}: ${t.slice(0, 300)}`);
   return t ? JSON.parse(t) : {};
@@ -35,7 +35,7 @@ async function execute(job: JobRow): Promise<unknown> {
       if (p.daily_budget) params["daily_budget"] = Math.round(Number(p.daily_budget));
       if (p.name) params["name"] = p.name;
       if (!p.id || !Object.keys(params).length) throw new Error("Tarefa sem campanha ou alteração.");
-      return metaPost(String(p.id), params);
+      return metaPost(String(p.id), params, job.user_id);
     }
     case "message": {
       const r = await deliver(p.channel, String(p.to ?? ""), String(p.text ?? ""));
@@ -148,34 +148,44 @@ export async function heartbeat(admin: Admin, info: Record<string, unknown>) {
 export async function checkFunds(admin: Admin, userIds: string[], stopped: Set<string>) {
   const users = userIds.filter((u) => !stopped.has(u));
   if (!users.length) return { fundAlerts: 0 };
-  const a = process.env["LOVABLE_API_KEY"], b = process.env["META_ADS_API_KEY"];
-  if (!a || !b) return { fundAlerts: 0 };
-  const h = { Authorization: `Bearer ${a}`, "X-Connection-Api-Key": b };
-  const get = async (path: string, params: Record<string, string>) => {
-    const u = new URL(`${GATEWAY}/${path}`); for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
-    const r = await fetch(u, { headers: h }); return r.ok ? r.json() : null;
-  };
+  const { metaConn } = await import("./meta-conn.server");
   const { accountFunds, isRunningOut } = await import("./funds");
-  const list = await get("me/adaccounts", { fields: "id,name,currency,account_status,amount_spent,spend_cap,balance,is_prepay_account,funding_source_details,insights.date_preset(last_7d){spend}", limit: "100" });
-  const alerts: { title: string; body: string }[] = [];
-  for (const acc of (list?.data ?? []) as any[]) {
-    if (acc.account_status !== 1) continue;
-    const f = accountFunds(acc);
-    if (f.available === null) continue;
-    const pace = Number(acc.insights?.data?.[0]?.spend ?? 0) / 7;
-    if (!isRunningOut(f.available, pace)) continue;
-    const active = await get(`${acc.id}/campaigns`, { effective_status: '["ACTIVE"]', fields: "id", limit: "1" });
-    if (!active?.data?.length) continue;
-    const money = `${acc.currency} ${f.available.toFixed(2)}`;
-    alerts.push({ title: `Dinheiro acabando: ${acc.name}`.slice(0, 80), body: `Restam ${money} (${f.label.toLowerCase()}) e a conta gasta cerca de ${acc.currency} ${pace.toFixed(2)} por dia. Recarregue para as campanhas não pararem.` });
+  // Each user may have their own Meta token; users sharing the same connection reuse one reading.
+  const byConn = new Map<string, { title: string; body: string }[]>();
+  const alertsOf = new Map<string, { title: string; body: string }[]>();
+  for (const uid of users) {
+    const conn = await metaConn(uid, admin).catch(() => null);
+    if (!conn) continue;
+    const ck = conn.base + JSON.stringify(conn.headers);
+    if (!byConn.has(ck)) {
+      const get = async (path: string, params: Record<string, string>) => {
+        const u = new URL(`${conn.base}/${path}`); for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+        const r = await fetch(u, { headers: conn.headers }); return r.ok ? r.json() : null;
+      };
+      const list = await get("me/adaccounts", { fields: "id,name,currency,account_status,amount_spent,spend_cap,balance,is_prepay_account,funding_source_details,insights.date_preset(last_7d){spend}", limit: "100" });
+      const found: { title: string; body: string }[] = [];
+      for (const acc of (list?.data ?? []) as any[]) {
+        if (acc.account_status !== 1) continue;
+        const f = accountFunds(acc);
+        if (f.available === null) continue;
+        const pace = Number(acc.insights?.data?.[0]?.spend ?? 0) / 7;
+        if (!isRunningOut(f.available, pace)) continue;
+        const active = await get(`${acc.id}/campaigns`, { effective_status: '["ACTIVE"]', fields: "id", limit: "1" });
+        if (!active?.data?.length) continue;
+        const money = `${acc.currency} ${f.available.toFixed(2)}`;
+        found.push({ title: `Dinheiro acabando: ${acc.name}`.slice(0, 80), body: `Restam ${money} (${f.label.toLowerCase()}) e a conta gasta cerca de ${acc.currency} ${pace.toFixed(2)} por dia. Recarregue para as campanhas não pararem.` });
+      }
+      byConn.set(ck, found);
+    }
+    alertsOf.set(uid, byConn.get(ck)!);
   }
-  if (!alerts.length) return { fundAlerts: 0 };
+  if (![...alertsOf.values()].some((a) => a.length)) return { fundAlerts: 0 };
   const since = new Date(Date.now() - 12 * 3600e3).toISOString();
   const { sendPush } = await import("./push.server");
   let sent = 0;
   for (const uid of users) {
     const { data: recent } = await admin.from("notifications").select("title").eq("user_id", uid).eq("kind", "saldo").gte("created_at", since);
-    const fresh = alerts.filter((x) => !recent?.some((r) => r.title === x.title));
+    const fresh = (alertsOf.get(uid) ?? []).filter((x) => !recent?.some((r) => r.title === x.title));
     if (!fresh.length) continue;
     await admin.from("notifications").insert(fresh.map((x) => ({ user_id: uid, kind: "saldo", title: x.title, body: x.body, link: "/ativos" })));
     const { data: subs } = await admin.from("app_state").select("value").eq("user_id", uid).like("key", "bg.push.%");
