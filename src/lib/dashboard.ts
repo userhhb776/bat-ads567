@@ -24,9 +24,9 @@ export function paymentTotals(events:GatewayEvent[],targetCurrency:string,rate:n
  return {revenue,sales:approved.length,pending:supported.filter(o=>o.status==='pending').length,refunds:supported.filter(o=>o.status==='refunded'||o.status==='chargeback').length,refused:supported.filter(o=>o.status==='refused').length,orders:supported.length,avgTicket:approved.length?revenue/approved.length:0,excluded:orders.length-supported.length};
 }
 
-/** Estimated profit = approved gateway revenue − ad spend − registered product costs. Null when any sold product has no cost. */
+/** Estimated profit = approved gateway revenue − ad spend − costs of registered products. Products are optional: sales without a registered cost count as zero cost. */
 export function estimatedProfit(p:{revenue:number;spend:number;approved:{product_name:string|null}[];products:{name:string;cost:number;currency:'BRL'|'USD'}[];target:string;rate:number}){
  let cost=0;
- for(const o of p.approved){const prod=p.products.find(x=>x.name===o.product_name);if(!prod||!(prod.cost>=0)||prod.cost===undefined)return null;cost+=prod.currency===p.target?prod.cost:prod.currency==='USD'?prod.cost*p.rate:prod.cost/p.rate;}
+ for(const o of p.approved){const prod=p.products.find(x=>x.name===o.product_name);if(!prod||!(Number(prod.cost)>0))continue;cost+=prod.currency===p.target?prod.cost:prod.currency==='USD'?prod.cost*p.rate:prod.cost/p.rate;}
  return p.revenue-p.spend-cost;
 }
