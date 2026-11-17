@@ -9,17 +9,17 @@ const ABOUT = img("1580489944761-15a19d654956", 900);
 const OFFICE = img("1600585154340-be6161a56a0c", 1400);
 
 const CARE = [
-  ["HeartPulse", "Ansiedade", "Crises, preocupação constante, pensamentos acelerados e dificuldade de desligar."],
-  ["CloudRain", "Depressão", "Desânimo, falta de energia e perda de interesse pelo que antes fazia sentido."],
-  ["Sparkles", "Autoestima", "Insegurança, autocrítica excessiva e dificuldade de se reconhecer com carinho."],
-  ["Users", "Relacionamentos", "Conflitos, dependência emocional, término e dificuldade de impor limites."],
-  ["Flame", "Esgotamento", "Burnout, cobrança no trabalho e a sensação de nunca dar conta."],
-  ["Feather", "Luto e mudanças", "Perdas, recomeços e fases de transição que pedem acolhimento."],
+  [HeartPulse, "Ansiedade", "Crises, preocupação constante, pensamentos acelerados e dificuldade de desligar."],
+  [CloudRain, "Depressão", "Desânimo, falta de energia e perda de interesse pelo que antes fazia sentido."],
+  [Sparkles, "Autoestima", "Insegurança, autocrítica excessiva e dificuldade de se reconhecer com carinho."],
+  [Users, "Relacionamentos", "Conflitos, dependência emocional, término e dificuldade de impor limites."],
+  [Flame, "Esgotamento", "Burnout, cobrança no trabalho e a sensação de nunca dar conta."],
+  [Feather, "Luto e mudanças", "Perdas, recomeços e fases de transição que pedem acolhimento."],
 ];
 const STEPS = [
-  ["CalendarCheck", "Agendamento", "Você chama no WhatsApp e escolhe o melhor dia e horário."],
-  ["BadgeCheck", "Confirmação", "Confirmamos a sessão e você recebe as orientações de pagamento."],
-  ["Video", "Sessão online", "No horário marcado você recebe o link da chamada, com total sigilo."],
+  [CalendarCheck, "Agendamento", "Você chama no WhatsApp e escolhe o melhor dia e horário."],
+  [BadgeCheck, "Confirmação", "Confirmamos a sessão e você recebe as orientações de pagamento."],
+  [Video, "Sessão online", "No horário marcado você recebe o link da chamada, com total sigilo."],
 ];
 const PLANS = [
   ["Sessão individual online", "50 minutos · por chamada de vídeo", "[R$ valor]"],
@@ -103,8 +103,8 @@ function App() {
         <section id="ajuda" className="py-16 sm:py-24" style={{ background: C.soft }}>
           <div className={wrap}>
             <Title kicker="Como posso ajudar">Você não precisa passar por isso sozinha(o)</Title>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{CARE.map(([ic, t, d]) => <article key={t} className="rounded-3xl p-6 text-center sm:text-left" style={{ background: C.card }}>
-              <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl sm:mx-0" style={{ background: C.accentSoft, color: C.accent }}>{React.createElement(scopeIcon(ic), { className: "h-6 w-6" })}</span>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{CARE.map(([Ic, t, d]) => <article key={t} className="rounded-3xl p-6 text-center sm:text-left" style={{ background: C.card }}>
+              <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl sm:mx-0" style={{ background: C.accentSoft, color: C.accent }}><Ic className="h-6 w-6" /></span>
               <h3 className="text-2xl font-semibold" style={serif}>{t}</h3><p className="mt-2 leading-relaxed" style={{ color: C.muted }}>{d}</p></article>)}</div>
             <div className="mt-10 text-center"><Cta msg="Olá! Gostaria de conversar sobre o que estou passando.">Quero conversar</Cta></div>
           </div>
@@ -122,9 +122,9 @@ function App() {
         <section id="como" className="py-16 sm:py-24" style={{ background: C.ink, color: C.bg }}>
           <div className={wrap}>
             <div className="mb-10 text-center"><p className="text-xs font-extrabold uppercase tracking-[.2em]" style={{ color: C.accentSoft }}>Simples e rápido</p><h2 className="mt-3 text-4xl sm:text-5xl" style={serif}>Como funciona o atendimento</h2></div>
-            <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">{STEPS.map(([ic, t, d], i) => <li key={t} className="relative rounded-3xl p-7 text-center" style={{ background: "#ffffff0d", border: "1px solid #ffffff1a" }}>
+            <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">{STEPS.map(([Ic, t, d], i) => <li key={t} className="relative rounded-3xl p-7 text-center" style={{ background: "#ffffff0d", border: "1px solid #ffffff1a" }}>
               <span className="absolute right-5 top-4 text-5xl opacity-20" style={serif}>{i + 1}</span>
-              <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: C.accent }}>{React.createElement(scopeIcon(ic), { className: "h-6 w-6" })}</span>
+              <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ background: C.accent }}><Ic className="h-6 w-6" /></span>
               <h3 className="text-2xl" style={serif}>{t}</h3><p className="mt-2 text-sm leading-relaxed opacity-80">{d}</p></li>)}</ol>
             <div className="mt-10 text-center"><Cta light>Agendar agora</Cta></div>
           </div>
