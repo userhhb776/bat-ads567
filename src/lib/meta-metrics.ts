@@ -1,6 +1,6 @@
 /** Catalog of Meta metrics the campaign table can show; the chefe picks which columns to see. */
 export type Act = { action_type: string; value: string };
-export type Ins = Record<string, any> | null | undefined;
+export type Ins = any;
 export type MetricFormat = "money" | "int" | "pct" | "ratio" | "sec" | "text";
 export type Metric = { key: string; label: string; group: string; format: MetricFormat; value: (i: Ins) => number | string | null; additive?: boolean };
 

@@ -27,10 +27,11 @@ export type IntelRule = {
 export type CampaignStats = {
   id: string; name: string; spend: number; purchases: number; revenue: number; frequency: number; dailyBudget: number; status: string; accountId?: string;
   /** Secondary metrics of today, for strategies that don't look only at spend. */
-  impressions?: number; clicks?: number; linkClicks?: number; ctr?: number; cpc?: number; cpm?: number; lpv?: number; addToCart?: number; checkouts?: number;
-  createdAt?: string; startedAt?: string;
+  impressions?: number | undefined; clicks?: number | undefined; linkClicks?: number | undefined; ctr?: number | undefined; cpc?: number | undefined; cpm?: number | undefined;
+  lpv?: number | undefined; addToCart?: number | undefined; checkouts?: number | undefined;
+  createdAt?: string | undefined; startedAt?: string | undefined;
   /** Whole-life totals of the campaign. */
-  totalSpend?: number; totalPurchases?: number; totalRevenue?: number;
+  totalSpend?: number | undefined; totalPurchases?: number | undefined; totalRevenue?: number | undefined;
 };
 export type Decision = { kind: "pausar" | "escalar" | "alerta"; reason: string; newBudget?: number };
 

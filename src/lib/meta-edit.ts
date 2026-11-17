@@ -1,5 +1,5 @@
 /** Pure helpers for editing an existing ad's creative (Meta creatives are immutable, so a patched copy is created). */
-export type CreativePatch = { message?: string; headline?: string; description?: string; link?: string; image_hash?: string; video_id?: string };
+export type CreativePatch = { message?: string | undefined; headline?: string | undefined; description?: string | undefined; link?: string | undefined; image_hash?: string | undefined; video_id?: string | undefined };
 
 export function patchStorySpec(spec: any, p: CreativePatch) {
   const s: any = JSON.parse(JSON.stringify(spec ?? {}));
