@@ -20,8 +20,10 @@ export const NAV_GROUPS = [
     { to: "/utm/visitantes", label: "Visitantes", icon: Users },
     { to: "/utm/integracoes", label: "Integrações", icon: Plug },
   ] },
+  { title: "Bat Dev V-0", items: [
+    { to: "/paginas", label: "Criador de sites", icon: FileText },
+  ] },
   { title: "Criação", items: [
-    { to: "/paginas", label: "Páginas", icon: FileText },
     { to: "/funis", label: "Funis", icon: Workflow },
   ] },
   { title: "Automações", items: [

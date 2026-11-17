@@ -29,7 +29,7 @@ use the editor.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
 
-- Meta Marketing API calls live only in `src/lib/meta.functions.ts` server functions, routed through the Lovable connector gateway (`LOVABLE_API_KEY` + `META_ADS_API_KEY`) — keeps credentials server-side.
+- Meta calls go through `src/lib/meta-conn.server.ts` (order: token saved in Configurações → `META_ACCESS_TOKEN` → legacy bridge) from `meta.functions.ts` (via `withMeta`), the cron watch and the worker — the panel works on any domain without a third-party connector and credentials stay server-side.
 - Mobile layout: below `md` the sidebar becomes a top bar + fixed bottom nav (h-16); pages add bottom padding so content clears it.
 - AI assistant (Crowley) calls DeepSeek/Ollama only from `src/lib/crowley.functions.ts` server functions using `DEEPSEEK_API_KEY` / `OLLAMA_API_KEY` — keeps AI keys server-side.
 - Money display goes through `money()` in `src/lib/currency.ts` (account currency → chosen view with live USD/BRL rate); pages call `useCurrency()` to re-render on toggle.
@@ -54,3 +54,4 @@ use the editor.
 - WhatsApp servers (Evolution API) are panel-managed in service-role `gateway_credentials` slots `wa-1..wa-6` (token = JSON url/name/primary, secret = key), ordered main → other panel → legacy `render-2` → env server; `evo()` in `channels.server.ts` fails over on network/5xx/401/403/404 unless a slot is pinned — lets the user edit servers without touching secrets.
 - The public home avoids live backdrop blur, fixed backgrounds and large rotating layers — they froze scrolling on phones.
 - The keep-awake ping lives on cron-job.org via `src/lib/cronjob.server.ts` (key in service-role `gateway_credentials` slot `cronjob`, env `CRONJOB_API_KEY` fallback); `syncWaPing` runs after every WhatsApp server save/delete and keeps exactly one ping on the main server, pausing backups — the decision logic is pure in `src/lib/cronjob.ts`.
+- Store templates (Bat Dev V-0) keep their catalog in `site_stores` (public read, owner write) and orders in `site_orders` (anyone inserts, owner reads); store and admin sites share one `storeKey` — static published sites stay editable without a separate backend.

@@ -36,7 +36,7 @@ export const Route = createFileRoute("/paginas")({
 /** Store templates read their catalog from the panel database with the public key. */
 function storeConnection(code: string): SiteConnection | undefined {
   if (!code.includes("site_stores")) return undefined;
-  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined, publicKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  const url = import.meta.env["VITE_SUPABASE_URL"] as string | undefined, publicKey = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] as string | undefined;
   return url && publicKey ? { url, publicKey } : undefined;
 }
 const newStoreKey = (name: string) => `${(slugify(name) || "loja").slice(0, 40)}-${Math.random().toString(36).slice(2, 6)}`;

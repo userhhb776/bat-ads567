@@ -81,13 +81,14 @@
 - [x] Ping segue o servidor principal sozinho; reservas pausadas
 
 ## 17/11 Campanhas, agentes, conexão nativa, Bat Dev V-0
-- [ ] Agentes: remover horário e alerta de frequência (agem 24h enquanto ligados)
-- [ ] Agentes: métricas secundárias (CTR, CPC, cliques, LPV, IC, criação) + histórico de orçamento para voltar ao anterior
-- [ ] Campanhas: abrir/editar campanha, conjunto e anúncio; ver conjuntos/anúncios; duplicar por linha
-- [ ] Campanhas: personalizar colunas com todas as métricas (lucro, LPV, IC, vídeo, leads...)
-- [ ] Campanhas: cabeçalho fixo na rolagem
-- [ ] Criar campanha: personalizar domínio de exibição + anúncios com vários anunciantes (desligado)
-- [ ] Visão geral: períodos > 90 dias (agrupar por mês)
-- [ ] Produtos opcionais (lucro = receita − gasto quando não há custo)
-- [ ] Conexão nativa Meta por token (Configurações) com guia; sem menção a terceiros no painel
-- [ ] Bat Dev V-0: aba própria (Estúdio, Meus sites, Modelos) + modelos profissionais (psicologia, loja com /admin)
+- [x] Agentes: remover horário e alerta de frequência (agem 24h enquanto ligados)
+- [x] Agentes: métricas secundárias (CTR, CPC, cliques, LPV, IC, criação) + histórico de orçamento para voltar ao anterior
+- [x] Campanhas: abrir/editar campanha, conjunto e anúncio; ver conjuntos/anúncios; duplicar por linha
+- [x] Campanhas: personalizar colunas com todas as métricas (lucro, LPV, IC, vídeo, leads...)
+- [x] Campanhas: cabeçalho fixo na rolagem
+- [x] Criar campanha: personalizar domínio de exibição + anúncios com vários anunciantes (desligado)
+- [x] Visão geral: períodos > 90 dias (agrupar por mês)
+- [x] Produtos opcionais (lucro = receita − gasto quando não há custo)
+- [x] Conexão nativa Meta por token (Configurações) com guia; sem menção a terceiros no painel
+- [x] Bat Dev V-0: menu próprio, modelos profissionais (psicologia, loja + admin), leitura de referências
+- [ ] Bat Dev V-0: páginas separadas "Meus sites", "Modelos prontos" e "Publicação e domínios" (pausado no fechamento)
