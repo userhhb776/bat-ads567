@@ -224,7 +224,7 @@ function Admin({ cat }) {
     </div>
   );
 
-  const tabs = [["produtos", "Produtos", Package], ["pedidos", "Pedidos", Receipt], ["banners", "Banners", GalleryHorizontal], ["categorias", "Categorias", LayoutGrid], ["cupons", "Cupons", TicketPercent], ["loja", "Loja", Settings]];
+  const tabs = [[Package, "produtos", "Produtos"], [Receipt, "pedidos", "Pedidos"], [GalleryHorizontal, "banners", "Banners"], [LayoutGrid, "categorias", "Categorias"], [TicketPercent, "cupons", "Cupons"], [Settings, "loja", "Loja"]];
   const newProduct = { id: uid(), name: "", price: 0, oldPrice: 0, category: (draft.categories[0] || {}).name || "", image: "", rating: 5, stock: 10, active: true, description: "" };
   const Row = ({ children }) => <div className="flex items-center gap-3 rounded-2xl border bg-white p-3">{children}</div>;
   const listEditor = (key, blank, fields) => (
@@ -240,7 +240,7 @@ function Admin({ cat }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24 text-gray-900" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <header className="sticky top-0 z-30 border-b bg-white"><div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4"><span className="font-extrabold">Admin · {draft.brand}</span><span className={"rounded-full px-2 py-0.5 text-[11px] font-bold " + (online ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")}>{online ? "Salvando no banco" : "Modo local"}</span>{session && <button onClick={() => supabase.auth.signOut()} className="ml-auto text-sm font-semibold text-gray-500">Sair</button>}</div>
-        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-2">{tabs.map(([k, l, Ic]) => <button key={k} onClick={() => setTab(k)} className={"flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold " + (tab === k ? "bg-gray-900 text-white" : "text-gray-600")}><Ic className="h-4 w-4" />{l}</button>)}</nav></header>
+        <nav className="mx-auto flex max-w-5xl gap-1 overflow-x-auto px-3 pb-2">{tabs.map(([Ic, k, l]) => <button key={k} onClick={() => setTab(k)} className={"flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold " + (tab === k ? "bg-gray-900 text-white" : "text-gray-600")}><Ic className="h-4 w-4" />{l}</button>)}</nav></header>
       {!online && <p className="mx-auto mt-4 max-w-5xl px-4 text-sm text-amber-700">Modo local: as mudanças ficam só neste aparelho. Publique pelo Bat Dev V-0 para salvar no banco e aparecer para os clientes.</p>}
       <main className="mx-auto max-w-5xl space-y-4 p-4">
         {tab === "produtos" && <>
