@@ -2,10 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, Eye, FolderOpen, LayoutGrid, Pencil, RefreshCw, Smartphone, Trash2 } from "lucide-react";
+import { ChevronRight, Copy, Eye, FolderOpen, LayoutGrid, Pencil, RefreshCw, Smartphone, Trash2 } from "lucide-react";
 import { AdReviewDialog } from "@/components/ad-review";
-import { AccountBar } from "@/components/account-bar";
-import { useAccount, brl, actionValue } from "@/lib/use-account";
+import { AccountBar, useAdAccounts } from "@/components/account-bar";
+import { MetaColumnsDialog } from "@/components/meta-columns-dialog";
+import { MetaEditSheet } from "@/components/meta-edit-sheet";
+import { cleanColumns, DEFAULT_COLUMNS, formatMetric, metricByKey, NO_TOTAL, sumInsights } from "@/lib/meta-metrics";
+import { useStore } from "@/lib/store";
+import { useAccount, brl } from "@/lib/use-account";
 import { useCurrency } from "@/lib/currency";
 import { duplicateObject, getObjects, updateObject } from "@/lib/meta.functions";
 import { Button } from "@/components/ui/button";
@@ -29,17 +33,20 @@ export const Route = createFileRoute("/met/")({
 });
 
 type Level = "campaigns" | "adsets" | "ads";
-const PURCHASE = ["purchase", "offsite_conversion.fb_pixel_purchase", "omni_purchase"];
-const IC = ["initiate_checkout", "offsite_conversion.fb_pixel_initiate_checkout", "omni_initiated_checkout"];
 const presets: [string, string][] = [
   ["today", "Hoje"],
   ["yesterday", "Ontem"],
   ["last_7d", "Últimos 7 dias"],
   ["last_14d", "Últimos 14 dias"],
   ["last_30d", "Últimos 30 dias"],
+  ["last_90d", "Últimos 90 dias"],
   ["this_month", "Este mês"],
+  ["last_month", "Mês passado"],
+  ["this_year", "Este ano"],
+  ["last_year", "Ano passado"],
   ["maximum", "Máximo"],
 ];
+const STATUS_PT: Record<string, string> = { ACTIVE: "Ativo", PAUSED: "Pausado", ARCHIVED: "Arquivado", CAMPAIGN_PAUSED: "Campanha pausada", ADSET_PAUSED: "Conjunto pausado", WITH_ISSUES: "Com problemas", DISAPPROVED: "Reprovado", PENDING_REVIEW: "Em revisão", IN_PROCESS: "Processando", DELETED: "Excluído" };
 
 function Manager() {
   useCurrency();
@@ -48,42 +55,48 @@ function Manager() {
   const [preset, setPreset] = useState("today");
   const [nameFilter, setNameFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [archived, setArchived] = useState(false);
   const [selected, setSelected] = useState<Record<Level, string[]>>({ campaigns: [], adsets: [], ads: [] });
+  const [savedCols, setSavedCols] = useStore<string[]>("met-columns", DEFAULT_COLUMNS);
+  const cols = cleanColumns(savedCols).map((k) => metricByKey(k)!).filter(Boolean);
+  const [edit, setEdit] = useState<{ id: string; level: Level } | null>(null);
   const qc = useQueryClient();
+  const { accounts } = useAdAccounts();
+  const currency = ((accounts.data ?? []) as any[]).find((a) => a.id === account)?.currency ?? "moeda da conta";
 
   const parentIds = level === "adsets" ? selected.campaigns : level === "ads" ? selected.adsets : undefined;
   const q = useQuery({
-    queryKey: ["objects", account, level, preset, parentIds],
-    queryFn: () => getObjects({ data: { accountId: account, level, datePreset: preset, parentIds } }),
+    queryKey: ["objects", account, level, preset, parentIds, archived],
+    queryFn: () => getObjects({ data: { accountId: account, level, datePreset: preset, parentIds, includeArchived: archived } }),
     enabled: !!account,
   });
 
   const update = useMutation({
-    mutationFn: (v: { id: string; status?: "ACTIVE" | "PAUSED"; daily_budget?: number }) => updateObject({ data: v }),
+    mutationFn: (v: { id: string; status?: "ACTIVE" | "PAUSED"; daily_budget?: number; before_budget?: number }) => updateObject({ data: v }),
     onSuccess: () => {
-      toast.success("Atualizado na Meta");
+      toast.success("Atualizado na conta de anúncios");
       qc.invalidateQueries({ queryKey: ["objects"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
   const dup = useMutation({
     mutationFn: async (ids: string[]) => {
-      for (const id of ids) await duplicateObject({ data: { id, deep: true } });
+      for (const id of ids) await duplicateObject({ data: { id, deep: true, level } });
     },
-    onSuccess: () => {
-      toast.success("Duplicado (pausado)");
+    onSuccess: (_d, ids) => {
+      toast.success(ids.length > 1 ? `${ids.length} cópias criadas (pausadas)` : "Cópia criada (pausada)");
       qc.invalidateQueries({ queryKey: ["objects"] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
   const del = useMutation({
     mutationFn: async (ids: string[]) => { for (const id of ids) await updateObject({ data: { id, status: "DELETED" } }); },
-    onSuccess: () => { toast.success("Excluído na Meta"); setSelected((s) => ({ ...s, [level]: [] })); qc.invalidateQueries({ queryKey: ["objects"] }); },
+    onSuccess: () => { toast.success("Excluído na conta de anúncios"); setSelected((s) => ({ ...s, [level]: [] })); qc.invalidateQueries({ queryKey: ["objects"] }); },
     onError: (e) => toast.error((e as Error).message),
   });
   const [review, setReview] = useState("");
 
-  const rows = (q.data ?? []).filter(
+  const rows = ((q.data ?? []) as any[]).filter(
     (r: any) =>
       r.name.toLowerCase().includes(nameFilter.toLowerCase()) &&
       (statusFilter === "all" || r.effective_status === statusFilter),
@@ -91,19 +104,13 @@ function Manager() {
   const sel = selected[level];
   const toggleSel = (id: string) =>
     setSelected((s) => ({ ...s, [level]: s[level].includes(id) ? s[level].filter((x) => x !== id) : [...s[level], id] }));
-
-  const totals = rows.reduce(
-    (t: any, r: any) => {
-      const i = r.insights;
-      t.spend += Number(i?.spend ?? 0);
-      t.sales += actionValue(i?.actions, PURCHASE);
-      t.ic += actionValue(i?.actions, IC);
-      t.clicks += Number(i?.clicks ?? 0);
-      t.impr += Number(i?.impressions ?? 0);
-      return t;
-    },
-    { spend: 0, sales: 0, ic: 0, clicks: 0, impr: 0 },
-  );
+  const allSel = rows.length > 0 && rows.every((r: any) => sel.includes(r.id));
+  const total = sumInsights(rows.map((r: any) => r.insights));
+  const insightsError = (q.data as any[] | undefined)?.[0]?.insightsError as string | null | undefined;
+  const drill = (r: any) => {
+    if (level === "campaigns") { setSelected((s) => ({ ...s, campaigns: [r.id], adsets: [] })); setLevel("adsets"); }
+    else if (level === "adsets") { setSelected((s) => ({ ...s, adsets: [r.id] })); setLevel("ads"); }
+  };
 
   const tabs: { key: Level; label: string; icon: any }[] = [
     { key: "campaigns", label: "Campanhas", icon: FolderOpen },
@@ -118,6 +125,7 @@ function Manager() {
       icon: Smartphone,
     },
   ];
+  const colSpan = cols.length + 4;
 
   return (
     <div className="space-y-4 p-3 pb-24 sm:space-y-5 sm:p-6">
@@ -165,11 +173,7 @@ function Manager() {
               <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Qualquer</SelectItem>
-                <SelectItem value="ACTIVE">Ativo</SelectItem>
-                <SelectItem value="PAUSED">Pausado</SelectItem>
-                <SelectItem value="CAMPAIGN_PAUSED">Campanha pausada</SelectItem>
-                <SelectItem value="ADSET_PAUSED">Conjunto pausado</SelectItem>
-                <SelectItem value="WITH_ISSUES">Com problemas</SelectItem>
+                {Object.entries(STATUS_PT).filter(([k]) => k !== "DELETED").map(([k, l]) => <SelectItem key={k} value={k}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -182,10 +186,12 @@ function Manager() {
               </SelectContent>
             </Select>
           </div>
+          <label className="flex items-center gap-2 pb-2 text-sm"><Switch checked={archived} onCheckedChange={setArchived} aria-label="Mostrar arquivadas" />Arquivadas</label>
+          <MetaColumnsDialog cols={cols.map((c) => c.key)} setCols={setSavedCols} />
           <Button variant="secondary" disabled={!sel.length || dup.isPending} onClick={() => dup.mutate(sel)}>
             <Copy className="mr-2 h-4 w-4" /> Duplicar
           </Button>
-          <Button variant="outline" disabled={!sel.length || del.isPending} onClick={() => { if (confirm(`Excluir ${sel.length} item(ns) na Meta? Isso não pode ser desfeito.`)) del.mutate(sel); }}>
+          <Button variant="outline" disabled={!sel.length || del.isPending} onClick={() => { if (confirm(`Excluir ${sel.length} item(ns) na conta de anúncios? Isso não pode ser desfeito.`)) del.mutate(sel); }}>
             <Trash2 className="mr-2 h-4 w-4" /> Excluir
           </Button>
           {level === "ads" && <Button variant="outline" disabled={sel.length !== 1} onClick={() => setReview(sel[0]!)}><Eye className="mr-2 h-4 w-4" /> Prévia e revisão</Button>}
@@ -195,92 +201,93 @@ function Manager() {
         </div>
 
         {q.error && <div className="p-4 text-sm text-destructive">{(q.error as Error).message}</div>}
+        {insightsError && <div className="p-3 text-xs text-destructive">Os itens carregaram, mas as métricas desse período falharam: {insightsError}</div>}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted text-xs uppercase text-muted-foreground">
+        {/* Own scroll area: header, name column and totals stay visible while scrolling far down or sideways. */}
+        <div className="max-h-[calc(100dvh-13rem)] overflow-auto overscroll-contain">
+          <table className="w-full border-separate border-spacing-0 text-sm">
+            <thead className="text-xs uppercase text-muted-foreground">
               <tr>
-                {["", "Status", level === "campaigns" ? "Campanha" : level === "adsets" ? "Conjunto" : "Anúncio", "Orçamento", "Vendas", "CPA", "Gastos", "IC", "Custo/IC", "CPC", "CTR", "CPM", "Impressões"].map((h) => (
-                  <th key={h} className="whitespace-nowrap px-3 py-3 text-left font-semibold">{h}</th>
-                ))}
+                <th className="sticky left-0 top-0 z-30 border-b border-border bg-muted px-3 py-3 text-left"><Checkbox checked={allSel} onCheckedChange={() => setSelected((s) => ({ ...s, [level]: allSel ? [] : rows.map((r: any) => r.id) }))} aria-label="Selecionar todos" /></th>
+                <th className="sticky top-0 z-20 border-b border-border bg-muted px-3 py-3 text-left font-semibold">Status</th>
+                <th className="sticky left-10 top-0 z-30 min-w-[13rem] border-b border-border bg-muted px-3 py-3 text-left font-semibold">{level === "campaigns" ? "Campanha" : level === "adsets" ? "Conjunto" : "Anúncio"}</th>
+                <th className="sticky top-0 z-20 border-b border-border bg-muted px-3 py-3 text-left font-semibold">Orçamento</th>
+                {cols.map((c) => <th key={c.key} className="sticky top-0 z-20 whitespace-nowrap border-b border-border bg-muted px-3 py-3 text-left font-semibold">{c.label}</th>)}
               </tr>
             </thead>
             <tbody>
               {q.isLoading && (
-                <tr><td colSpan={13} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>
+                <tr><td colSpan={colSpan} className="p-6 text-center text-muted-foreground">Carregando…</td></tr>
               )}
               {!q.isLoading && rows.length === 0 && account && (
-                <tr><td colSpan={13} className="p-6 text-center text-muted-foreground">Nada por aqui.</td></tr>
+                <tr><td colSpan={colSpan} className="p-6 text-center text-muted-foreground">Nada por aqui.</td></tr>
               )}
               {rows.map((r: any) => {
                 const i = r.insights;
-                const spend = Number(i?.spend ?? 0);
-                const sales = actionValue(i?.actions, PURCHASE);
-                const ic = actionValue(i?.actions, IC);
                 const budget = r.daily_budget ?? r.lifetime_budget;
                 return (
-                  <tr key={r.id} className="border-t border-border hover:bg-accent/40">
-                    <td className="px-3 py-3">
+                  <tr key={r.id} className="group">
+                    <td className="sticky left-0 z-10 border-t border-border bg-card px-3 py-3 group-hover:bg-accent">
                       <Checkbox checked={sel.includes(r.id)} onCheckedChange={() => toggleSel(r.id)} />
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="border-t border-border px-3 py-3 group-hover:bg-accent/40">
                       <Switch
                         checked={r.status === "ACTIVE"}
+                        disabled={r.status === "ARCHIVED"}
                         onCheckedChange={(on) => update.mutate({ id: r.id, status: on ? "ACTIVE" : "PAUSED" })}
                       />
                     </td>
-                    <td className="max-w-xs px-3 py-3">
-                      <div className="font-medium">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{r.effective_status}</div>
+                    <td className="sticky left-10 z-10 max-w-[16rem] border-t border-border bg-card px-3 py-2 group-hover:bg-accent">
+                      <button type="button" onClick={() => setEdit({ id: r.id, level })} className="block max-w-full truncate text-left font-medium hover:text-primary hover:underline" title={r.name}>{r.name}</button>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{STATUS_PT[r.effective_status] ?? r.effective_status}</span>
+                        <span className="flex gap-0.5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
+                          <button type="button" aria-label="Editar" title="Editar" onClick={() => setEdit({ id: r.id, level })} className="rounded p-1 hover:bg-muted hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
+                          <button type="button" aria-label="Duplicar" title="Duplicar" disabled={dup.isPending} onClick={() => dup.mutate([r.id])} className="rounded p-1 hover:bg-muted hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
+                          {level === "ads" && <button type="button" aria-label="Prévia" title="Prévia" onClick={() => setReview(r.id)} className="rounded p-1 hover:bg-muted hover:text-primary"><Eye className="h-3.5 w-3.5" /></button>}
+                          {level !== "ads" && <button type="button" onClick={() => drill(r)} className="flex items-center rounded px-1 hover:bg-muted hover:text-primary">{level === "campaigns" ? "Conjuntos" : "Anúncios"}<ChevronRight className="h-3.5 w-3.5" /></button>}
+                        </span>
+                      </div>
                     </td>
-                    <td className="whitespace-nowrap px-3 py-3">
+                    <td className="whitespace-nowrap border-t border-border px-3 py-3 group-hover:bg-accent/40">
                       {budget ? (
                         <button
                           className="flex items-center gap-1 hover:text-primary"
                           onClick={() => {
-                            const v = prompt("Novo orçamento diário (R$)", String(Number(budget) / 100));
-                            if (v) update.mutate({ id: r.id, daily_budget: Math.round(Number(v.replace(",", ".")) * 100) });
+                            const v = prompt(`Novo orçamento ${r.daily_budget ? "diário" : "total"} (${currency})`, String(Number(budget) / 100));
+                            if (!v) return;
+                            const next = Math.round(Number(v.replace(",", ".")) * 100);
+                            if (!(next > 0)) { toast.error("Valor inválido"); return; }
+                            if (r.daily_budget) update.mutate({ id: r.id, daily_budget: next, before_budget: Number(r.daily_budget) });
+                            else updateObject({ data: { id: r.id, lifetime_budget: next } }).then(() => { toast.success("Atualizado"); qc.invalidateQueries({ queryKey: ["objects"] }); }, (e) => toast.error((e as Error).message));
                           }}
                         >
                           <Pencil className="h-3 w-3" /> {brl(Number(budget) / 100)}
                           <span className="text-xs text-muted-foreground">{r.daily_budget ? "Diário" : "Total"}</span>
                         </button>
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-muted-foreground">{level === "campaigns" ? "Nos conjuntos" : level === "adsets" ? "Na campanha" : "—"}</span>
                       )}
                     </td>
-                    <td className="px-3 py-3">{sales}</td>
-                    <td className="px-3 py-3">{sales ? brl(spend / sales) : "—"}</td>
-                    <td className="px-3 py-3">{brl(spend)}</td>
-                    <td className="px-3 py-3">{ic}</td>
-                    <td className="px-3 py-3">{ic ? brl(spend / ic) : "—"}</td>
-                    <td className="px-3 py-3">{i?.cpc ? brl(i.cpc) : "—"}</td>
-                    <td className="px-3 py-3">{i?.ctr ? `${Number(i.ctr).toFixed(2)}%` : "—"}</td>
-                    <td className="px-3 py-3">{i?.cpm ? brl(i.cpm) : "—"}</td>
-                    <td className="px-3 py-3">{Number(i?.impressions ?? 0).toLocaleString("pt-BR")}</td>
+                    {cols.map((c) => <td key={c.key} className="whitespace-nowrap border-t border-border px-3 py-3 tabular-nums group-hover:bg-accent/40">{formatMetric(c, c.value(i), brl)}</td>)}
                   </tr>
                 );
               })}
             </tbody>
-            <tfoot className="bg-muted text-xs font-semibold uppercase">
+            <tfoot className="text-xs font-semibold uppercase">
               <tr>
-                <td className="px-3 py-3" colSpan={3}>{rows.length} itens</td>
-                <td />
-                <td className="px-3 py-3">{totals.sales}</td>
-                <td className="px-3 py-3">{totals.sales ? brl(totals.spend / totals.sales) : "—"}</td>
-                <td className="px-3 py-3">{brl(totals.spend)}</td>
-                <td className="px-3 py-3">{totals.ic}</td>
-                <td className="px-3 py-3">{totals.ic ? brl(totals.spend / totals.ic) : "—"}</td>
-                <td className="px-3 py-3">{totals.clicks ? brl(totals.spend / totals.clicks) : "—"}</td>
-                <td className="px-3 py-3">{totals.impr ? `${((totals.clicks / totals.impr) * 100).toFixed(2)}%` : "—"}</td>
-                <td className="px-3 py-3">{totals.impr ? brl((totals.spend / totals.impr) * 1000) : "—"}</td>
-                <td className="px-3 py-3">{totals.impr.toLocaleString("pt-BR")}</td>
+                <td className="sticky bottom-0 left-0 z-30 border-t border-border bg-muted px-3 py-3" />
+                <td className="sticky bottom-0 z-20 border-t border-border bg-muted px-3 py-3" />
+                <td className="sticky bottom-0 left-10 z-30 border-t border-border bg-muted px-3 py-3">{rows.length} itens</td>
+                <td className="sticky bottom-0 z-20 border-t border-border bg-muted px-3 py-3" />
+                {cols.map((c) => <td key={c.key} className="sticky bottom-0 z-20 whitespace-nowrap border-t border-border bg-muted px-3 py-3 tabular-nums">{NO_TOTAL.has(c.key) ? "—" : formatMetric(c, c.value(total), brl)}</td>)}
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
       <AdReviewDialog adId={review} onClose={() => setReview("")} />
+      <MetaEditSheet target={edit} onClose={() => setEdit(null)} currency={currency} />
     </div>
   );
 }
