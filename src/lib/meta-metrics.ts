@@ -142,3 +142,20 @@ export function sumInsights(list: Ins[]): Record<string, any> {
 }
 
 export const metricByKey = (k: string) => METRICS.find((m) => m.key === k);
+
+/** Metrics that can't be summed across rows (unique people, averages, rankings): totals show a dash. */
+export const NO_TOTAL = new Set(["reach", "frequency", "unique_link_clicks", "avg_watch", "quality", "eng_rank", "conv_rank"]);
+
+export function formatMetric(m: Metric, v: number | string | null, money: (n: number) => string) {
+  if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "string") return v;
+  if (!Number.isFinite(v)) return "—";
+  switch (m.format) {
+    case "money": return money(v);
+    case "pct": return `${v.toFixed(2)}%`;
+    case "ratio": return v.toFixed(2);
+    case "sec": return `${v.toFixed(1)}s`;
+    case "int": return Math.round(v).toLocaleString("pt-BR");
+    default: return String(v);
+  }
+}
