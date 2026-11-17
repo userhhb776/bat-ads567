@@ -11,8 +11,10 @@ export type IntelRule = {
   minRoasToScale: number; // escala se ROAS >= (0 = desligado)
   scalePercent: number; // % de aumento de orçamento
   maxDailyBudget: number; // teto de orçamento ao escalar
-  maxFrequency: number; // alerta se frequência acima (0 = desligado)
-  hours: [number, number]; // janela de atuação
+  /** @deprecated no longer used: agents watch 24h while active. Kept optional so old saved rules still load. */
+  maxFrequency?: number;
+  /** @deprecated no longer used: agents watch 24h while active. */
+  hours?: [number, number];
   autonomy: Autonomy;
   active: boolean;
   /** Free-form strategy written by the chefe; when set, the 24h watch decides with AI inside the limits below. */
@@ -22,15 +24,21 @@ export type IntelRule = {
   /** Minimum minutes between AI reviews. */
   everyMinutes?: number;
 };
-export type CampaignStats = { id: string; name: string; spend: number; purchases: number; revenue: number; frequency: number; dailyBudget: number; status: string; accountId?: string };
+export type CampaignStats = {
+  id: string; name: string; spend: number; purchases: number; revenue: number; frequency: number; dailyBudget: number; status: string; accountId?: string;
+  /** Secondary metrics of today, for strategies that don't look only at spend. */
+  impressions?: number; clicks?: number; linkClicks?: number; ctr?: number; cpc?: number; cpm?: number; lpv?: number; addToCart?: number; checkouts?: number;
+  createdAt?: string; startedAt?: string;
+  /** Whole-life totals of the campaign. */
+  totalSpend?: number; totalPurchases?: number; totalRevenue?: number;
+};
 export type Decision = { kind: "pausar" | "escalar" | "alerta"; reason: string; newBudget?: number };
 
-export function evaluate(rule: IntelRule, c: CampaignStats, hour: number): Decision | null {
+/** Fixed-rule agents act at any hour while active (the hour argument is kept for compatibility). */
+export function evaluate(rule: IntelRule, c: CampaignStats, _hour?: number): Decision | null {
   if (!rule.active || rule.strategy || c.status !== "ACTIVE") return null;
   if (rule.accountId && rule.accountId !== c.accountId) return null;
   if (rule.campaignId !== "*" && rule.campaignId !== c.id) return null;
-  const [from, to] = rule.hours;
-  if (!(from <= to ? hour >= from && hour < to : hour >= from || hour < to)) return null;
   if (rule.maxSpendNoSale > 0 && c.purchases === 0 && c.spend >= rule.maxSpendNoSale)
     return { kind: "pausar", reason: `Gastou ${c.spend.toFixed(2)} sem vender (limite ${rule.maxSpendNoSale}).` };
   const cpa = c.purchases ? c.spend / c.purchases : Infinity;
@@ -41,7 +49,5 @@ export function evaluate(rule: IntelRule, c: CampaignStats, hour: number): Decis
     const next = Math.min(rule.maxDailyBudget || Infinity, Math.round(c.dailyBudget * (1 + rule.scalePercent / 100)));
     if (next > c.dailyBudget) return { kind: "escalar", reason: `ROAS ${roas.toFixed(2)} ≥ ${rule.minRoasToScale}.`, newBudget: next };
   }
-  if (rule.maxFrequency > 0 && c.frequency > rule.maxFrequency)
-    return { kind: "alerta", reason: `Frequência ${c.frequency.toFixed(2)} acima de ${rule.maxFrequency}.` };
   return null;
 }
