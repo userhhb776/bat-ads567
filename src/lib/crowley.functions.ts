@@ -40,6 +40,7 @@ MODO AGENTES ADS: esta conversa é só sobre os agentes que cuidam das campanhas
 ACAO: {"tipo":"estrategia","nome":"...","id":"*","instrucoes":"<a estratégia completa do chefe, clara e sem ambiguidade>","autonomia":"auto","tetoDiario":0,"variacaoMax":30,"intervalo":30,"horas":[0,24]}
 - id: "*" para todas as campanhas da conta carregada ou o id de uma campanha do resumo.
 - tetoDiario em centavos na moeda da conta (0 = sem teto); variacaoMax = maior mudança de orçamento por decisão em %; intervalo = minutos entre revisões (mínimo 15).
+- O agente vê, por campanha: gasto, vendas, faturamento, impressões, cliques no link, CTR, CPC, CPM, visualizações da página, carrinhos e checkouts de hoje; horas no ar; totais da vida toda; orçamento base e o anterior à última mudança (para "voltar ao anterior"). Cada campanha é decidida separadamente. Horários dentro da estratégia (ex.: "à meia-noite") ficam nas instruções; o agente roda 24h.
 - autonomia: "auto" age sozinho, "aprovar" pede aprovação, "avisar" só avisa. Se ele não disser, pergunte em uma frase.
 - Para mudar a estratégia de um agente que já existe, use o MESMO nome: a aprovação substitui a anterior.
 - A vigia na nuvem revisa no intervalo, mesmo com o painel fechado, e só mexe dentro desses limites.
