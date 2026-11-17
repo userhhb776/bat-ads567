@@ -25,7 +25,7 @@ export function MetaConnectionCard() {
   const [busy, setBusy] = useState(false);
   const [guide, setGuide] = useState(false);
   const s = q.data;
-  const refresh = () => { void q.refetch(); void qc.invalidateQueries({ queryKey: ["meta-status"] }); void qc.invalidateQueries({ queryKey: ["accounts"] }); };
+  const refresh = () => { void q.refetch(); void qc.invalidateQueries({ queryKey: ["meta-status"] }); void qc.invalidateQueries({ queryKey: ["meta-accounts"] }); };
   return <section className="space-y-4 border-b border-border pb-6">
     <div className="flex items-start justify-between gap-3">
       <div><h2 className="font-display text-2xl">Conexão Meta</h2><p className="text-xs text-muted-foreground">Conecte qualquer BM ou conta de anúncios com um token de usuário do sistema. Funciona em qualquer domínio onde o painel estiver.</p></div>
