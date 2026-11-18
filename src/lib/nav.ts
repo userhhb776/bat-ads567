@@ -1,4 +1,4 @@
-import { Bell, Bot, BarChart3, Building2, CalendarClock, Eye, FileBarChart, FileText, Gauge, Image, LayoutGrid, Link2, MessagesSquare, Package, Plug, PlusSquare, Radar, Settings, ShieldCheck, Users, Workflow, Zap, Activity, BookOpen, BellRing } from "lucide-react";
+import { Bell, Bot, BarChart3, Building2, CalendarClock, Eye, FileBarChart, FileText, Gauge, Image, LayoutGrid, Link2, MessagesSquare, Package, Plug, PlusSquare, Radar, Settings, ShieldCheck, Users, Workflow, Zap, Activity, BookOpen, BellRing, FolderOpen, LayoutTemplate, Globe } from "lucide-react";
 
 /** Single menu definition shared by the sidebar and the mobile "Mais" page. */
 export const NAV_GROUPS = [
@@ -22,6 +22,9 @@ export const NAV_GROUPS = [
   ] },
   { title: "Bat Dev V-0", items: [
     { to: "/paginas", label: "Criador de sites", icon: FileText },
+    { to: "/sites", label: "Meus sites", icon: FolderOpen },
+    { to: "/sites/modelos", label: "Modelos prontos", icon: LayoutTemplate },
+    { to: "/sites/dominios", label: "Publicação e domínios", icon: Globe },
   ] },
   { title: "Criação", items: [
     { to: "/funis", label: "Funis", icon: Workflow },

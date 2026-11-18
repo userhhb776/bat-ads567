@@ -25,6 +25,8 @@ export type SalesPage = {
   /** Template the site started from. */
   template?: string | undefined;
   updatedAt?: number | undefined;
+  /** Own domains linked to the published site. */
+  domains?: string[] | undefined;
 };
 
 /** Turns any typed phone into a wa.me link; empty when there are not enough digits. */

@@ -4,9 +4,11 @@ import { SpyXrayButton } from "@/components/spy-xray";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { checkoutLabel, formatOf, heat, mediaDownload, type SpyAd } from "@/lib/spy";
+import { SpyInsights } from "@/components/spy-insights";
+import type { PageStats } from "@/lib/spy-trend";
 
 /** Full "Espionar" view of a mined ad: big creative, download, timing, scale, copy and destination. */
-export function SpyDetail({ ad, onClose, onRadar, niche = "", platform = "" }: { ad: SpyAd | null; onClose: () => void; onRadar: (a: SpyAd) => void; niche?: string; platform?: string }) {
+export function SpyDetail({ ad, onClose, onRadar, niche = "", platform = "", stats }: { ad: SpyAd | null; onClose: () => void; onRadar: (a: SpyAd) => void; niche?: string; platform?: string; stats?: PageStats | undefined }) {
   const nav = useNavigate();
   if (!ad) return null;
   const media = ad.video || ad.image;
@@ -45,6 +47,7 @@ export function SpyDetail({ ad, onClose, onRadar, niche = "", platform = "" }: {
           </div>
         </div>
       </div>
+      <SpyInsights ad={ad} stats={stats} />
     </DialogContent>
   </Dialog>;
 }

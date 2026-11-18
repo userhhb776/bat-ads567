@@ -82,6 +82,7 @@ export async function runSentinels(admin: Admin, stopped: Set<string>) {
         if (status !== "SUCCEEDED" || !run?.data?.defaultDatasetId) { await save({ ...state, runId: "", error: `Busca terminou como ${status || "desconhecida"}.`, checked: new Date().toISOString() }); continue; }
         const items = await fetch(`${API}/datasets/${run.data.defaultDatasetId}/items?clean=true&limit=200`, { headers: { Authorization: `Bearer ${token}` } }).then((r) => (r.ok ? r.json() : [])).catch(() => []);
         const ads = toAds(items);
+        await recordSnapshots(admin, userId, ads).catch(() => null);
         const hits = sentinelHits(ads, sen.minDays, state.seen ?? []);
         const seen = [...new Set([...(state.seen ?? []), ...hits.map((h) => h.id)])].slice(-2000);
         await save({ ...state, runId: "", error: "", seen, hits: [...hits, ...(state.hits ?? [])].slice(0, 60), checked: new Date().toISOString() });
@@ -113,4 +114,46 @@ export async function runSentinels(admin: Admin, stopped: Set<string>) {
     }
   }
   return { sentinelsStarted: started, sentinelAlerts: alerts };
+}
+
+/** Saves today's active-ad count per page so later searches can show if a page scaled up or down. */
+export async function recordSnapshots(admin: Admin, userId: string, ads: SpyAd[], exact = false) {
+  const { pageStats, mergeSnap, isoDay } = await import("./spy-trend");
+  const stats = [...pageStats(ads).values()].filter((s) => s.key && s.active > 0).slice(0, 300);
+  if (!stats.length) return;
+  const day = isoDay();
+  const { data: prev } = await admin.from("spy_page_snapshots" as never).select("page_id, active, launched7, exact").eq("user_id", userId).eq("day", day).in("page_id", stats.map((s) => s.key) as never);
+  const byId = new Map(((prev ?? []) as { page_id: string; active: number; launched7: number; exact: boolean }[]).map((p) => [p.page_id, p]));
+  const rows = stats.map((s) => {
+    const p = byId.get(s.key);
+    const m = mergeSnap(p ? { day, active: p.active, launched7: p.launched7, exact: p.exact } : undefined, { day, active: s.active, launched7: s.launched7, exact });
+    return { user_id: userId, page_id: s.key.slice(0, 120), page_name: s.pageName.slice(0, 200), day, active: m.active, launched7: m.launched7 ?? 0, exact: !!m.exact };
+  });
+  const { error } = await admin.from("spy_page_snapshots" as never).upsert(rows as never, { onConflict: "user_id,page_id,day" });
+  if (error) console.error("spy snapshots", error.message);
+}
+
+/** Library link that lists only the active ads of one page. */
+export const pageLibraryUrl = (pageId: string) => `https://www.facebook.com/ads/library/?active_status=active&ad_type=all&country=ALL&media_type=all&search_type=page&view_all_page_id=${encodeURIComponent(pageId)}`;
+
+const TRAFFIC_ACTOR = "trakk~similarweb-scraper";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36";
+/** Traffic estimate: free public source first, then the traffic actor on the saved keys (rotating on no credit). */
+export async function fetchTraffic(admin: Admin, userId: string, domain: string): Promise<{ raw: unknown; source: string; error: string }> {
+  try {
+    const r = await fetch(`https://data.similarweb.com/api/v1/data?domain=${encodeURIComponent(domain)}`, { headers: { "User-Agent": UA, Accept: "application/json" }, signal: AbortSignal.timeout(7000) });
+    if (r.ok) { const j = await r.json().catch(() => null) as Record<string, unknown> | null; if (j && j["EstimatedMonthlyVisits"]) return { raw: j, source: "gratis", error: "" }; }
+  } catch { /* falls back to the actor */ }
+  const keys = await apifyKeys(admin, userId);
+  if (!keys.length) return { raw: null, source: "", error: "A consulta grátis não respondeu. Cadastre a chave da Apify em Configurações → Bat Spy para usar a consulta completa." };
+  const fails: string[] = [];
+  for (const k of keys) {
+    try {
+      const r = await fetch(`${API}/acts/${TRAFFIC_ACTOR}/run-sync-get-dataset-items?timeout=120`, { method: "POST", headers: { Authorization: `Bearer ${k.token}`, "Content-Type": "application/json" }, body: JSON.stringify({ domains: [domain], mode: "base_data" }), signal: AbortSignal.timeout(130000) });
+      if (OUT.includes(r.status)) { fails.push(`${k.platform}: sem crédito`); continue; }
+      if (!r.ok) { const t = (await r.text()).slice(0, 200); console.error("apify traffic", r.status, t); return { raw: null, source: "", error: `Apify respondeu ${r.status}: ${t}` }; }
+      return { raw: await r.json(), source: "apify", error: "" };
+    } catch { fails.push(`${k.platform}: sem resposta`); }
+  }
+  return { raw: null, source: "", error: `Não consegui consultar o tráfego — ${fails.join("; ")}` };
 }

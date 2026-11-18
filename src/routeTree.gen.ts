@@ -40,6 +40,9 @@ import { Route as BatSpySalvosRouteImport } from './routes/bat-spy/salvos'
 import { Route as BatSpySentinelaRouteImport } from './routes/bat-spy/sentinela'
 import { Route as MetIndexRouteImport } from './routes/met.index'
 import { Route as MetCriarRouteImport } from './routes/met.criar'
+import { Route as SitesIndexRouteImport } from './routes/sites.index'
+import { Route as SitesDominiosRouteImport } from './routes/sites.dominios'
+import { Route as SitesModelosRouteImport } from './routes/sites.modelos'
 import { Route as UtmIndexRouteImport } from './routes/utm.index'
 import { Route as UtmIntegracoesRouteImport } from './routes/utm.integracoes'
 import { Route as UtmLinksRouteImport } from './routes/utm.links'
@@ -206,6 +209,21 @@ const MetCriarRoute = MetCriarRouteImport.update({
   path: '/criar',
   getParentRoute: () => MetRoute,
 } as any)
+const SitesIndexRoute = SitesIndexRouteImport.update({
+  id: '/sites/',
+  path: '/sites/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitesDominiosRoute = SitesDominiosRouteImport.update({
+  id: '/sites/dominios',
+  path: '/sites/dominios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitesModelosRoute = SitesModelosRouteImport.update({
+  id: '/sites/modelos',
+  path: '/sites/modelos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const UtmIndexRoute = UtmIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -288,11 +306,14 @@ export interface FileRoutesByFullPath {
   '/bat-spy/salvos': typeof BatSpySalvosRoute
   '/bat-spy/sentinela': typeof BatSpySentinelaRoute
   '/met/criar': typeof MetCriarRoute
+  '/sites/dominios': typeof SitesDominiosRoute
+  '/sites/modelos': typeof SitesModelosRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
   '/utm/visitantes': typeof UtmVisitantesRoute
   '/bat-spy/': typeof BatSpyIndexRoute
   '/met/': typeof MetIndexRoute
+  '/sites/': typeof SitesIndexRoute
   '/utm/': typeof UtmIndexRoute
   '/api/public/spy-media': typeof ApiPublicSpyMediaRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -329,11 +350,14 @@ export interface FileRoutesByTo {
   '/bat-spy/salvos': typeof BatSpySalvosRoute
   '/bat-spy/sentinela': typeof BatSpySentinelaRoute
   '/met/criar': typeof MetCriarRoute
+  '/sites/dominios': typeof SitesDominiosRoute
+  '/sites/modelos': typeof SitesModelosRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
   '/utm/visitantes': typeof UtmVisitantesRoute
   '/bat-spy': typeof BatSpyIndexRoute
   '/met': typeof MetIndexRoute
+  '/sites': typeof SitesIndexRoute
   '/utm': typeof UtmIndexRoute
   '/api/public/spy-media': typeof ApiPublicSpyMediaRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -373,11 +397,14 @@ export interface FileRoutesById {
   '/bat-spy/salvos': typeof BatSpySalvosRoute
   '/bat-spy/sentinela': typeof BatSpySentinelaRoute
   '/met/criar': typeof MetCriarRoute
+  '/sites/dominios': typeof SitesDominiosRoute
+  '/sites/modelos': typeof SitesModelosRoute
   '/utm/integracoes': typeof UtmIntegracoesRoute
   '/utm/links': typeof UtmLinksRoute
   '/utm/visitantes': typeof UtmVisitantesRoute
   '/bat-spy/': typeof BatSpyIndexRoute
   '/met/': typeof MetIndexRoute
+  '/sites/': typeof SitesIndexRoute
   '/utm/': typeof UtmIndexRoute
   '/api/public/spy-media': typeof ApiPublicSpyMediaRoute
   '/api/public/track': typeof ApiPublicTrackRoute
@@ -418,11 +445,14 @@ export interface FileRouteTypes {
     | '/bat-spy/salvos'
     | '/bat-spy/sentinela'
     | '/met/criar'
+    | '/sites/dominios'
+    | '/sites/modelos'
     | '/utm/integracoes'
     | '/utm/links'
     | '/utm/visitantes'
     | '/bat-spy/'
     | '/met/'
+    | '/sites/'
     | '/utm/'
     | '/api/public/spy-media'
     | '/api/public/track'
@@ -459,11 +489,14 @@ export interface FileRouteTypes {
     | '/bat-spy/salvos'
     | '/bat-spy/sentinela'
     | '/met/criar'
+    | '/sites/dominios'
+    | '/sites/modelos'
     | '/utm/integracoes'
     | '/utm/links'
     | '/utm/visitantes'
     | '/bat-spy'
     | '/met'
+    | '/sites'
     | '/utm'
     | '/api/public/spy-media'
     | '/api/public/track'
@@ -502,11 +535,14 @@ export interface FileRouteTypes {
     | '/bat-spy/salvos'
     | '/bat-spy/sentinela'
     | '/met/criar'
+    | '/sites/dominios'
+    | '/sites/modelos'
     | '/utm/integracoes'
     | '/utm/links'
     | '/utm/visitantes'
     | '/bat-spy/'
     | '/met/'
+    | '/sites/'
     | '/utm/'
     | '/api/public/spy-media'
     | '/api/public/track'
@@ -545,7 +581,10 @@ export interface RootRouteChildren {
   BatSpyAnunciantesRoute: typeof BatSpyAnunciantesRoute
   BatSpySalvosRoute: typeof BatSpySalvosRoute
   BatSpySentinelaRoute: typeof BatSpySentinelaRoute
+  SitesDominiosRoute: typeof SitesDominiosRoute
+  SitesModelosRoute: typeof SitesModelosRoute
   BatSpyIndexRoute: typeof BatSpyIndexRoute
+  SitesIndexRoute: typeof SitesIndexRoute
   ApiPublicSpyMediaRoute: typeof ApiPublicSpyMediaRoute
   ApiPublicTrackRoute: typeof ApiPublicTrackRoute
   ApiPublicCronWatchRoute: typeof ApiPublicCronWatchRoute
@@ -773,6 +812,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MetCriarRouteImport
       parentRoute: typeof MetRoute
     }
+    '/sites/': {
+      id: '/sites/'
+      path: '/sites'
+      fullPath: '/sites/'
+      preLoaderRoute: typeof SitesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sites/dominios': {
+      id: '/sites/dominios'
+      path: '/sites/dominios'
+      fullPath: '/sites/dominios'
+      preLoaderRoute: typeof SitesDominiosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sites/modelos': {
+      id: '/sites/modelos'
+      path: '/sites/modelos'
+      fullPath: '/sites/modelos'
+      preLoaderRoute: typeof SitesModelosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/utm/': {
       id: '/utm/'
       path: '/'
@@ -903,7 +963,10 @@ const rootRouteChildren: RootRouteChildren = {
   BatSpyAnunciantesRoute: BatSpyAnunciantesRoute,
   BatSpySalvosRoute: BatSpySalvosRoute,
   BatSpySentinelaRoute: BatSpySentinelaRoute,
+  SitesDominiosRoute: SitesDominiosRoute,
+  SitesModelosRoute: SitesModelosRoute,
   BatSpyIndexRoute: BatSpyIndexRoute,
+  SitesIndexRoute: SitesIndexRoute,
   ApiPublicSpyMediaRoute: ApiPublicSpyMediaRoute,
   ApiPublicTrackRoute: ApiPublicTrackRoute,
   ApiPublicCronWatchRoute: ApiPublicCronWatchRoute,

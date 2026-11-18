@@ -7,11 +7,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useStore, uid } from "@/lib/store";
 import { checkoutLabel, formatOf, heat, mediaDownload, type SpyAd } from "@/lib/spy";
+import { TrendBadges } from "@/components/spy-insights";
+import type { PageStats, Snap } from "@/lib/spy-trend";
 
 type Offer = { id: string; name: string; niche: string; status: string; library: string; page: string; creative: string; angle: string; price: string; notes: string };
 
 /** One mined ad with the spy actions: save, send to Radar, model page, ask Crowley. */
-export function SpyAdCard({ ad, niche = "", compact = false, platform = "" }: { ad: SpyAd; niche?: string; compact?: boolean; platform?: string }) {
+export function SpyAdCard({ ad, niche = "", compact = false, platform = "", stats, snaps }: { ad: SpyAd; niche?: string; compact?: boolean; platform?: string; stats?: PageStats | undefined; snaps?: Snap[] | undefined }) {
   const nav = useNavigate();
   const [saved, setSaved] = useStore<SpyAd[]>("spy-saved", []);
   const [offers, setOffers] = useStore<Offer[]>("offers", []);
@@ -20,7 +22,7 @@ export function SpyAdCard({ ad, niche = "", compact = false, platform = "" }: { 
   const [open, setOpen] = useState(false);
   const toRadar = () => { setOffers([...offers, { id: uid(), name: ad.title || ad.pageName, niche, status: "Modelar", library: ad.libraryUrl, page: ad.link, creative: ad.video || ad.image, angle: ad.text.slice(0, 300), price: "", notes: `Minerado no Bat Spy · ${ad.pageName} · ${ad.sameCreative} anúncios · ${ad.days} dias` }]); toast.success("Enviado ao Radar de ofertas"); };
   const media = ad.video || ad.image;
-  return <><SpyDetail ad={open ? ad : null} niche={niche} platform={platform} onClose={() => setOpen(false)} onRadar={toRadar} /><article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
+  return <><SpyDetail ad={open ? ad : null} niche={niche} platform={platform} stats={stats} onClose={() => setOpen(false)} onRadar={toRadar} /><article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
     <div className="flex items-center gap-2 p-3">
       {ad.avatar ? <img src={ad.avatar} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" /> : <div className="h-8 w-8 shrink-0 rounded-full bg-muted" />}
       <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{ad.pageName}</p><p className="truncate text-xs text-muted-foreground">{ad.days}d no ar · {ad.active ? "ativo" : "parado"}</p></div>
@@ -30,6 +32,7 @@ export function SpyAdCard({ ad, niche = "", compact = false, platform = "" }: { 
     <div className="flex flex-1 flex-col gap-2 p-3">
       <p className="text-xs text-muted-foreground">{ad.sameCreative > 1 ? `${ad.sameCreative} anúncios com este criativo` : "1 anúncio"}{ad.platforms.length ? ` · ${ad.platforms.join(", ").toLowerCase()}` : ""}</p>
       <div className="flex flex-wrap gap-1"><span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium">{({ video: "Vídeo", imagem: "Imagem", carrossel: `Carrossel${ad.cards ? ` · ${ad.cards}` : ""}`, dinamico: "Dinâmico" } as const)[formatOf(ad)]}</span>{platform && <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">{checkoutLabel(platform)}</span>}</div>
+      <TrendBadges stats={stats} snaps={snaps} />
       {ad.title && <p className="text-sm font-semibold">{ad.title}</p>}
       <p className={`whitespace-pre-wrap text-sm ${compact ? "line-clamp-3 sm:line-clamp-5" : "line-clamp-5"}`}>{ad.text}</p>
       <div className={`mt-auto grid gap-1.5 pt-2 ${compact ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-2"}`}>

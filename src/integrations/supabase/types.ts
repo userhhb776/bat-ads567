@@ -802,6 +802,69 @@ export type Database = {
         }
         Relationships: []
       }
+      spy_page_snapshots: {
+        Row: {
+          active: number
+          created_at: string
+          day: string
+          exact: boolean
+          id: string
+          launched7: number
+          page_id: string
+          page_name: string
+          user_id: string
+        }
+        Insert: {
+          active?: number
+          created_at?: string
+          day?: string
+          exact?: boolean
+          id?: string
+          launched7?: number
+          page_id: string
+          page_name?: string
+          user_id: string
+        }
+        Update: {
+          active?: number
+          created_at?: string
+          day?: string
+          exact?: boolean
+          id?: string
+          launched7?: number
+          page_id?: string
+          page_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      spy_traffic: {
+        Row: {
+          data: Json
+          domain: string
+          fetched_at: string
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          data?: Json
+          domain: string
+          fetched_at?: string
+          id?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          data?: Json
+          domain?: string
+          fetched_at?: string
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_bots: {
         Row: {
           created_at: string

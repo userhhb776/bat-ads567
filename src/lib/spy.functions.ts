@@ -32,6 +32,7 @@ export const spySearch = createServerFn({ method: "POST" }).middleware([requireS
     const { runSpy } = await import("./spy.server");
     const db = await admin();
     const r = await runSpy(db, context.userId, data);
+    if (r.ads.length) { const { recordSnapshots } = await import("./spy.server"); await recordSnapshots(db, context.userId, r.ads).catch(() => null); }
     if (r.slot && !r.error) await db.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "bat-spy", action: "minerar", target: data.q || data.pageUrl, after: { found: r.ads.length, asked: data.limit, slot: r.slot } as never, result: "ok" });
     return { ...r, error: r.error || (r.ads.length ? "" : "Nada encontrado com esses filtros.") };
   });
@@ -75,3 +76,49 @@ export const spySentinelStatus = createServerFn({ method: "POST" }).middleware([
   }
   return out;
 });
+
+/** Last 30 days of active-ad counts for the pages shown in the feed. */
+export const spyTrends = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pageIds: z.array(z.string().min(1).max(120)).max(300) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const out: Record<string, { day: string; active: number; launched7: number; exact: boolean }[]> = {};
+    if (!data.pageIds.length) return out;
+    const since = new Date(Date.now() - 31 * 86400000).toISOString().slice(0, 10);
+    const { data: rows } = await context.supabase.from("spy_page_snapshots" as never).select("page_id, day, active, launched7, exact").eq("user_id", context.userId).gte("day", since).in("page_id", data.pageIds as never).order("day");
+    for (const r of (rows ?? []) as { page_id: string; day: string; active: number; launched7: number; exact: boolean }[]) (out[r.page_id] ??= []).push({ day: r.day, active: r.active, launched7: r.launched7, exact: r.exact });
+    return out;
+  });
+
+/** Counts every active ad of one page right now (uses Apify credit) and saves it as an exact snapshot. */
+export const spyPageCount = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ pageId: z.string().regex(/^\d{3,30}$/), pageName: z.string().max(200) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { runSpy, recordSnapshots, pageLibraryUrl } = await import("./spy.server");
+    const { DEFAULT_FILTERS } = await import("./spy");
+    const db = await admin();
+    const limit = 300;
+    const r = await runSpy(db, context.userId, { ...DEFAULT_FILTERS, q: "", pageUrl: pageLibraryUrl(data.pageId), country: "ALL", status: "active", limit });
+    if (r.error) return { active: 0, capped: false, error: r.error };
+    const ads = r.ads.filter((a) => a.pageId === data.pageId || !a.pageId).map((a) => ({ ...a, pageId: data.pageId, pageName: a.pageName || data.pageName }));
+    const active = ads.filter((a) => a.active).reduce((n, a) => n + Math.max(1, a.sameCreative), 0);
+    if (ads.length) await recordSnapshots(db, context.userId, ads, true);
+    await db.from("audit_log").insert({ user_id: context.userId, actor: "chefe", module: "bat-spy", action: "contar-anuncios", target: data.pageName || data.pageId, after: { active } as never, result: "ok" });
+    return { active, capped: r.ads.length >= limit, error: ads.length ? "" : "A página não tem anúncios ativos agora." };
+  });
+
+/** Website traffic estimate for an offer's domain, cached 7 days per account. */
+export const spyTraffic = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ domain: z.string().min(3).max(255).regex(/^[a-z0-9.-]+\.[a-z]{2,}$/i), refresh: z.boolean().optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { normalizeTraffic } = await import("./spy-traffic");
+    const domain = data.domain.toLowerCase().replace(/^www\./, "");
+    const { data: cached } = await context.supabase.from("spy_traffic" as never).select("data, source, fetched_at").eq("user_id", context.userId).eq("domain", domain).maybeSingle();
+    const c = cached as { data: unknown; source: string; fetched_at: string } | null;
+    if (c && !data.refresh && Date.now() - Date.parse(c.fetched_at) < 7 * 86400000) return { traffic: normalizeTraffic(c.data, domain), source: c.source, at: c.fetched_at, error: "" };
+    const { fetchTraffic } = await import("./spy.server");
+    const r = await fetchTraffic(await admin(), context.userId, domain);
+    if (r.error) return { traffic: c ? normalizeTraffic(c.data, domain) : null, source: c?.source ?? "", at: c?.fetched_at ?? "", error: r.error };
+    const at = new Date().toISOString();
+    await context.supabase.from("spy_traffic" as never).upsert({ user_id: context.userId, domain, data: r.raw, source: r.source, fetched_at: at } as never, { onConflict: "user_id,domain" });
+    return { traffic: normalizeTraffic(r.raw, domain), source: r.source, at, error: "" };
+  });

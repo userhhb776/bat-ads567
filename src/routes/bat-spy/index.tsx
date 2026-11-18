@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Search, SlidersHorizontal, Rows3, LayoutGrid, ChevronsDown, BellRing, ShieldOff, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -9,7 +9,8 @@ import { PageHead, Field, NativeSelect, head } from "@/components/ui-kit";
 import { SpyAdCard } from "@/components/spy-ad-card";
 import { SpyXrayButton } from "@/components/spy-xray";
 import { useStore, uid } from "@/lib/store";
-import { spySearch, spyTech } from "@/lib/spy.functions";
+import { spySearch, spyTech, spyTrends } from "@/lib/spy.functions";
+import { pageKey, pageStats, type Snap } from "@/lib/spy-trend";
 import { COUNTRIES, DEFAULT_FILTERS, NICHES, MIN_DAYS, FORMATS, SCALES, CHECKOUTS, MAX_PER_SEARCH, applyMinDays, applyMinActive, applyScale, checkoutFromUrl, formatOf, heat, isBigBrand, mergeAds, reachedEnd, type SpyAd, type SpyFilters, type SpySentinel } from "@/lib/spy";
 
 export const Route = createFileRoute("/bat-spy/")({ head: () => head("Bat Spy — Minerador", "Minere anúncios da biblioteca por país, nicho, mídia, plataforma e escala do anunciante."), component: Spy });
@@ -19,6 +20,8 @@ type Results = { ads: SpyAd[]; at: string; q: string; asked?: number; end?: bool
 function Spy() {
   const run = useServerFn(spySearch);
   const techFn = useServerFn(spyTech);
+  const trendsFn = useServerFn(spyTrends);
+  const [snaps, setSnaps] = useState<Record<string, Snap[]>>({});
   const [f, setF] = useStore<SpyFilters>("spy-filters", DEFAULT_FILTERS);
   const [res, setRes] = useStore<Results>("spy-results", { ads: [], at: "", q: "" });
   const [tech, setTech] = useStore<Record<string, string>>("spy-tech", {});
@@ -114,6 +117,17 @@ function Spy() {
     toast.success("Sentinela criada — ajuste em Bat Spy → Sentinela");
   };
 
+  const stats = useMemo(() => pageStats(res.ads), [res.ads]);
+  // Day-by-day history of the pages in the feed (saved on every search), for the "subiu/desceu" chips.
+  useEffect(() => {
+    const ids = [...stats.keys()].slice(0, 300);
+    if (!ids.length) { setSnaps({}); return; }
+    let live = true;
+    trendsFn({ data: { pageIds: ids } }).then((r) => { if (live) setSnaps(r); }).catch(() => {});
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stats]);
+
   const shown = useMemo(() => {
     let a = filterAds(res.ads, tech);
     if (hot !== "todos") a = a.filter((x) => heat(x) === hot);
@@ -149,7 +163,7 @@ function Spy() {
       <div className="flex flex-wrap gap-2 border-t border-border pt-2"><SpyXrayButton ads={shown} niche={res.q} label="Raio-X da busca (5 mais antigos)" /><Button type="button" size="sm" variant="outline" onClick={addSentinel}><BellRing className="h-3.5 w-3.5" />Vigiar esta busca</Button></div>
     </div>}
     {res.ads.length > 0 && shown.length < res.ads.length && <p className="rounded-md border border-border bg-muted/40 p-3 text-sm">{res.ads.length - shown.length} anúncios escondidos pelos filtros. <button className="font-semibold text-primary underline" onClick={() => { setF({ ...f, minActive: 0, minDays: 0, scale: "todos", format: "todos", checkout: "todos", noBrands: false }); setHot("todos"); setText(""); }}>Mostrar todos</button></p>}
-    <div id="spy-feed" className={`grid scroll-mt-20 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 ${compact ? "grid-cols-2" : "grid-cols-1"}`}>{shown.map((a) => <SpyAdCard key={a.id} ad={a} niche={f.q} compact={compact} platform={platformOf(a)} />)}</div>
+    <div id="spy-feed" className={`grid scroll-mt-20 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4 ${compact ? "grid-cols-2" : "grid-cols-1"}`}>{shown.map((a) => <SpyAdCard key={a.id} ad={a} niche={f.q} compact={compact} platform={platformOf(a)} stats={stats.get(pageKey(a))} snaps={snaps[pageKey(a)]} />)}</div>
     {res.ads.length > 0 && (res.end
       ? <p className="flex items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 p-4 text-center text-sm"><CheckCircle2 className="h-4 w-4 text-primary" />Fim da lista: {(res.asked ?? 0) >= MAX_PER_SEARCH ? `limite de ${MAX_PER_SEARCH} anúncios por busca atingido` : "todos os anúncios compatíveis foram minerados"} ({res.ads.length}).</p>
       : <div className="flex flex-col items-center gap-1 py-2"><Button type="button" size="lg" disabled={more || busy} onClick={() => void loadMore()} className="w-full sm:w-auto">{more ? <Loader2 className="h-4 w-4 animate-spin" /> : <ChevronsDown className="h-4 w-4" />}{more ? "Minerando mais…" : `Minerar mais ${f.limit}`}</Button><p className="text-center text-xs text-muted-foreground">Mantém os {res.ads.length} já carregados e junta só os novos. Gasta crédito da Apify.</p></div>)}
