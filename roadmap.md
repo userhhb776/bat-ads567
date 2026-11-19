@@ -91,4 +91,9 @@
 - [x] Produtos opcionais (lucro = receita − gasto quando não há custo)
 - [x] Conexão nativa Meta por token (Configurações) com guia; sem menção a terceiros no painel
 - [x] Bat Dev V-0: menu próprio, modelos profissionais (psicologia, loja + admin), leitura de referências
-- [ ] Bat Dev V-0: páginas separadas "Meus sites", "Modelos prontos" e "Publicação e domínios" (pausado no fechamento)
+- [x] Bat Dev V-0: páginas separadas "Meus sites", "Modelos prontos" e "Publicação e domínios"
+
+## 18/11 Bat Spy tráfego e ritmo
+- [x] Mineração normal: ritmo de lançamento e "subiu/desceu" de anúncios ativos por página (histórico 30 dias, contagem exata)
+- [x] Tráfego do site da oferta (consulta grátis → Apify), guardado 7 dias
+- [x] Mais países no filtro

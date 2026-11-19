@@ -7,9 +7,9 @@ type DomainState = { ok: boolean; verified: boolean; misconfigured: boolean; ver
 
 async function vercel(path: string, init?: RequestInit) {
   const token = process.env["VERCEL_TOKEN"];
-  if (!token) return { status: 0, body: { error: { message: "Para usar domínio próprio, cadastre o token da hospedagem." } } as Record<string, any> };
+  if (!token) return { status: 0, body: { error: { message: "Para usar domínio próprio, cadastre o token da hospedagem." } } as any };
   const r = await fetch(`https://api.vercel.com${path}`, { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init?.headers ?? {}) } }).catch(() => null);
-  return { status: r?.status ?? 0, body: (r ? await r.json().catch(() => ({})) : { error: { message: "Hospedagem não respondeu." } }) as Record<string, any> };
+  return { status: r?.status ?? 0, body: (r ? await r.json().catch(() => ({})) : { error: { message: "Hospedagem não respondeu." } }) as any };
 }
 
 async function state(project: string, domain: string): Promise<DomainState> {
