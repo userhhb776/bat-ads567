@@ -200,7 +200,7 @@ function PagesRoute() {
       const { data: row } = await supabase.from("site_stores" as never).select("user_id").eq("site_key", key).maybeSingle();
       const owner = (row as { user_id?: string } | null)?.user_id;
       if (owner && owner !== u.user.id) { patchPage(page.id, { storeKey: newStoreKey(page.name) }); setBusy(false); toast.error("Esse endereço de loja já existe. Gerei outro — toque em Publicar de novo."); return; }
-      if (!owner) { const ins = await supabase.from("site_stores" as never).insert({ user_id: u.user.id, site_key: key, data: {} } as never); if (ins.error) { setBusy(false); toast.error("Não consegui criar o catálogo da loja: " + ins.error.message); return; } }
+      if (!owner) { const ins = await supabase.from("site_stores" as never).insert({ user_id: u.user.id, site_key: key, data: {} } as never); if (ins.error) { setBusy(false); if (ins.error.code === "23505") { patchPage(page.id, { storeKey: newStoreKey(page.name) }); toast.error("Esse endereço de loja já existe. Gerei outro — toque em Publicar de novo."); } else toast.error("Não consegui criar o catálogo da loja: " + ins.error.message); return; } }
     }
     const r = await pub({ data: { name: page.name, slug: base, html: live(filled) } }).catch(() => ({ url: "", error: "Falha ao publicar." }));
     if (r.error) { setBusy(false); toast.error(r.error); return; }

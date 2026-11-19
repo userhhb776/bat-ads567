@@ -45,8 +45,8 @@ function useCatalog() {
   const [source, setSource] = useState("modelo");
   const load = async () => {
     if (supabase && validKey) {
-      const r = await supabase.from("site_stores").select("data").eq("site_key", STORE_KEY).maybeSingle();
-      if (r.data && r.data.data) { setData(merge(r.data.data)); setSource("banco"); setLoaded(true); return; }
+      const r = await supabase.rpc("get_store_catalog", { p_site_key: STORE_KEY });
+      if (r.data && typeof r.data === "object") { setData(merge(r.data)); setSource("banco"); setLoaded(true); return; }
     }
     try { const raw = localStorage.getItem(LOCAL); if (raw) { setData(merge(JSON.parse(raw))); setSource("aparelho"); } } catch (e) {}
     setLoaded(true);

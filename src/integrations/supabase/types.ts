@@ -1041,7 +1041,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_store_catalog: { Args: { p_site_key: string }; Returns: Json }
     }
     Enums: {
       [_ in never]: never
